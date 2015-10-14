@@ -11,7 +11,15 @@ import "log"
 import "sync"
 import "time"
 
-var std = NewLogger(0)
+const (
+	LOG_TRACE = iota
+	LOG_DEBUG
+	LOG_INFO
+	LOG_WARN
+	LOG_ERROR
+)
+
+var std = NewLogger(LOG_TRACE)
 
 type Logger interface {
 	Trace(format string, v ...interface{})
@@ -93,13 +101,13 @@ func Error(format string, v ...interface{}) {
 
 func NewLogger(level int) (log Logger) {
 	switch level {
-	case 0:
+	case LOG_TRACE:
 		log = &LogTrace{}
-	case 1:
+	case LOG_DEBUG:
 		log = &LogDebug{}
-	case 2:
+	case LOG_INFO:
 		log = &LogInfo{}
-	case 3:
+	case LOG_WARN:
 		log = &LogWarn{}
 	default:
 		log = &LogError{}
