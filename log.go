@@ -42,11 +42,11 @@ type LogTrace struct {
 	LogDebug
 }
 
-func (* LogLogger) Trace(string, ...interface{}) {}
-func (* LogLogger) Debug(string, ...interface{}) {}
-func (* LogLogger) Info(string, ...interface{}) {}
-func (* LogLogger) Warn(string, ...interface{}) {}
-func (* LogLogger) Error(string, ...interface{}) {}
+func (self * LogLogger) Trace(string, ...interface{}) {}
+func (self * LogLogger) Debug(string, ...interface{}) {}
+func (self * LogLogger) Info(string, ...interface{}) {}
+func (self * LogLogger) Warn(string, ...interface{}) {}
+func (self * LogLogger) Error(string, ...interface{}) {}
 func (self * LogLogger) SetOutput(out io.Writer) {
 	self.out = out
 }
