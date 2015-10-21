@@ -2,7 +2,7 @@
 // Log levels
 //
 
-package log_go
+package log
 
 import "os"
 import "io"

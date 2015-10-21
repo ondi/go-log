@@ -1,5 +1,5 @@
 ```
-import log "github.com/ondi/log_go"
+import "github.com/ondi/go-log"
 
 log_rotate := log.NewRotateLogWriter(LogFile, LogSize, LogBackup, DuplicateOnStderr)
 logger := log.NewLogger(LogLevel)
