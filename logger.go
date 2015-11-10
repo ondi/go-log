@@ -26,11 +26,13 @@ type Logger interface {
 	Info(format string, v ...interface{})
 	Warn(format string, v ...interface{})
 	Error(format string, v ...interface{})
+	SetDateTime(format string)
 	SetOutput(out io.Writer)
 }
 
 type LogLogger struct {
 	Logger
+	datetime func() string
 	out io.Writer
 }
 type LogError struct {
@@ -55,28 +57,37 @@ func (* LogLogger) Info(string, ...interface{}) {}
 func (* LogLogger) Warn(string, ...interface{}) {}
 func (* LogLogger) Error(string, ...interface{}) {}
 
+func (self * LogLogger) SetDateTime(format string) {
+	if len(format) > 0 {
+		format += " "
+		self.datetime = func() string {return time.Now().Format(format)}
+	} else {
+		self.datetime = func() string {return ""}
+	}
+}
+
 func (self * LogLogger) SetOutput(out io.Writer) {
 	self.out = out
 }
 
 func (self * LogError) Error(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, time.Now().Format("2006-01-02 15:04:05 ERROR ") + format + "\n", v...)
+	fmt.Fprintf(self.out, self.datetime() + "ERROR " + format + "\n", v...)
 }
 
 func (self * LogWarn) Warn(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, time.Now().Format("2006-01-02 15:04:05 WARN ") + format + "\n", v...)
+	fmt.Fprintf(self.out, self.datetime() + "WARN " + format + "\n", v...)
 }
 
 func (self * LogInfo) Info(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, time.Now().Format("2006-01-02 15:04:05 INFO ") + format + "\n", v...)
+	fmt.Fprintf(self.out, self.datetime() + "INFO " + format + "\n", v...)
 }
 
 func (self * LogDebug) Debug(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, time.Now().Format("2006-01-02 15:04:05 DEBUG ") + format + "\n", v...)
+	fmt.Fprintf(self.out, self.datetime() + "DEBUG " + format + "\n", v...)
 }
 
 func (self * LogTrace) Trace(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, time.Now().Format("2006-01-02 15:04:05 TRACE ") + format + "\n", v...)
+	fmt.Fprintf(self.out, self.datetime() + "TRACE " + format + "\n", v...)
 }
 
 func Trace(format string, v ...interface{}) {
@@ -99,20 +110,22 @@ func Error(format string, v ...interface{}) {
 	std.Error(format, v...)
 }
 
-func NewLogger(level int) (log Logger) {
+func NewLogger(level int) (self Logger) {
 	switch level {
 	case LOG_TRACE:
-		log = &LogTrace{}
+		self = &LogTrace{}
 	case LOG_DEBUG:
-		log = &LogDebug{}
+		self = &LogDebug{}
 	case LOG_INFO:
-		log = &LogInfo{}
+		self = &LogInfo{}
 	case LOG_WARN:
-		log = &LogWarn{}
+		self = &LogWarn{}
 	default:
-		log = &LogError{}
+		self = &LogError{}
 	}
-	log.SetOutput(os.Stderr)
+	// self.SetDateTime("2006-01-02 15:04:05.000")
+	self.SetDateTime("2006-01-02 15:04:05")
+	self.SetOutput(os.Stderr)
 	return
 }
 
