@@ -1,5 +1,5 @@
 //
-// Log levels
+// Log with levels
 //
 
 package log
@@ -12,11 +12,11 @@ import "time"
 import "sync"
 
 const (
-	LOG_TRACE = iota
-	LOG_DEBUG
-	LOG_INFO
-	LOG_WARN
-	LOG_ERROR
+	LOG_TRACE = 0
+	LOG_DEBUG = 1
+	LOG_INFO = 2
+	LOG_WARN = 3
+	LOG_ERROR = 4
 )
 
 var std = NewLogger(LOG_TRACE)
@@ -171,6 +171,10 @@ func NewLogger(level int) (self Logger) {
 
 func SetLogger(logger Logger) {
 	std = logger
+}
+
+func GetLogger() (Logger) {
+	return std
 }
 
 func SetOutput(out io.Writer) {
