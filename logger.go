@@ -33,14 +33,11 @@ type Logger interface {
 	DelOutput(out io.Writer)
 }
 
-type LogLogger struct {
+type LogError struct {
 	Logger
 	mx sync.Mutex
 	datetime func() string
 	out map[io.Writer]struct{}
-}
-type LogError struct {
-	LogLogger
 }
 type LogWarn struct {
 	LogError
@@ -55,13 +52,7 @@ type LogTrace struct {
 	LogDebug
 }
 
-func (* LogLogger) Trace(string, ...interface{}) {}
-func (* LogLogger) Debug(string, ...interface{}) {}
-func (* LogLogger) Info(string, ...interface{}) {}
-func (* LogLogger) Warn(string, ...interface{}) {}
-func (* LogLogger) Error(string, ...interface{}) {}
-
-func (self * LogLogger) DateTime(format string) {
+func (self * LogError) DateTime(format string) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if len(format) > 0 {
@@ -71,7 +62,7 @@ func (self * LogLogger) DateTime(format string) {
 	}
 }
 
-func (self * LogLogger) SetOutput(out io.Writer) {
+func (self * LogError) SetOutput(out io.Writer) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if self.out != nil {
@@ -81,13 +72,18 @@ func (self * LogLogger) SetOutput(out io.Writer) {
 	}
 }
 
-func (self * LogLogger) DelOutput(out io.Writer) {
+func (self * LogError) DelOutput(out io.Writer) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if self.out != nil {
 		delete(self.out, out)
 	}
 }
+
+func (* LogError) Trace(string, ...interface{}) {}
+func (* LogError) Debug(string, ...interface{}) {}
+func (* LogError) Info(string, ...interface{}) {}
+func (* LogError) Warn(string, ...interface{}) {}
 
 func (self * LogError) Error(format string, v ...interface{}) {
 	self.mx.Lock()
