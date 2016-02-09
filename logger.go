@@ -9,6 +9,7 @@ import "io"
 import "fmt"
 import "log"
 import "time"
+import "sync"
 
 const (
 	LOG_TRACE = iota
@@ -26,14 +27,17 @@ type Logger interface {
 	Info(format string, v ...interface{})
 	Warn(format string, v ...interface{})
 	Error(format string, v ...interface{})
-	SetDateTime(format string)
+	
+	DateTime(format string)
 	SetOutput(out io.Writer)
+	DelOutput(out io.Writer)
 }
 
 type LogLogger struct {
 	Logger
+	mx sync.Mutex
 	datetime func() string
-	out io.Writer
+	out map[io.Writer]struct{}
 }
 type LogError struct {
 	LogLogger
@@ -57,37 +61,77 @@ func (* LogLogger) Info(string, ...interface{}) {}
 func (* LogLogger) Warn(string, ...interface{}) {}
 func (* LogLogger) Error(string, ...interface{}) {}
 
-func (self * LogLogger) SetDateTime(format string) {
+func (self * LogLogger) DateTime(format string) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
 	if len(format) > 0 {
-		format += " "
-		self.datetime = func() string {return time.Now().Format(format)}
+		self.datetime = func() string {return time.Now().Format(format + " ")}
 	} else {
 		self.datetime = func() string {return ""}
 	}
 }
 
 func (self * LogLogger) SetOutput(out io.Writer) {
-	self.out = out
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	if self.out != nil {
+		self.out[out] = struct{}{}
+	} else {
+		self.out = map[io.Writer]struct{}{out: struct{}{}}
+	}
+}
+
+func (self * LogLogger) DelOutput(out io.Writer) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	if self.out != nil {
+		delete(self.out, out)
+	}
 }
 
 func (self * LogError) Error(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, self.datetime() + "ERROR " + format + "\n", v...)
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	temp := fmt.Sprintf(self.datetime() + "ERROR " + format + "\n", v...)
+	for k, _ := range self.out {
+		fmt.Fprint(k, temp)
+	}
 }
 
 func (self * LogWarn) Warn(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, self.datetime() + "WARN " + format + "\n", v...)
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	temp := fmt.Sprintf(self.datetime() + "WARN " + format + "\n", v...)
+	for k, _ := range self.out {
+		fmt.Fprintf(k, temp)
+	}
 }
 
 func (self * LogInfo) Info(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, self.datetime() + "INFO " + format + "\n", v...)
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	temp := fmt.Sprintf(self.datetime() + "INFO " + format + "\n", v...)
+	for k, _ := range self.out {
+		fmt.Fprintf(k, temp)
+	}
 }
 
 func (self * LogDebug) Debug(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, self.datetime() + "DEBUG " + format + "\n", v...)
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	temp := fmt.Sprintf(self.datetime() + "DEBUG " + format + "\n", v...)
+	for k, _ := range self.out {
+		fmt.Fprintf(k, temp)
+	}
 }
 
 func (self * LogTrace) Trace(format string, v ...interface{}) {
-	fmt.Fprintf(self.out, self.datetime() + "TRACE " + format + "\n", v...)
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	temp := fmt.Sprintf(self.datetime() + "TRACE " + format + "\n", v...)
+	for k, _ := range self.out {
+		fmt.Fprintf(k, temp)
+	}
 }
 
 func Trace(format string, v ...interface{}) {
@@ -123,8 +167,8 @@ func NewLogger(level int) (self Logger) {
 	default:
 		self = &LogError{}
 	}
-	// self.SetDateTime("2006-01-02 15:04:05.000")
-	self.SetDateTime("2006-01-02 15:04:05")
+	// self.DateTime("2006-01-02 15:04:05.000")
+	self.DateTime("2006-01-02 15:04:05")
 	self.SetOutput(os.Stderr)
 	return
 }
