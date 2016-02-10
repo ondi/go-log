@@ -29,30 +29,54 @@ type Logger interface {
 	Error(format string, v ...interface{})
 	
 	DateTime(format string)
-	SetOutput(out io.Writer)
+	SetOutput(out io.Writer, level int)
 	DelOutput(out io.Writer)
 }
 
-type LogError struct {
+type write_map_t map[io.Writer]struct{}
+
+type LogLogger struct {
 	Logger
 	mx sync.Mutex
 	datetime func() string
-	out map[io.Writer]struct{}
-}
-type LogWarn struct {
-	LogError
-}
-type LogInfo struct {
-	LogWarn
-}
-type LogDebug struct {
-	LogInfo
-}
-type LogTrace struct {
-	LogDebug
+	error write_map_t
+	warn write_map_t
+	info write_map_t
+	debug write_map_t
+	trace write_map_t
 }
 
-func (self * LogError) DateTime(format string) {
+func (self * LogLogger) SetOutput(out io.Writer, level int) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	if level <= LOG_ERROR {
+		self.error[out] = struct{}{}
+	}
+	if level <= LOG_WARN {
+		self.warn[out] = struct{}{}
+	}
+	if level <= LOG_INFO {
+		self.info[out] = struct{}{}
+	}
+	if level <= LOG_DEBUG {
+		self.debug[out] = struct{}{}
+	}
+	if level == LOG_TRACE {
+		self.trace[out] = struct{}{}
+	}
+}
+
+func (self * LogLogger) DelOutput(out io.Writer) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	delete(self.error, out)
+	delete(self.warn, out)
+	delete(self.info, out)
+	delete(self.debug, out)
+	delete(self.trace, out)
+}
+
+func (self * LogLogger) DateTime(format string) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if len(format) > 0 {
@@ -62,70 +86,47 @@ func (self * LogError) DateTime(format string) {
 	}
 }
 
-func (self * LogError) SetOutput(out io.Writer) {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	if self.out != nil {
-		self.out[out] = struct{}{}
-	} else {
-		self.out = map[io.Writer]struct{}{out: struct{}{}}
-	}
-}
-
-func (self * LogError) DelOutput(out io.Writer) {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	if self.out != nil {
-		delete(self.out, out)
-	}
-}
-
-func (* LogError) Trace(string, ...interface{}) {}
-func (* LogError) Debug(string, ...interface{}) {}
-func (* LogError) Info(string, ...interface{}) {}
-func (* LogError) Warn(string, ...interface{}) {}
-
-func (self * LogError) Error(format string, v ...interface{}) {
+func (self * LogLogger) Error(format string, v ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	temp := fmt.Sprintf(self.datetime() + "ERROR " + format + "\n", v...)
-	for k, _ := range self.out {
+	for k, _ := range self.error {
 		fmt.Fprint(k, temp)
 	}
 }
 
-func (self * LogWarn) Warn(format string, v ...interface{}) {
+func (self * LogLogger) Warn(format string, v ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	temp := fmt.Sprintf(self.datetime() + "WARN " + format + "\n", v...)
-	for k, _ := range self.out {
+	for k, _ := range self.warn {
 		fmt.Fprintf(k, temp)
 	}
 }
 
-func (self * LogInfo) Info(format string, v ...interface{}) {
+func (self * LogLogger) Info(format string, v ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	temp := fmt.Sprintf(self.datetime() + "INFO " + format + "\n", v...)
-	for k, _ := range self.out {
+	for k, _ := range self.info {
 		fmt.Fprintf(k, temp)
 	}
 }
 
-func (self * LogDebug) Debug(format string, v ...interface{}) {
+func (self * LogLogger) Debug(format string, v ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	temp := fmt.Sprintf(self.datetime() + "DEBUG " + format + "\n", v...)
-	for k, _ := range self.out {
+	for k, _ := range self.debug {
 		fmt.Fprintf(k, temp)
 	}
 }
 
-func (self * LogTrace) Trace(format string, v ...interface{}) {
+func (self * LogLogger) Trace(format string, v ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	temp := fmt.Sprintf(self.datetime() + "TRACE " + format + "\n", v...)
-	for k, _ := range self.out {
+	for k, _ := range self.trace {
 		fmt.Fprintf(k, temp)
 	}
 }
@@ -150,23 +151,17 @@ func Error(format string, v ...interface{}) {
 	std.Error(format, v...)
 }
 
-func NewLogger(level int) (self Logger) {
-	switch level {
-	case LOG_TRACE:
-		self = &LogTrace{}
-	case LOG_DEBUG:
-		self = &LogDebug{}
-	case LOG_INFO:
-		self = &LogInfo{}
-	case LOG_WARN:
-		self = &LogWarn{}
-	default:
-		self = &LogError{}
-	}
+func NewLogger(level int) Logger {
+	self := &LogLogger{}
+	self.error = write_map_t{}
+	self.warn = write_map_t{}
+	self.info = write_map_t{}
+	self.debug = write_map_t{}
+	self.trace = write_map_t{}
 	// self.DateTime("2006-01-02 15:04:05.000")
 	self.DateTime("2006-01-02 15:04:05")
-	self.SetOutput(os.Stderr)
-	return
+	self.SetOutput(os.Stderr, level)
+	return self
 }
 
 func SetLogger(logger Logger) {
