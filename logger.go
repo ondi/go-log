@@ -25,11 +25,11 @@ const (
 var std = NewLogger(os.Stderr, LOG_TRACE, DATETIME1)
 
 type Logger interface {
-	Trace(format string, v ...interface{})
-	Debug(format string, v ...interface{})
-	Info(format string, v ...interface{})
-	Warn(format string, v ...interface{})
-	Error(format string, v ...interface{})
+	Trace(format string, args ...interface{})
+	Debug(format string, args ...interface{})
+	Info(format string, args ...interface{})
+	Warn(format string, args ...interface{})
+	Error(format string, args ...interface{})
 	
 	AddOutput(out io.Writer, level int, datetime string)
 	DelOutput(out io.Writer)
@@ -135,24 +135,24 @@ func (self * LogLogger) Trace(format string, args ...interface{}) {
 	}
 }
 
-func Trace(format string, v ...interface{}) {
-	std.Trace(format, v...)
+func Trace(format string, args ...interface{}) {
+	std.Trace(format, args...)
 }
 
-func Debug(format string, v ...interface{}) {
-	std.Debug(format, v...)
+func Debug(format string, args ...interface{}) {
+	std.Debug(format, args...)
 }
 
-func Info(format string, v ...interface{}) {
-	std.Info(format, v...)
+func Info(format string, args ...interface{}) {
+	std.Info(format, args...)
 }
 
-func Warn(format string, v ...interface{}) {
-	std.Warn(format, v...)
+func Warn(format string, args ...interface{}) {
+	std.Warn(format, args...)
 }
 
-func Error(format string, v ...interface{}) {
-	std.Error(format, v...)
+func Error(format string, args ...interface{}) {
+	std.Error(format, args...)
 }
 
 func SetLogger(logger Logger) {
