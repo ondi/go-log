@@ -1,13 +1,13 @@
 ```
+import "os"
 import "github.com/ondi/go-log"
 
-logger := log.NewLogger(LogLevel)
+logger := log.NewLogger(os.Stderr, LogLevel, log.DATETIME1)
 if len(LogFile) > 0 {
 	log_rotate := log.NewRotateLogWriter(LogFile, LogSize, LogBackup)
-	logger.SetOutput(log_rotate, LogLevel)
+	logger.AddOutput(log_rotate, LogLevel, log.DATETIME1)
 }
 log.SetLogger(logger)
 
 log.Info("%v", "test")
 ```
-
