@@ -28,15 +28,14 @@ type Logger interface {
 	Warn(format string, v ...interface{})
 	Error(format string, v ...interface{})
 	
-	DateTime(format string)
-	SetOutput(out io.Writer, level int)
+	SetDateTime(format string)
+	AddOutput(out io.Writer, level int)
 	DelOutput(out io.Writer)
 }
 
 type write_map_t map[io.Writer]struct{}
 
 type LogLogger struct {
-	Logger
 	mx sync.Mutex
 	datetime func() string
 	error write_map_t
@@ -46,7 +45,20 @@ type LogLogger struct {
 	trace write_map_t
 }
 
-func (self * LogLogger) SetOutput(out io.Writer, level int) {
+func NewLogger(level int) Logger {
+	self := &LogLogger{}
+	self.error = write_map_t{}
+	self.warn = write_map_t{}
+	self.info = write_map_t{}
+	self.debug = write_map_t{}
+	self.trace = write_map_t{}
+	// self.SetDateTime("2006-01-02 15:04:05.000")
+	self.SetDateTime("2006-01-02 15:04:05")
+	self.AddOutput(os.Stderr, level)
+	return self
+}
+
+func (self * LogLogger) AddOutput(out io.Writer, level int) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if level <= LOG_ERROR {
@@ -76,7 +88,7 @@ func (self * LogLogger) DelOutput(out io.Writer) {
 	delete(self.trace, out)
 }
 
-func (self * LogLogger) DateTime(format string) {
+func (self * LogLogger) SetDateTime(format string) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if len(format) > 0 {
@@ -151,19 +163,6 @@ func Error(format string, v ...interface{}) {
 	std.Error(format, v...)
 }
 
-func NewLogger(level int) Logger {
-	self := &LogLogger{}
-	self.error = write_map_t{}
-	self.warn = write_map_t{}
-	self.info = write_map_t{}
-	self.debug = write_map_t{}
-	self.trace = write_map_t{}
-	// self.DateTime("2006-01-02 15:04:05.000")
-	self.DateTime("2006-01-02 15:04:05")
-	self.SetOutput(os.Stderr, level)
-	return self
-}
-
 func SetLogger(logger Logger) {
 	std = logger
 }
@@ -172,6 +171,7 @@ func GetLogger() (Logger) {
 	return std
 }
 
+// SetOutput to std logger
 func SetOutput(out io.Writer) {
 	log.SetOutput(out)
 }
