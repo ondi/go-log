@@ -22,7 +22,7 @@ const (
 	DATETIME2 = "2006-01-02 15:04:05.000"
 )
 
-var std = NewLogger(os.Stderr, LOG_TRACE, DATETIME1)
+var std = NewLogger("stderr", LOG_TRACE, os.Stderr, DATETIME1)
 
 type Logger interface {
 	Trace(format string, args ...interface{})
@@ -31,11 +31,16 @@ type Logger interface {
 	Warn(format string, args ...interface{})
 	Error(format string, args ...interface{})
 	
-	AddOutput(out io.Writer, level int, datetime string)
-	DelOutput(out io.Writer)
+	AddOutput(name string, level int, out io.Writer, datetime string)
+	DelOutput(name string)
 }
 
-type write_map_t map[io.Writer]func() string
+type mapped_t struct {
+	datetime func() string
+	stream io.Writer
+}
+
+type write_map_t map[string]mapped_t
 
 type LogLogger struct {
 	mx sync.Mutex
@@ -46,7 +51,7 @@ type LogLogger struct {
 	trace write_map_t
 }
 
-func NewLogger(out io.Writer, level int, datetime string) Logger {
+func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
 	self := &LogLogger{}
 	self.error = write_map_t{}
 	self.warn = write_map_t{}
@@ -54,84 +59,86 @@ func NewLogger(out io.Writer, level int, datetime string) Logger {
 	self.debug = write_map_t{}
 	self.trace = write_map_t{}
 	if out != nil {
-		self.AddOutput(out, level, datetime)
+		self.AddOutput(name, level, out, datetime)
 	}
 	return self
 }
 
-func (self * LogLogger) AddOutput(out io.Writer, level int, datetime string) {
+func (self * LogLogger) AddOutput(name string, level int, out io.Writer, datetime string) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	var format func() string
+	var mapped mapped_t
 	if len(datetime) > 0 {
-		format = func() string {return time.Now().Format(datetime + " ")}
+		datetime += " "
+		mapped.datetime = func() string {return time.Now().Format(datetime)}
 	} else {
-		format = func() string {return ""}
+		mapped.datetime = func() string {return ""}
 	}
+	mapped.stream = out
 	if level <= LOG_ERROR {
-		self.error[out] = format
+		self.error[name] = mapped
 	}
 	if level <= LOG_WARN {
-		self.warn[out] = format
+		self.warn[name] = mapped
 	}
 	if level <= LOG_INFO {
-		self.info[out] = format
+		self.info[name] = mapped
 	}
 	if level <= LOG_DEBUG {
-		self.debug[out] = format
+		self.debug[name] = mapped
 	}
 	if level == LOG_TRACE {
-		self.trace[out] = format
+		self.trace[name] = mapped
 	}
 }
 
-func (self * LogLogger) DelOutput(out io.Writer) {
+func (self * LogLogger) DelOutput(name string) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	delete(self.error, out)
-	delete(self.warn, out)
-	delete(self.info, out)
-	delete(self.debug, out)
-	delete(self.trace, out)
+	delete(self.error, name)
+	delete(self.warn, name)
+	delete(self.info, name)
+	delete(self.debug, name)
+	delete(self.trace, name)
 }
 
 func (self * LogLogger) Error(format string, args ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	for k, v := range self.error {
-		fmt.Fprintf(k, v() + "ERROR " + format + "\n", args...)
+	for _, v := range self.error {
+		fmt.Fprintf(v.stream, v.datetime() + "ERROR " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Warn(format string, args ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	for k, v := range self.warn {
-		fmt.Fprintf(k, v() + "WARN " + format + "\n", args...)
+	for _, v := range self.warn {
+		fmt.Fprintf(v.stream, v.datetime() + "WARN " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Info(format string, args ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	for k, v := range self.info {
-		fmt.Fprintf(k, v() + "INFO " + format + "\n", args...)
+	for _, v := range self.info {
+		fmt.Fprintf(v.stream, v.datetime() + "INFO " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Debug(format string, args ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	for k, v := range self.debug {
-		fmt.Fprintf(k, v() + "DEBUG " + format + "\n", args...)
+	for _, v := range self.debug {
+		fmt.Fprintf(v.stream, v.datetime() + "DEBUG " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Trace(format string, args ...interface{}) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	for k, v := range self.trace {
-		fmt.Fprintf(k, v() + "TRACE " + format + "\n", args...)
+	for _, v := range self.trace {
+		fmt.Fprintf(v.stream, v.datetime() + "TRACE " + format + "\n", args...)
 	}
 }
 
