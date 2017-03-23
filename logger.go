@@ -33,6 +33,7 @@ type Logger interface {
 	
 	AddOutput(name string, level int, out io.Writer, datetime string)
 	DelOutput(name string)
+	Clear()
 }
 
 type mapped_t struct {
@@ -53,11 +54,7 @@ type LogLogger struct {
 
 func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
 	self := &LogLogger{}
-	self.error = write_map_t{}
-	self.warn = write_map_t{}
-	self.info = write_map_t{}
-	self.debug = write_map_t{}
-	self.trace = write_map_t{}
+	self.Clear()
 	if out != nil {
 		self.AddOutput(name, level, out, datetime)
 	}
@@ -87,9 +84,17 @@ func (self * LogLogger) AddOutput(name string, level int, out io.Writer, datetim
 	if level <= LOG_DEBUG {
 		self.debug[name] = mapped
 	}
-	if level == LOG_TRACE {
+	if level <= LOG_TRACE {
 		self.trace[name] = mapped
 	}
+}
+
+func (self * LogLogger) Clear() {
+	self.error = write_map_t{}
+	self.warn = write_map_t{}
+	self.info = write_map_t{}
+	self.debug = write_map_t{}
+	self.trace = write_map_t{}
 }
 
 func (self * LogLogger) DelOutput(name string) {
