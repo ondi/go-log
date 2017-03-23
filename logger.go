@@ -90,6 +90,8 @@ func (self * LogLogger) AddOutput(name string, level int, out io.Writer, datetim
 }
 
 func (self * LogLogger) Clear() {
+	self.mx.Lock()
+	defer self.mx.Unlock()
 	self.error = write_map_t{}
 	self.warn = write_map_t{}
 	self.info = write_map_t{}
