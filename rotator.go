@@ -36,7 +36,11 @@ func (self * RotateLogWriter) LogCycle() (err error) {
 	for i := self.backup_count; i > 1; i-- {
 		os.Rename(fmt.Sprintf("%s.%d", self.filename, i - 1), fmt.Sprintf("%s.%d", self.filename, i))
 	}
-	os.Rename(self.filename, fmt.Sprintf("%s.%d", self.filename, 1))
+	if self.backup_count > 0 {
+		os.Rename(self.filename, fmt.Sprintf("%s.%d", self.filename, 1))
+	} else {
+		os.Remove(self.filename)
+	}
 	self.curr_bytes = 0
 	self.fp, err = os.OpenFile(self.filename, os.O_WRONLY | os.O_CREATE /*| os.O_APPEND*/, 0644)
 	if err != nil {
