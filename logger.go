@@ -36,21 +36,56 @@ type Logger interface {
 	Clear()
 }
 
-type output_t struct {
+type out_t struct {
 	mx sync.Mutex
 	stream io.Writer
 	datetime func() string
 }
 
-type write_map_t map[string]*output_t
+func (self * out_t) Write(format string, args ...interface{}) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	fmt.Fprintf(self.stream, format, args...)
+}
+
+type output_t struct {
+	mx sync.Mutex
+	out map[string]*out_t
+}
+
+func (self * output_t) AddOutput(name string, value * out_t) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	self.out[name] = value
+}
+
+func (self * output_t) DelOutput(name string) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	delete(self.out, name)
+}
+
+func (self * output_t) Clear() {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	self.out = map[string]*out_t{}
+}
+
+func (self * output_t) Values() (res []*out_t) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	for _, v := range self.out {
+		res = append(res, v)
+	}
+	return
+}
 
 type LogLogger struct {
-	mx sync.Mutex
-	error write_map_t
-	warn write_map_t
-	info write_map_t
-	debug write_map_t
-	trace write_map_t
+	error output_t
+	warn output_t
+	info output_t
+	debug output_t
+	trace output_t
 }
 
 func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
@@ -63,9 +98,7 @@ func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
 }
 
 func (self * LogLogger) AddOutput(name string, level int, out io.Writer, datetime string) {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	value := &output_t{stream: out}
+	value := &out_t{stream: out}
 	if len(datetime) > 0 {
 		datetime += " "
 		value.datetime = func() string {return time.Now().Format(datetime)}
@@ -73,84 +106,65 @@ func (self * LogLogger) AddOutput(name string, level int, out io.Writer, datetim
 		value.datetime = func() string {return ""}
 	}
 	if level <= LOG_ERROR {
-		self.error[name] = value
+		self.error.AddOutput(name, value)
 	}
 	if level <= LOG_WARN {
-		self.warn[name] = value
+		self.warn.AddOutput(name, value)
 	}
 	if level <= LOG_INFO {
-		self.info[name] = value
+		self.info.AddOutput(name, value)
 	}
 	if level <= LOG_DEBUG {
-		self.debug[name] = value
+		self.debug.AddOutput(name, value)
 	}
 	if level <= LOG_TRACE {
-		self.trace[name] = value
+		self.trace.AddOutput(name, value)
 	}
 }
 
 func (self * LogLogger) Clear() {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	self.error = write_map_t{}
-	self.warn = write_map_t{}
-	self.info = write_map_t{}
-	self.debug = write_map_t{}
-	self.trace = write_map_t{}
+	self.error.Clear()
+	self.warn.Clear()
+	self.info.Clear()
+	self.debug.Clear()
+	self.trace.Clear()
 }
 
 func (self * LogLogger) DelOutput(name string) {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	delete(self.error, name)
-	delete(self.warn, name)
-	delete(self.info, name)
-	delete(self.debug, name)
-	delete(self.trace, name)
-}
-
-func (self * LogLogger) Values(m write_map_t) (res []*output_t) {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	for _, v := range m {
-		res = append(res, v)
-	}
-	return
-}
-
-func Write(v * output_t, format string, args ...interface{}) {
-	v.mx.Lock()
-	defer v.mx.Unlock()
-	fmt.Fprintf(v.stream, format, args...)
+	self.error.DelOutput(name)
+	self.warn.DelOutput(name)
+	self.info.DelOutput(name)
+	self.debug.DelOutput(name)
+	self.trace.DelOutput(name)
 }
 
 func (self * LogLogger) Error(format string, args ...interface{}) {
-	for _, v := range self.Values(self.error) {
-		Write(v, v.datetime() + "ERROR " + format + "\n", args...)
+	for _, v := range self.error.Values() {
+		v.Write(v.datetime() + "ERROR " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Warn(format string, args ...interface{}) {
-	for _, v := range self.Values(self.warn) {
-		Write(v, v.datetime() + "WARN " + format + "\n", args...)
+	for _, v := range self.warn.Values() {
+		v.Write(v.datetime() + "WARN " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Info(format string, args ...interface{}) {
-	for _, v := range self.Values(self.info) {
-		Write(v, v.datetime() + "INFO " + format + "\n", args...)
+	for _, v := range self.info.Values() {
+		v.Write(v.datetime() + "INFO " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Debug(format string, args ...interface{}) {
-	for _, v := range self.Values(self.debug) {
-		Write(v, v.datetime() + "DEBUG " + format + "\n", args...)
+	for _, v := range self.debug.Values() {
+		v.Write(v.datetime() + "DEBUG " + format + "\n", args...)
 	}
 }
 
 func (self * LogLogger) Trace(format string, args ...interface{}) {
-	for _, v := range self.Values(self.trace) {
-		Write(v, v.datetime() + "TRACE " + format + "\n", args...)
+	for _, v := range self.trace.Values() {
+		v.Write(v.datetime() + "TRACE " + format + "\n", args...)
 	}
 }
 
