@@ -11,6 +11,7 @@ import "log"
 import "time"
 import "sync"
 import "sync/atomic"
+import "unsafe"
 
 const (
 	LOG_TRACE = 0
@@ -53,7 +54,7 @@ func (self * out_t) Write(format string, args ...interface{}) {
 type outmap_t map[string]*out_t
 
 type fanout_t struct {
-	value atomic.Value
+	value unsafe.Pointer
 }
 
 func NewFanout() (self * fanout_t) {
@@ -62,30 +63,40 @@ func NewFanout() (self * fanout_t) {
 	return
 }
 
+func (self * fanout_t) Clear() {
+	atomic.StorePointer(&self.value, unsafe.Pointer(&outmap_t{}))
+}
+
 func (self * fanout_t) AddOutput(name string, value * out_t) {
-	out := outmap_t{}
-	for k, v := range self.value.Load().(outmap_t) {
-		out[k] = v
+	for {
+		out := outmap_t{}
+		p := atomic.LoadPointer(&self.value)
+		for k, v := range *(* outmap_t)(p) {
+			out[k] = v
+		}
+		out[name] = value
+		if atomic.CompareAndSwapPointer(&self.value, p, unsafe.Pointer(&out)) {
+			return
+		}
 	}
-	out[name] = value
-	self.value.Store(out)
 }
 
 func (self * fanout_t) DelOutput(name string) {
-	out := outmap_t{}
-	for k, v := range self.value.Load().(outmap_t) {
-		out[k] = v
+	for {
+		out := outmap_t{}
+		p := atomic.LoadPointer(&self.value)
+		for k, v := range *(* outmap_t)(p) {
+			out[k] = v
+		}
+		delete(out, name)
+		if atomic.CompareAndSwapPointer(&self.value, p, unsafe.Pointer(&out)) {
+			return
+		}
 	}
-	delete(out, name)
-	self.value.Store(out)
 }
 
 func (self * fanout_t) Range() outmap_t {
-	return self.value.Load().(outmap_t)
-}
-
-func (self * fanout_t) Clear() {
-	self.value.Store(outmap_t{})
+	return *(*outmap_t)(atomic.LoadPointer(&self.value))
 }
 
 type LogLogger struct {
