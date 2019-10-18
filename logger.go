@@ -107,13 +107,18 @@ type LogLogger struct {
 	trace * fanout_t
 }
 
-func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
+func NewEmpty() Logger {
 	self := &LogLogger{}
 	self.error = NewFanout()
 	self.warn = NewFanout()
 	self.info = NewFanout()
 	self.debug = NewFanout()
 	self.trace = NewFanout()
+	return self
+}
+
+func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
+	self := NewEmpty()
 	self.AddOutput(name, level, out, datetime)
 	return self
 }
