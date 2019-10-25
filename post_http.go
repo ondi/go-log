@@ -36,23 +36,23 @@ func (self * HttpLogWriter_t) Write(m []byte) (int, error) {
 
 func (self * HttpLogWriter_t) worker() {
 	for {
-		if m, ok := self.q.PopFront(); ok == -1 {
+		m, ok := self.q.PopFront()
+		if ok == -1 {
 			return
-		} else {
-			buf, err := self.convert(m.([]byte))
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				continue
-			}
-			req, err := http.NewRequest("POST", self.url, &buf)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				continue
-			}
-			if _, err = self.client.Do(req); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				continue
-			}
+		}
+		buf, err := self.convert(m.([]byte))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			continue
+		}
+		req, err := http.NewRequest("POST", self.url, &buf)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			continue
+		}
+		if _, err = self.client.Do(req); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			continue
 		}
 	}
 }
