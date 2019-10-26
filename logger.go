@@ -33,21 +33,21 @@ type Logger interface {
 	Warn(format string, args ...interface{})
 	Error(format string, args ...interface{})
 	
-	AddOutput(name string, level int, out Writer)
+	AddOutput(name string, level int, writer Writer)
 	DelOutput(name string)
 	Clear()
 }
 
 type writer_map_t map[string]Writer
 
-func add_output(value * unsafe.Pointer, name string, out Writer) {
+func add_output(value * unsafe.Pointer, name string, writer Writer) {
 	for {
 		temp := writer_map_t{}
 		p := atomic.LoadPointer(value)
 		for k, v := range *(* writer_map_t)(p) {
 			temp[k] = v
 		}
-		temp[name] = out
+		temp[name] = writer
 		if atomic.CompareAndSwapPointer(value, p, unsafe.Pointer(&temp)) {
 			return
 		}
@@ -181,6 +181,6 @@ func GetLogger() (Logger) {
 }
 
 // SetOutput to std logger
-func SetOutput(out io.Writer) {
-	log.SetOutput(out)
+func SetOutput(writer io.Writer) {
+	log.SetOutput(writer)
 }

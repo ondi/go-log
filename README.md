@@ -1,13 +1,20 @@
 ```
-import "os"
+package main
+
 import "github.com/ondi/go-log"
 
-logger := log.NewLogger("stderr", LogLevel, os.Stderr, log.DATETIME1)
-if len(LogFile) > 0 {
-	log_rotate := log.NewRotateLogWriter(LogFile, LogSize, LogBackup)
-	logger.AddOutput("logfile", LogLevel, log_rotate, log.DATETIME1)
-}
-log.SetLogger(logger)
+func main() {
+	ExampleLogLevel := 0
+	ExampleLogFile := "app.log"
+	ExampleLogSize := 10 * 1024 * 1024
+	ExampleLogBackup := 5
+	logger := log.NewLogger("stderr", ExampleLogLevel, log.NewStderr(log.DATETIME1))
+	if len(ExampleLogFile) > 0 {
+		log_rotate := log.NewRotateLogWriter(ExampleLogFile, log.DATETIME1, ExampleLogSize, ExampleLogBackup)
+		logger.AddOutput("logfile", ExampleLogLevel, log_rotate)
+	}
+	log.SetLogger(logger)
 
-log.Info("%v", "test")
+	log.Info("%v", "test")
+}
 ```
