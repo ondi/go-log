@@ -37,18 +37,18 @@ type Logger interface {
 	Clear()
 }
 
-type out_t struct {
+type writer_t struct {
 	datetime func() string
 	out io.Writer
 }
 
-type outmap_t map[string]out_t
+type writer_map_t map[string]writer_t
 
-func AddOutput(value * unsafe.Pointer, name string, out out_t) {
+func add_output(value * unsafe.Pointer, name string, out writer_t) {
 	for {
-		temp := outmap_t{}
+		temp := writer_map_t{}
 		p := atomic.LoadPointer(value)
-		for k, v := range *(* outmap_t)(p) {
+		for k, v := range *(* writer_map_t)(p) {
 			temp[k] = v
 		}
 		temp[name] = out
@@ -58,26 +58,22 @@ func AddOutput(value * unsafe.Pointer, name string, out out_t) {
 	}
 }
 
-func DelOutput(value * unsafe.Pointer, name string) {
+func del_output(value * unsafe.Pointer, name string) {
 	for {
-		out := outmap_t{}
+		temp := writer_map_t{}
 		p := atomic.LoadPointer(value)
-		for k, v := range *(* outmap_t)(p) {
-			out[k] = v
+		for k, v := range *(* writer_map_t)(p) {
+			temp[k] = v
 		}
-		delete(out, name)
-		if atomic.CompareAndSwapPointer(value, p, unsafe.Pointer(&out)) {
+		delete(temp, name)
+		if atomic.CompareAndSwapPointer(value, p, unsafe.Pointer(&temp)) {
 			return
 		}
 	}
 }
 
-func Range(value * unsafe.Pointer) outmap_t {
-	return *(* outmap_t)(atomic.LoadPointer(value))
-}
-
-type LogLogger struct {
-	error unsafe.Pointer
+type log_t struct {
+	err unsafe.Pointer
 	warn unsafe.Pointer
 	info unsafe.Pointer
 	debug unsafe.Pointer
@@ -85,7 +81,7 @@ type LogLogger struct {
 }
 
 func NewEmpty() Logger {
-	self := &LogLogger{}
+	self := &log_t{}
 	self.Clear()
 	return self
 }
@@ -96,73 +92,73 @@ func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
 	return self
 }
 
-func (self * LogLogger) AddOutput(name string, level int, out io.Writer, datetime string) {
-	value := out_t{out: out}
+func (self * log_t) AddOutput(name string, level int, out io.Writer, datetime string) {
+	writer := writer_t{out: out}
 	if len(datetime) > 0 {
 		datetime += " "
-		value.datetime = func() string {return time.Now().Format(datetime)}
+		writer.datetime = func() string {return time.Now().Format(datetime)}
 	} else {
-		value.datetime = func() string {return ""}
+		writer.datetime = func() string {return ""}
 	}
 	if level <= LOG_ERROR {
-		AddOutput(&self.error, name, value)
+		add_output(&self.err, name, writer)
 	}
 	if level <= LOG_WARN {
-		AddOutput(&self.warn, name, value)
+		add_output(&self.warn, name, writer)
 	}
 	if level <= LOG_INFO {
-		AddOutput(&self.info, name, value)
+		add_output(&self.info, name, writer)
 	}
 	if level <= LOG_DEBUG {
-		AddOutput(&self.debug, name, value)
+		add_output(&self.debug, name, writer)
 	}
 	if level <= LOG_TRACE {
-		AddOutput(&self.trace, name, value)
+		add_output(&self.trace, name, writer)
 	}
 }
 
-func (self * LogLogger) DelOutput(name string) {
-	DelOutput(&self.error, name)
-	DelOutput(&self.warn, name)
-	DelOutput(&self.info, name)
-	DelOutput(&self.debug, name)
-	DelOutput(&self.trace, name)
+func (self * log_t) DelOutput(name string) {
+	del_output(&self.err, name)
+	del_output(&self.warn, name)
+	del_output(&self.info, name)
+	del_output(&self.debug, name)
+	del_output(&self.trace, name)
 }
 
-func (self * LogLogger) Clear() {
-	atomic.StorePointer(&self.error, unsafe.Pointer(&outmap_t{}))
-	atomic.StorePointer(&self.warn, unsafe.Pointer(&outmap_t{}))
-	atomic.StorePointer(&self.info, unsafe.Pointer(&outmap_t{}))
-	atomic.StorePointer(&self.debug, unsafe.Pointer(&outmap_t{}))
-	atomic.StorePointer(&self.trace, unsafe.Pointer(&outmap_t{}))
+func (self * log_t) Clear() {
+	atomic.StorePointer(&self.err, unsafe.Pointer(&writer_map_t{}))
+	atomic.StorePointer(&self.warn, unsafe.Pointer(&writer_map_t{}))
+	atomic.StorePointer(&self.info, unsafe.Pointer(&writer_map_t{}))
+	atomic.StorePointer(&self.debug, unsafe.Pointer(&writer_map_t{}))
+	atomic.StorePointer(&self.trace, unsafe.Pointer(&writer_map_t{}))
 }
 
-func (self * LogLogger) Error(format string, args ...interface{}) {
-	for _, v := range Range(&self.error) {
+func (self * log_t) Error(format string, args ...interface{}) {
+	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.err)) {
 		fmt.Fprintf(v.out, v.datetime() + "ERROR " + format + "\n", args...)
 	}
 }
 
-func (self * LogLogger) Warn(format string, args ...interface{}) {
-	for _, v := range Range(&self.warn) {
+func (self * log_t) Warn(format string, args ...interface{}) {
+	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.warn)) {
 		fmt.Fprintf(v.out, v.datetime() + "WARN " + format + "\n", args...)
 	}
 }
 
-func (self * LogLogger) Info(format string, args ...interface{}) {
-	for _, v := range Range(&self.info) {
+func (self * log_t) Info(format string, args ...interface{}) {
+	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.info)) {
 		fmt.Fprintf(v.out, v.datetime() + "INFO " + format + "\n", args...)
 	}
 }
 
-func (self * LogLogger) Debug(format string, args ...interface{}) {
-	for _, v := range Range(&self.debug) {
+func (self * log_t) Debug(format string, args ...interface{}) {
+	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.debug)) {
 		fmt.Fprintf(v.out, v.datetime() + "DEBUG " + format + "\n", args...)
 	}
 }
 
-func (self * LogLogger) Trace(format string, args ...interface{}) {
-	for _, v := range Range(&self.trace) {
+func (self * log_t) Trace(format string, args ...interface{}) {
+	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.trace)) {
 		fmt.Fprintf(v.out, v.datetime() + "TRACE " + format + "\n", args...)
 	}
 }
