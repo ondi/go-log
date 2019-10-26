@@ -4,13 +4,10 @@
 
 package log
 
-import "os"
 import "io"
-import "fmt"
 import "log"
-import "time"
-import "sync/atomic"
 import "unsafe"
+import "sync/atomic"
 
 const (
 	LOG_TRACE = 0
@@ -23,7 +20,11 @@ const (
 	DATETIME2 = "2006-01-02 15:04:05.000"
 )
 
-var std = NewLogger("stderr", LOG_TRACE, os.Stderr, DATETIME1)
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(DATETIME1))
+
+type Writer interface {
+	Write(level string, format string, args ...interface{})
+}
 
 type Logger interface {
 	Trace(format string, args ...interface{})
@@ -32,19 +33,14 @@ type Logger interface {
 	Warn(format string, args ...interface{})
 	Error(format string, args ...interface{})
 	
-	AddOutput(name string, level int, out io.Writer, datetime string)
+	AddOutput(name string, level int, out Writer)
 	DelOutput(name string)
 	Clear()
 }
 
-type writer_t struct {
-	datetime func() string
-	out io.Writer
-}
+type writer_map_t map[string]Writer
 
-type writer_map_t map[string]writer_t
-
-func add_output(value * unsafe.Pointer, name string, out writer_t) {
+func add_output(value * unsafe.Pointer, name string, out Writer) {
 	for {
 		temp := writer_map_t{}
 		p := atomic.LoadPointer(value)
@@ -86,20 +82,13 @@ func NewEmpty() Logger {
 	return self
 }
 
-func NewLogger(name string, level int, out io.Writer, datetime string) Logger {
+func NewLogger(name string, level int, writer Writer) Logger {
 	self := NewEmpty()
-	self.AddOutput(name, level, out, datetime)
+	self.AddOutput(name, level, writer)
 	return self
 }
 
-func (self * log_t) AddOutput(name string, level int, out io.Writer, datetime string) {
-	writer := writer_t{out: out}
-	if len(datetime) > 0 {
-		datetime += " "
-		writer.datetime = func() string {return time.Now().Format(datetime)}
-	} else {
-		writer.datetime = func() string {return ""}
-	}
+func (self * log_t) AddOutput(name string, level int, writer Writer) {
 	if level <= LOG_ERROR {
 		add_output(&self.err, name, writer)
 	}
@@ -135,31 +124,31 @@ func (self * log_t) Clear() {
 
 func (self * log_t) Error(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.err)) {
-		fmt.Fprintf(v.out, v.datetime() + "ERROR " + format + "\n", args...)
+		v.Write("ERROR", format, args...)
 	}
 }
 
 func (self * log_t) Warn(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.warn)) {
-		fmt.Fprintf(v.out, v.datetime() + "WARN " + format + "\n", args...)
+		v.Write("WARN", format, args...)
 	}
 }
 
 func (self * log_t) Info(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.info)) {
-		fmt.Fprintf(v.out, v.datetime() + "INFO " + format + "\n", args...)
+		v.Write("INFO", format, args...)
 	}
 }
 
 func (self * log_t) Debug(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.debug)) {
-		fmt.Fprintf(v.out, v.datetime() + "DEBUG " + format + "\n", args...)
+		v.Write("DEBUG", format, args...)
 	}
 }
 
 func (self * log_t) Trace(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.trace)) {
-		fmt.Fprintf(v.out, v.datetime() + "TRACE " + format + "\n", args...)
+		v.Write("TRACE", format, args...)
 	}
 }
 

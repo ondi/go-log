@@ -1,11 +1,9 @@
 package log
 
-import "os"
 import "testing"
 
 func ExampleLog1() {
-	logger := NewLogger("stderr", 0, os.Stdout, "")
-	SetLogger(logger)
+	SetLogger(NewLogger("stdout", 0, NewStdout("")))
 	Debug("lalala")
 	Debug("bububu")
 /* Output:
@@ -14,6 +12,6 @@ DEBUG bububu
 */
 }
 
-func Test1(t * testing.T) {
+func TestLog1(t * testing.T) {
 
 }

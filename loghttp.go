@@ -15,7 +15,7 @@ import "crypto/tls"
 
 import "github.com/ondi/go-queue"
 
-type Convert_t func(* bytes.Buffer, []byte) error
+type Convert_t func(buf * bytes.Buffer, level string, format string, args ...interface{}) error
 
 type HttpLogWriter_t struct {
 	q queue.Queue
@@ -25,20 +25,20 @@ type HttpLogWriter_t struct {
 	client * http.Client
 }
 
-func Convert(buf * bytes.Buffer, in []byte) (err error) {
-	_, err = buf.Write(in)
+func Convert(buf * bytes.Buffer, level string, format string, args ...interface{}) (err error) {
+	_, err = fmt.Fprintf(buf, level + " " + format + "\n", args...)
 	return
 }
 
-func (self * HttpLogWriter_t) Write(m []byte) (int, error) {
+func (self * HttpLogWriter_t) Write(level string, format string, args ...interface{}) {
 	buf := self.pool.Get().(* bytes.Buffer)
 	buf.Reset()
-	if err := self.convert(buf, m); err != nil {
+	if err := self.convert(buf, level, format, args...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
-		return 0, err
+		return
 	}
 	self.q.PushBackNoWait(buf)
-	return buf.Len(), nil
+	return
 }
 
 func (self * HttpLogWriter_t) worker() {
