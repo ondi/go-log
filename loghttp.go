@@ -30,10 +30,10 @@ func Convert(buf * bytes.Buffer, level string, format string, args ...interface{
 	return
 }
 
-func (self * HttpLogWriter_t) Write(level string, format string, args ...interface{}) {
+func (self * HttpLogWriter_t) Write(level string, format string, args ...interface{}) (err error) {
 	buf := self.pool.Get().(* bytes.Buffer)
 	buf.Reset()
-	if err := self.convert(buf, level, format, args...); err != nil {
+	if err = self.convert(buf, level, format, args...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
 	}

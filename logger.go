@@ -23,7 +23,7 @@ const (
 var std = NewLogger("stderr", LOG_TRACE, NewStderr(DATETIME1))
 
 type Writer interface {
-	Write(level string, format string, args ...interface{})
+	Write(level string, format string, args ...interface{}) error
 }
 
 type Logger interface {
