@@ -53,7 +53,11 @@ func (self * HttpLogWriter_t) worker() {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
-		if _, err = self.client.Do(req); err != nil {
+		resp, err := self.client.Do(req)
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
