@@ -9,7 +9,7 @@ import "fmt"
 import "sync"
 import "time"
 
-type RotateLogWriter struct {
+type log_file_t struct {
 	mx sync.Mutex
 	fp * os.File
 	datetime func() string
@@ -19,11 +19,23 @@ type RotateLogWriter struct {
 	backup_count int
 }
 
-func (self * RotateLogWriter) Write(level string, format string, args ...interface{}) {
+func NewLogFile(filename string, datetime string, max_bytes int, backup_count int) (self * log_file_t, err error) {
+	self = &log_file_t{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
+	if len(datetime) > 0 {
+		datetime += " "
+		self.datetime = func() string {return time.Now().Format(datetime)}
+	} else {
+		self.datetime = func() string {return ""}
+	}
+	err = self.LogCycle()
+	return
+}
+
+func (self * log_file_t) Write(level string, format string, args ...interface{}) (err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	n, err := fmt.Fprintf(self.fp, self.datetime() + level + " " + format + "\n", args...)
-	if err != nil {
+	var n int
+	if n, err = fmt.Fprintf(self.fp, self.datetime() + level + " " + format + "\n", args...); err != nil {
 		return
 	}
 	self.curr_bytes += n
@@ -33,7 +45,7 @@ func (self * RotateLogWriter) Write(level string, format string, args ...interfa
 	return
 }
 
-func (self * RotateLogWriter) LogCycle() (err error) {
+func (self * log_file_t) LogCycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
 	}
@@ -51,17 +63,5 @@ func (self * RotateLogWriter) LogCycle() (err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
-	return
-}
-
-func NewRotateLogWriter(filename string, datetime string, max_bytes int, backup_count int) (self * RotateLogWriter) {
-	self = &RotateLogWriter{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
-	if len(datetime) > 0 {
-		datetime += " "
-		self.datetime = func() string {return time.Now().Format(datetime)}
-	} else {
-		self.datetime = func() string {return ""}
-	}
-	self.LogCycle()
 	return
 }

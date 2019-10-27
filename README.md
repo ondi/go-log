@@ -8,9 +8,9 @@ func main() {
 	ExampleLogFile := "app.log"
 	ExampleLogSize := 10 * 1024 * 1024
 	ExampleLogBackup := 5
-	logger := log.NewLogger("stderr", ExampleLogLevel, log.NewStderr(log.DATETIME1))
+	logger := log.NewLogger("stderr", ExampleLogLevel, log.NewLogStderr(log.DATETIME1))
 	if len(ExampleLogFile) > 0 {
-		log_rotate := log.NewRotateLogWriter(ExampleLogFile, log.DATETIME1, ExampleLogSize, ExampleLogBackup)
+		log_rotate := log.NewLogFile(ExampleLogFile, log.DATETIME1, ExampleLogSize, ExampleLogBackup)
 		logger.AddOutput("logfile", ExampleLogLevel, log_rotate)
 	}
 	log.SetLogger(logger)

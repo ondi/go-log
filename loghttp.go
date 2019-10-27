@@ -17,7 +17,7 @@ import "github.com/ondi/go-queue"
 
 type Convert_t func(buf * bytes.Buffer, level string, format string, args ...interface{}) error
 
-type HttpLogWriter_t struct {
+type log_http_t struct {
 	q queue.Queue
 	pool sync.Pool
 	convert Convert_t
@@ -25,49 +25,8 @@ type HttpLogWriter_t struct {
 	client * http.Client
 }
 
-func Convert(buf * bytes.Buffer, level string, format string, args ...interface{}) (err error) {
-	_, err = fmt.Fprintf(buf, level + " " + format + "\n", args...)
-	return
-}
-
-func (self * HttpLogWriter_t) Write(level string, format string, args ...interface{}) (err error) {
-	buf := self.pool.Get().(* bytes.Buffer)
-	buf.Reset()
-	if err = self.convert(buf, level, format, args...); err != nil {
-		self.pool.Put(buf)
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		return
-	}
-	self.q.PushBackNoWait(buf)
-	return
-}
-
-func (self * HttpLogWriter_t) worker() {
-	for {
-		buf, ok := self.q.PopFront()
-		if ok == -1 {
-			return
-		}
-		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
-		if err != nil {
-			self.pool.Put(buf)
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			continue
-		}
-		resp, err := self.client.Do(req)
-		self.pool.Put(buf)
-		if resp != nil && resp.Body != nil {
-			resp.Body.Close()
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			continue
-		}
-	}
-}
-
-func NewHttpLogWriter(post_url string, convert Convert_t, queue_size int, timeout time.Duration, workers int) (self * HttpLogWriter_t) {
-	self = &HttpLogWriter_t{}
+func NewLogHttp(post_url string, convert Convert_t, queue_size int, timeout time.Duration, workers int) (self * log_http_t) {
+	self = &log_http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool {New: func() interface{} {return new(bytes.Buffer)}}
 	self.convert = convert
@@ -89,4 +48,45 @@ func NewHttpLogWriter(post_url string, convert Convert_t, queue_size int, timeou
 		go self.worker()
 	}
 	return
+}
+
+func Convert(buf * bytes.Buffer, level string, format string, args ...interface{}) (err error) {
+	_, err = fmt.Fprintf(buf, level + " " + format + "\n", args...)
+	return
+}
+
+func (self * log_http_t) Write(level string, format string, args ...interface{}) (err error) {
+	buf := self.pool.Get().(* bytes.Buffer)
+	buf.Reset()
+	if err = self.convert(buf, level, format, args...); err != nil {
+		self.pool.Put(buf)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		return
+	}
+	self.q.PushBackNoWait(buf)
+	return
+}
+
+func (self * log_http_t) worker() {
+	for {
+		buf, ok := self.q.PopFront()
+		if ok == -1 {
+			return
+		}
+		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
+		if err != nil {
+			self.pool.Put(buf)
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			continue
+		}
+		resp, err := self.client.Do(req)
+		self.pool.Put(buf)
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			continue
+		}
+	}
 }

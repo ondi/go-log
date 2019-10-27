@@ -1,9 +1,16 @@
 package log
 
+import "time"
 import "testing"
 
 func ExampleLog1() {
-	SetLogger(NewLogger("stdout", 0, NewStdout("")))
+	logger := NewEmpty()
+	logger.AddOutput("stdout", 0, NewLogStdout(""))
+	log_file, _ := NewLogFile("/tmp/test.log", "", 1024, 10)
+	logger.AddOutput("file", 0, log_file)
+	log_htto := NewLogHttp("http://localhost", Convert, 10, time.Second, 1)
+	logger.AddOutput("http", 0, log_htto)
+	SetLogger(logger)
 	Debug("lalala")
 	Debug("bububu")
 /* Output:
