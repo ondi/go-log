@@ -34,6 +34,7 @@ func (self * HttpLogWriter_t) Write(level string, format string, args ...interfa
 	buf := self.pool.Get().(* bytes.Buffer)
 	buf.Reset()
 	if err = self.convert(buf, level, format, args...); err != nil {
+		self.pool.Put(buf)
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
 	}
@@ -43,17 +44,18 @@ func (self * HttpLogWriter_t) Write(level string, format string, args ...interfa
 
 func (self * HttpLogWriter_t) worker() {
 	for {
-		m, ok := self.q.PopFront()
+		buf, ok := self.q.PopFront()
 		if ok == -1 {
 			return
 		}
-		req, err := http.NewRequest("POST", self.url, m.(* bytes.Buffer))
-		self.pool.Put(m)
+		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
 		if err != nil {
+			self.pool.Put(buf)
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
 		resp, err := self.client.Do(req)
+		self.pool.Put(buf)
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
 		}
