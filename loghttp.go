@@ -22,6 +22,7 @@ type Http_t struct {
 	pool sync.Pool
 	convert Convert_t
 	url string
+	headers map[string]string
 	client * http.Client
 }
 
@@ -30,12 +31,16 @@ func Convert(buf * bytes.Buffer, level string, format string, args ...interface{
 	return
 }
 
-func NewHttp(post_url string, convert Convert_t, queue_size int, timeout time.Duration, workers int) (self * Http_t) {
+func NewHttp(queue_size int, workers int, post_url string, timeout time.Duration, convert Convert_t, headers map[string]string) (self * Http_t) {
 	self = &Http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool {New: func() interface{} {return new(bytes.Buffer)}}
 	self.convert = convert
 	self.url = post_url
+	self.headers = map[string]string{}
+	for k, v := range headers {
+		self.headers[k] = v
+	}
 	self.client = &http.Client {
 		// Timeout: timeout,
 		Transport: &http.Transport {
@@ -79,6 +84,9 @@ func (self * Http_t) worker() {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
+		for k, v := range self.headers {
+			req.Header.Set(k, v)
+		}
 		resp, err := self.client.Do(req)
 		self.pool.Put(buf)
 		if resp != nil && resp.Body != nil {
@@ -88,7 +96,7 @@ func (self * Http_t) worker() {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
-		if resp.StatusCode != 200 {
+		if resp.StatusCode >= 400 {
 			fmt.Fprintf(os.Stderr, "%v: %v\n", self.url, resp.Status)
 			continue
 		}
