@@ -5,10 +5,10 @@ import "testing"
 
 func ExampleLog1() {
 	logger := NewEmpty()
-	logger.AddOutput("stdout", 0, NewLogStdout(""))
-	log_file, _ := NewLogFile("/tmp/test.log", "", 1024, 10)
+	logger.AddOutput("stdout", 0, NewStdout(""))
+	log_file, _ := NewFile("/tmp/test.log", "", 1024, 10)
 	logger.AddOutput("file", 0, log_file)
-	log_htto := NewLogHttp("http://localhost", Convert, 10, time.Second, 1)
+	log_htto := NewHttp("http://localhost", Convert, 10, time.Second, 1)
 	logger.AddOutput("http", 0, log_htto)
 	SetLogger(logger)
 	Debug("lalala")

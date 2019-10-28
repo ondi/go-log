@@ -9,7 +9,7 @@ import "fmt"
 import "sync"
 import "time"
 
-type log_file_t struct {
+type file_t struct {
 	mx sync.Mutex
 	fp * os.File
 	datetime func() string
@@ -19,19 +19,19 @@ type log_file_t struct {
 	backup_count int
 }
 
-func NewLogFile(filename string, datetime string, max_bytes int, backup_count int) (self * log_file_t, err error) {
-	self = &log_file_t{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
+func NewFile(filename string, datetime string, max_bytes int, backup_count int) (self * file_t, err error) {
+	self = &file_t{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
 	if len(datetime) > 0 {
 		datetime += " "
 		self.datetime = func() string {return time.Now().Format(datetime)}
 	} else {
 		self.datetime = func() string {return ""}
 	}
-	err = self.LogCycle()
+	err = self.Cycle()
 	return
 }
 
-func (self * log_file_t) Write(level string, format string, args ...interface{}) (err error) {
+func (self * file_t) Write(level string, format string, args ...interface{}) (err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	var n int
@@ -40,12 +40,12 @@ func (self * log_file_t) Write(level string, format string, args ...interface{})
 	}
 	self.curr_bytes += n
 	if self.curr_bytes >= self.max_bytes {
-		self.LogCycle()
+		self.Cycle()
 	}
 	return
 }
 
-func (self * log_file_t) LogCycle() (err error) {
+func (self * file_t) Cycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
 	}

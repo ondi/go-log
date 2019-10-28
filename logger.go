@@ -20,7 +20,7 @@ const (
 	DATETIME2 = "2006-01-02 15:04:05.000"
 )
 
-var std = NewLogger("stderr", LOG_TRACE, NewLogStderr(DATETIME1))
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(DATETIME1))
 
 type Writer interface {
 	Write(level string, format string, args ...interface{}) error
