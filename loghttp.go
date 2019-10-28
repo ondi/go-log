@@ -17,7 +17,7 @@ import "github.com/ondi/go-queue"
 
 type Convert_t func(buf * bytes.Buffer, level string, format string, args ...interface{}) error
 
-type http_t struct {
+type Http_t struct {
 	q queue.Queue
 	pool sync.Pool
 	convert Convert_t
@@ -30,8 +30,8 @@ func Convert(buf * bytes.Buffer, level string, format string, args ...interface{
 	return
 }
 
-func NewHttp(post_url string, convert Convert_t, queue_size int, timeout time.Duration, workers int) (self * http_t) {
-	self = &http_t{}
+func NewHttp(post_url string, convert Convert_t, queue_size int, timeout time.Duration, workers int) (self * Http_t) {
+	self = &Http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool {New: func() interface{} {return new(bytes.Buffer)}}
 	self.convert = convert
@@ -55,7 +55,7 @@ func NewHttp(post_url string, convert Convert_t, queue_size int, timeout time.Du
 	return
 }
 
-func (self * http_t) Write(level string, format string, args ...interface{}) (err error) {
+func (self * Http_t) Write(level string, format string, args ...interface{}) (err error) {
 	buf := self.pool.Get().(* bytes.Buffer)
 	buf.Reset()
 	if err = self.convert(buf, level, format, args...); err != nil {
@@ -67,7 +67,7 @@ func (self * http_t) Write(level string, format string, args ...interface{}) (er
 	return
 }
 
-func (self * http_t) worker() {
+func (self * Http_t) worker() {
 	for {
 		buf, ok := self.q.PopFront()
 		if ok == -1 {

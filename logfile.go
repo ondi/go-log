@@ -9,7 +9,7 @@ import "fmt"
 import "sync"
 import "time"
 
-type file_t struct {
+type File_t struct {
 	mx sync.Mutex
 	fp * os.File
 	datetime func() string
@@ -19,8 +19,8 @@ type file_t struct {
 	backup_count int
 }
 
-func NewFile(filename string, datetime string, max_bytes int, backup_count int) (self * file_t, err error) {
-	self = &file_t{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
+func NewFile(filename string, datetime string, max_bytes int, backup_count int) (self * File_t, err error) {
+	self = &File_t{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
 	if len(datetime) > 0 {
 		datetime += " "
 		self.datetime = func() string {return time.Now().Format(datetime)}
@@ -31,7 +31,7 @@ func NewFile(filename string, datetime string, max_bytes int, backup_count int) 
 	return
 }
 
-func (self * file_t) Write(level string, format string, args ...interface{}) (err error) {
+func (self * File_t) Write(level string, format string, args ...interface{}) (err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	var n int
@@ -45,7 +45,7 @@ func (self * file_t) Write(level string, format string, args ...interface{}) (er
 	return
 }
 
-func (self * file_t) Cycle() (err error) {
+func (self * File_t) Cycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
 	}
