@@ -88,5 +88,9 @@ func (self * Http_t) worker() {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			continue
 		}
+		if resp.StatusCode != 200 {
+			fmt.Fprintf(os.Stderr, "%v: %v\n", self.url, resp.Status)
+			continue
+		}
 	}
 }
