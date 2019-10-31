@@ -65,7 +65,7 @@ func (self * Http_t) Write(level string, format string, args ...interface{}) (er
 	buf.Reset()
 	if err = self.convert(buf, level, format, args...); err != nil {
 		self.pool.Put(buf)
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		fmt.Fprintf(os.Stderr, "LOG CONVERT: %v\n", err)
 		return
 	}
 	self.q.PushBackNoWait(buf)
@@ -78,12 +78,7 @@ func (self * Http_t) worker() {
 		if ok == -1 {
 			return
 		}
-		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
-		if err != nil {
-			self.pool.Put(buf)
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			continue
-		}
+		req, _ := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
 		for k, v := range self.headers {
 			req.Header.Set(k, v)
 		}
@@ -92,13 +87,8 @@ func (self * Http_t) worker() {
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
 		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			continue
-		}
-		if resp.StatusCode >= 400 {
-			fmt.Fprintf(os.Stderr, "%v: %v\n", self.url, resp.Status)
-			continue
+		if err != nil || resp.StatusCode >= 400 {
+			fmt.Fprintf(os.Stderr, "LOG POST: %v %v\n", resp.Status, err)
 		}
 	}
 }
