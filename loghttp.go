@@ -15,7 +15,7 @@ import "crypto/tls"
 
 import "github.com/ondi/go-queue"
 
-type Convert_t func(buf * bytes.Buffer, level string, format string, args ...interface{}) error
+type Convert_t func(buf * bytes.Buffer, level string, format string, args ...interface{}) (int, error)
 
 type Http_t struct {
 	q queue.Queue
@@ -26,9 +26,8 @@ type Http_t struct {
 	client * http.Client
 }
 
-func Convert(buf * bytes.Buffer, level string, format string, args ...interface{}) (err error) {
-	_, err = fmt.Fprintf(buf, level + " " + format + "\n", args...)
-	return
+func Convert(buf * bytes.Buffer, level string, format string, args ...interface{}) (int, error) {
+	return fmt.Fprintf(buf, level + " " + format + "\n", args...)
 }
 
 func NewHttp(queue_size int, workers int, post_url string, timeout time.Duration, convert Convert_t, headers map[string]string) (self * Http_t) {
@@ -60,10 +59,10 @@ func NewHttp(queue_size int, workers int, post_url string, timeout time.Duration
 	return
 }
 
-func (self * Http_t) Write(level string, format string, args ...interface{}) (err error) {
+func (self * Http_t) Write(level string, format string, args ...interface{}) (n int, err error) {
 	buf := self.pool.Get().(* bytes.Buffer)
 	buf.Reset()
-	if err = self.convert(buf, level, format, args...); err != nil {
+	if n, err = self.convert(buf, level, format, args...); err != nil {
 		self.pool.Put(buf)
 		fmt.Fprintf(os.Stderr, "LOG CONVERT: %v\n", err)
 		return

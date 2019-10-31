@@ -31,10 +31,9 @@ func NewFile(filename string, datetime string, max_bytes int, backup_count int) 
 	return
 }
 
-func (self * File_t) Write(level string, format string, args ...interface{}) (err error) {
+func (self * File_t) Write(level string, format string, args ...interface{}) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	var n int
 	if n, err = fmt.Fprintf(self.fp, self.datetime() + level + " " + format + "\n", args...); err != nil {
 		return
 	}

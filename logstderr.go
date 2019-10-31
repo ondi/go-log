@@ -23,9 +23,8 @@ func NewStderr(datetime string) Writer {
 	return self
 }
 
-func (self * Stderr_t) Write(level string, format string, args ...interface{}) (err error) {
-	_, err = fmt.Fprintf(os.Stderr, self.datetime() + level + " " + format + "\n", args...)
-	return
+func (self * Stderr_t) Write(level string, format string, args ...interface{}) (int, error) {
+	return fmt.Fprintf(os.Stderr, self.datetime() + level + " " + format + "\n", args...)
 }
 
 type Stdout_t struct {
@@ -43,7 +42,6 @@ func NewStdout(datetime string) Writer {
 	return self
 }
 
-func (self * Stdout_t) Write(level string, format string, args ...interface{}) (err error) {
-	_, err = fmt.Fprintf(os.Stdout, self.datetime() + level + " " + format + "\n", args...)
-	return
+func (self * Stdout_t) Write(level string, format string, args ...interface{}) (int, error) {
+	return fmt.Fprintf(os.Stdout, self.datetime() + level + " " + format + "\n", args...)
 }
