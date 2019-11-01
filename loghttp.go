@@ -77,7 +77,12 @@ func (self * Http_t) worker() {
 		if ok == -1 {
 			return
 		}
-		req, _ := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
+		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
+		if err != nil {
+			self.pool.Put(buf)
+			fmt.Fprintf(os.Stderr, "LOG REQUEST: %v", err)
+			continue
+		}
 		for k, v := range self.headers {
 			req.Header.Set(k, v)
 		}
