@@ -88,11 +88,13 @@ func (self * Http_t) worker() {
 		}
 		resp, err := self.client.Do(req)
 		self.pool.Put(buf)
-		if resp != nil && resp.Body != nil {
+		if resp != nil {
 			resp.Body.Close()
 		}
-		if err != nil || resp.StatusCode >= 400 {
-			fmt.Fprintf(os.Stderr, "LOG POST: %v %v\n", resp.Status, err)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "LOG POST: %v\n", err)
+		} else if resp.StatusCode >= 400 {
+			fmt.Fprintf(os.Stderr, "LOG STATUS: %v\n", resp.Status)
 		}
 	}
 }
