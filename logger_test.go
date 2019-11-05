@@ -8,7 +8,7 @@ func ExampleLog1() {
 	logger.AddOutput("stdout", 0, NewStdout(""))
 	log_file, _ := NewFile("/tmp/test.log", "", 1024, 10)
 	logger.AddOutput("file", 0, log_file)
-	log_htto := NewHttp(10, 1, "http://localhost", time.Second, Convert, nil)
+	log_htto := NewHttp(DefaultTransport(time.Second), 10, 1, "http://localhost", Convert, nil)
 	logger.AddOutput("http", 0, log_htto)
 	SetLogger(logger)
 	Debug("lalala")

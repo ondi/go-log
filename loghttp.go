@@ -30,7 +30,14 @@ func Convert(buf * bytes.Buffer, level string, format string, args ...interface{
 	return fmt.Fprintf(buf, level + " " + format + "\n", args...)
 }
 
-func NewHttp(queue_size int, workers int, post_url string, timeout time.Duration, convert Convert_t, headers map[string]string) (self * Http_t) {
+func DefaultTransport(timeout time.Duration) http.RoundTripper {
+	return &http.Transport {
+		DialContext: (&net.Dialer{Timeout: timeout}).DialContext,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+}
+
+func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string, convert Convert_t, headers map[string]string) (self * Http_t) {
 	self = &Http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool {New: func() interface{} {return new(bytes.Buffer)}}
@@ -41,17 +48,7 @@ func NewHttp(queue_size int, workers int, post_url string, timeout time.Duration
 		self.headers[k] = v
 	}
 	self.client = &http.Client {
-		// Timeout: timeout,
-		Transport: &http.Transport {
-			Dial: (&net.Dialer{Timeout: timeout}).Dial,
-			// DisableKeepAlives: false,
-			// MaxIdleConns: 10,
-			// MaxIdleConnsPerHost: 10,
-			// IdleConnTimeout: timeout,
-			// ResponseHeaderTimeout: timeout,
-			// TLSHandshakeTimeout: timeout,
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
+		Transport: tr,
 	}
 	for i := 0; i < workers; i++ {
 		go self.worker()
