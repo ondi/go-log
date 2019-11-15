@@ -23,7 +23,7 @@ func NewStderr(datetime string) Writer {
 	return self
 }
 
-func (self * Stderr_t) Write(level string, format string, args ...interface{}) (int, error) {
+func (self * Stderr_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
 	return fmt.Fprintf(os.Stderr, self.datetime() + level + " " + format + "\n", args...)
 }
 
@@ -42,6 +42,6 @@ func NewStdout(datetime string) Writer {
 	return self
 }
 
-func (self * Stdout_t) Write(level string, format string, args ...interface{}) (int, error) {
+func (self * Stdout_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
 	return fmt.Fprintf(os.Stdout, self.datetime() + level + " " + format + "\n", args...)
 }

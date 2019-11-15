@@ -23,7 +23,7 @@ const (
 var std = NewLogger("stderr", LOG_TRACE, NewStderr(DATETIME1))
 
 type Writer interface {
-	Write(level string, format string, args ...interface{}) (int, error)
+	WriteLevel(level string, format string, args ...interface{}) (int, error)
 }
 
 type Logger interface {
@@ -124,31 +124,31 @@ func (self * log_t) Clear() {
 
 func (self * log_t) Error(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.err)) {
-		v.Write("ERROR", format, args...)
+		v.WriteLevel("ERROR", format, args...)
 	}
 }
 
 func (self * log_t) Warn(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.warn)) {
-		v.Write("WARN", format, args...)
+		v.WriteLevel("WARN", format, args...)
 	}
 }
 
 func (self * log_t) Info(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.info)) {
-		v.Write("INFO", format, args...)
+		v.WriteLevel("INFO", format, args...)
 	}
 }
 
 func (self * log_t) Debug(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.debug)) {
-		v.Write("DEBUG", format, args...)
+		v.WriteLevel("DEBUG", format, args...)
 	}
 }
 
 func (self * log_t) Trace(format string, args ...interface{}) {
 	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.trace)) {
-		v.Write("TRACE", format, args...)
+		v.WriteLevel("TRACE", format, args...)
 	}
 }
 

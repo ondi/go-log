@@ -56,7 +56,7 @@ func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string,
 	return
 }
 
-func (self * Http_t) Write(level string, format string, args ...interface{}) (n int, err error) {
+func (self * Http_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
 	buf := self.pool.Get().(* bytes.Buffer)
 	buf.Reset()
 	if n, err = self.convert(buf, level, format, args...); err != nil {

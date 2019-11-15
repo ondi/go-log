@@ -31,10 +31,14 @@ func NewFile(filename string, datetime string, max_bytes int, backup_count int) 
 	return
 }
 
-func (self * File_t) Write(level string, format string, args ...interface{}) (n int, err error) {
+func (self * File_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
+	return fmt.Fprintf(self, self.datetime() + level + " " + format + "\n", args...)
+}
+
+func (self * File_t) Write(p []byte) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	if n, err = fmt.Fprintf(self.fp, self.datetime() + level + " " + format + "\n", args...); err != nil {
+	if n, err = self.fp.Write(p); err != nil {
 		return
 	}
 	self.curr_bytes += n
