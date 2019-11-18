@@ -8,6 +8,9 @@ import "os"
 import "fmt"
 import "sync"
 import "time"
+import "syscall"
+
+type Dup_t func(fp * os.File) error
 
 type File_t struct {
 	mx sync.Mutex
@@ -17,9 +20,22 @@ type File_t struct {
 	max_bytes int
 	curr_bytes int
 	backup_count int
+	dup []Dup_t
 }
 
-func NewFile(filename string, datetime string, max_bytes int, backup_count int) (self * File_t, err error) {
+func Dup(in * os.File, fd int) (error) {
+	return syscall.Dup2(int(in.Fd()), fd)
+}
+
+func DupStdout(in * os.File) (error) {
+	return Dup(in, syscall.Stdout)
+}
+
+func DupStderr(in * os.File) (error) {
+	return Dup(in, syscall.Stderr)
+}
+
+func NewFile(filename string, datetime string, max_bytes int, backup_count int, dup ...Dup_t) (self * File_t, err error) {
 	self = &File_t{filename: filename, max_bytes: max_bytes, backup_count: backup_count}
 	if len(datetime) > 0 {
 		datetime += " "
@@ -27,6 +43,7 @@ func NewFile(filename string, datetime string, max_bytes int, backup_count int) 
 	} else {
 		self.datetime = func() string {return ""}
 	}
+	self.dup = dup
 	err = self.Cycle()
 	return
 }
@@ -62,9 +79,13 @@ func (self * File_t) Cycle() (err error) {
 		os.Remove(self.filename)
 	}
 	self.curr_bytes = 0
-	self.fp, err = os.OpenFile(self.filename, os.O_WRONLY | os.O_CREATE /*| os.O_APPEND*/, 0644)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+	if self.fp, err = os.OpenFile(self.filename, os.O_WRONLY | os.O_CREATE /*| os.O_APPEND*/, 0644); err != nil {
+		return
+	}
+	for _, dup := range self.dup {
+		if err = dup(self.fp); err != nil {
+			return
+		}
 	}
 	return
 }
