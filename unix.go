@@ -1,0 +1,15 @@
+//
+// +build linux
+//
+
+package log
+
+import "syscall"
+
+func DupStderr(filename string) (fp * os.File, err error) {
+	if fp, err = os.OpenFile(filename, os.O_WRONLY | os.O_CREATE /*| os.O_APPEND*/, 0644); err != nil {
+		return
+	}
+	err = syscall.Dup2(int(fp.Fd()), syscall.Stderr)
+	return
+}

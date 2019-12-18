@@ -8,7 +8,6 @@ import "os"
 import "fmt"
 import "sync"
 import "time"
-import "syscall"
 
 type File_t struct {
 	mx sync.Mutex
@@ -64,13 +63,5 @@ func (self * File_t) Cycle() (err error) {
 	}
 	self.curr_bytes = 0
 	self.fp, err = os.OpenFile(self.filename, os.O_WRONLY | os.O_CREATE /*| os.O_APPEND*/, 0644)
-	return
-}
-
-func DupStderr(filename string) (fp * os.File, err error) {
-	if fp, err = os.OpenFile(filename, os.O_WRONLY | os.O_CREATE /*| os.O_APPEND*/, 0644); err != nil {
-		return
-	}
-	err = syscall.Dup2(int(fp.Fd()), syscall.Stderr)
 	return
 }
