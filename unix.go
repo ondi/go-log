@@ -4,6 +4,7 @@
 
 package log
 
+import "os"
 import "syscall"
 
 func DupStderr(filename string) (fp * os.File, err error) {
