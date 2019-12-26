@@ -12,6 +12,7 @@ import "bytes"
 import "net"
 import "net/http"
 import "crypto/tls"
+import "io/ioutil"
 
 import "github.com/ondi/go-queue"
 
@@ -77,7 +78,7 @@ func (self * Http_t) worker() {
 		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
 		if err != nil {
 			self.pool.Put(buf)
-			fmt.Fprintf(os.Stderr, "LOG REQUEST: %v", err)
+			fmt.Fprintf(os.Stderr, "LOG REQUEST: %v\n", err)
 			continue
 		}
 		for k, v := range self.headers {
@@ -85,13 +86,12 @@ func (self * Http_t) worker() {
 		}
 		resp, err := self.client.Do(req)
 		self.pool.Put(buf)
-		if resp != nil {
-			resp.Body.Close()
-		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "LOG POST: %v\n", err)
 		} else if resp.StatusCode >= 400 {
-			fmt.Fprintf(os.Stderr, "LOG STATUS: %v\n", resp.Status)
+			temp, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			fmt.Fprintf(os.Stderr, "LOG STATUS: %v %s\n", resp.Status, temp)
 		}
 	}
 }

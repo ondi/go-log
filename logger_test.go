@@ -3,7 +3,7 @@ package log
 import "time"
 import "testing"
 
-func ExampleLog1() {
+func Example_log() {
 	logger := NewEmpty()
 	logger.AddOutput("stdout", 0, NewStdout(""))
 	log_file, _ := NewFile("/tmp/test.log", "", 1024, 10)
