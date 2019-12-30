@@ -69,10 +69,11 @@ func (self * Http_t) WriteLevel(level string, format string, args ...interface{}
 	buf.Reset()
 	if n, err = self.convert(buf, level, format, args...); err != nil {
 		self.pool.Put(buf)
-		fmt.Fprintf(os.Stderr, "LOG CONVERT: %v\n", err)
 		return
 	}
-	self.q.PushBackNoWait(buf)
+	if self.q.PushBackNoWait(buf) != 0 {
+		return 0, fmt.Errorf("LOG QUEUE OVERFLOW")
+	}
 	return
 }
 
@@ -85,7 +86,7 @@ func (self * Http_t) worker() {
 		req, err := http.NewRequest("POST", self.url, buf.(* bytes.Buffer))
 		if err != nil {
 			self.pool.Put(buf)
-			fmt.Fprintf(os.Stderr, "LOG REQUEST: %v\n", err)
+			fmt.Fprintf(os.Stderr, "LOG HTTP REQUEST: %v\n", err)
 			continue
 		}
 		for k, v := range self.headers {
@@ -94,11 +95,11 @@ func (self * Http_t) worker() {
 		resp, err := self.client.Do(req)
 		self.pool.Put(buf)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "LOG POST: %v\n", err)
+			fmt.Fprintf(os.Stderr, "LOG HTTP POST: %v\n", err)
 		} else if resp.StatusCode >= 400 {
 			temp, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
-			fmt.Fprintf(os.Stderr, "LOG STATUS: %v %s\n", resp.Status, temp)
+			fmt.Fprintf(os.Stderr, "LOG HTTP STATUS: %v %s\n", resp.Status, temp)
 		}
 	}
 }
