@@ -45,7 +45,7 @@ func DefaultTransport(timeout time.Duration) http.RoundTripper {
 	}
 }
 
-func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string, convert Convert_t, headers map[string]string) (self * Http_t) {
+func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string, convert Convert_t, timeout time.Duration, headers map[string]string) (self * Http_t) {
 	self = &Http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool {New: func() interface{} {return new(bytes.Buffer)}}
@@ -57,6 +57,7 @@ func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string,
 	}
 	self.client = &http.Client {
 		Transport: tr,
+		Timeout: timeout,
 	}
 	for i := 0; i < workers; i++ {
 		go self.worker()
