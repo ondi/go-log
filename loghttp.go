@@ -34,6 +34,13 @@ func Convert(buf * bytes.Buffer, level string, format string, args ...interface{
 func DefaultTransport(timeout time.Duration) http.RoundTripper {
 	return &http.Transport {
 		DialContext: (&net.Dialer{Timeout: timeout}).DialContext,
+		ForceAttemptHTTP2: true,
+		MaxIdleConns: 100,
+		MaxIdleConnsPerHost: 2,
+		IdleConnTimeout: timeout,
+		ResponseHeaderTimeout: timeout,
+		ExpectContinueTimeout: timeout,
+		TLSHandshakeTimeout: timeout,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 }
