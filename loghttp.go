@@ -23,7 +23,7 @@ type Http_t struct {
 	pool sync.Pool
 	convert Convert_t
 	url string
-	headers map[string]string
+	header http.Header
 	client * http.Client
 }
 
@@ -45,16 +45,13 @@ func DefaultTransport(timeout time.Duration) http.RoundTripper {
 	}
 }
 
-func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string, convert Convert_t, timeout time.Duration, headers map[string]string) (self * Http_t) {
+func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string, convert Convert_t, timeout time.Duration, header http.Header) (self * Http_t) {
 	self = &Http_t{}
 	self.q = queue.New(queue_size)
-	self.pool = sync.Pool {New: func() interface{} {return new(bytes.Buffer)}}
+	self.pool = sync.Pool{New: func() interface{} {return new(bytes.Buffer)}}
 	self.convert = convert
 	self.url = post_url
-	self.headers = map[string]string{}
-	for k, v := range headers {
-		self.headers[k] = v
-	}
+	self.header = header.Clone()
 	self.client = &http.Client {
 		Transport: tr,
 		Timeout: timeout,
@@ -90,9 +87,7 @@ func (self * Http_t) worker() {
 			fmt.Fprintf(os.Stderr, "LOG HTTP REQUEST: %v\n", err)
 			continue
 		}
-		for k, v := range self.headers {
-			req.Header.Set(k, v)
-		}
+		req.Header = self.header
 		resp, err := self.client.Do(req)
 		self.pool.Put(buf)
 		if err != nil {
