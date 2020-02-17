@@ -4,10 +4,12 @@
 
 package log
 
-import "os"
-import "io"
-import "fmt"
-import "time"
+import (
+	"fmt"
+	"io"
+	"os"
+	"time"
+)
 
 type Stdany_t struct {
 	out      io.Writer

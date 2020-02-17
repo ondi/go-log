@@ -15,10 +15,10 @@ func Example_log1() {
 	SetLogger(logger)
 	Debug("lalala")
 	Debug("bububu")
-	/* Output:
-	   DEBUG lalala
-	   DEBUG bububu
-	*/
+	// Output:
+	// DEBUG lalala
+	// DEBUG bububu
+	//
 }
 
 func TestLog1(t *testing.T) {

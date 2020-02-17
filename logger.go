@@ -4,10 +4,12 @@
 
 package log
 
-import "io"
-import "log"
-import "unsafe"
-import "sync/atomic"
+import (
+	"io"
+	"log"
+	"sync/atomic"
+	"unsafe"
+)
 
 const (
 	LOG_TRACE = 0

@@ -4,10 +4,12 @@
 
 package log
 
-import "os"
-import "fmt"
-import "sync"
-import "time"
+import (
+	"fmt"
+	"os"
+	"sync"
+	"time"
+)
 
 type FileTime_t struct {
 	mx           sync.Mutex
@@ -15,7 +17,7 @@ type FileTime_t struct {
 	datetime     func() string
 	filename     string
 	truncate     time.Duration
-	curr_date    time.Time
+	last_date    time.Time
 	backup_count int
 	files        []string
 }
@@ -40,7 +42,7 @@ func (self *FileTime_t) Write(p []byte) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	ts := time.Now()
-	if !self.curr_date.Equal(ts.Truncate(self.truncate)) {
+	if !self.last_date.Equal(ts.Truncate(self.truncate)) {
 		self.__cycle()
 	}
 	if n, err = self.fp.Write(p); err != nil {
@@ -52,10 +54,10 @@ func (self *FileTime_t) Write(p []byte) (n int, err error) {
 func (self *FileTime_t) __cycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
-		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.curr_date.Format("2006-01-02T15:04:05")))
+		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format("2006-01-02T15:04:05")))
 	}
-	self.curr_date = time.Now().Truncate(self.truncate)
-	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.curr_date.Format("2006-01-02T15:04:05")))
+	self.last_date = time.Now().Truncate(self.truncate)
+	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format("2006-01-02T15:04:05")))
 	if len(self.files) > self.backup_count {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]

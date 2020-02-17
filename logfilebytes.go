@@ -4,10 +4,12 @@
 
 package log
 
-import "os"
-import "fmt"
-import "sync"
-import "time"
+import (
+	"fmt"
+	"os"
+	"sync"
+	"time"
+)
 
 type FileBytes_t struct {
 	mx           sync.Mutex
@@ -16,7 +18,7 @@ type FileBytes_t struct {
 	filename     string
 	bytes_limit  int
 	bytes_count  int
-	cycle_count  int
+	last_date    time.Time
 	backup_count int
 	files        []string
 }
@@ -53,11 +55,11 @@ func (self *FileBytes_t) Write(p []byte) (n int, err error) {
 func (self *FileBytes_t) __cycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
-		os.Rename(self.filename, fmt.Sprintf("%s.%d", self.filename, self.cycle_count))
+		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format("2006-01-02T15:04:05")))
 	}
-	self.cycle_count++
 	self.bytes_count = 0
-	self.files = append(self.files, fmt.Sprintf("%s.%d", self.filename, self.cycle_count))
+	self.last_date = time.Now()
+	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format("2006-01-02T15:04:05")))
 	if len(self.files) > self.backup_count {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]

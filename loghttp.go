@@ -4,17 +4,19 @@
 
 package log
 
-import "os"
-import "fmt"
-import "time"
-import "sync"
-import "bytes"
-import "net"
-import "net/http"
-import "crypto/tls"
-import "io/ioutil"
+import (
+	"bytes"
+	"crypto/tls"
+	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"os"
+	"sync"
+	"time"
 
-import "github.com/ondi/go-queue"
+	"github.com/ondi/go-queue"
+)
 
 type Convert_t func(buf *bytes.Buffer, level string, format string, args ...interface{}) (int, error)
 
