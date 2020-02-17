@@ -12,10 +12,10 @@ import "sync/atomic"
 const (
 	LOG_TRACE = 0
 	LOG_DEBUG = 1
-	LOG_INFO = 2
-	LOG_WARN = 3
+	LOG_INFO  = 2
+	LOG_WARN  = 3
 	LOG_ERROR = 4
-	
+
 	DATETIME1 = "2006-01-02 15:04:05"
 	DATETIME2 = "2006-01-02 15:04:05.000"
 )
@@ -32,7 +32,7 @@ type Logger interface {
 	Info(format string, args ...interface{})
 	Warn(format string, args ...interface{})
 	Error(format string, args ...interface{})
-	
+
 	AddOutput(name string, level int, writer Writer)
 	DelOutput(name string)
 	Clear()
@@ -40,11 +40,11 @@ type Logger interface {
 
 type writer_map_t map[string]Writer
 
-func add_output(value * unsafe.Pointer, name string, writer Writer) {
+func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {
 		temp := writer_map_t{}
 		p := atomic.LoadPointer(value)
-		for k, v := range *(* writer_map_t)(p) {
+		for k, v := range *(*writer_map_t)(p) {
 			temp[k] = v
 		}
 		temp[name] = writer
@@ -54,11 +54,11 @@ func add_output(value * unsafe.Pointer, name string, writer Writer) {
 	}
 }
 
-func del_output(value * unsafe.Pointer, name string) {
+func del_output(value *unsafe.Pointer, name string) {
 	for {
 		temp := writer_map_t{}
 		p := atomic.LoadPointer(value)
-		for k, v := range *(* writer_map_t)(p) {
+		for k, v := range *(*writer_map_t)(p) {
 			temp[k] = v
 		}
 		delete(temp, name)
@@ -69,9 +69,9 @@ func del_output(value * unsafe.Pointer, name string) {
 }
 
 type log_t struct {
-	err unsafe.Pointer
-	warn unsafe.Pointer
-	info unsafe.Pointer
+	err   unsafe.Pointer
+	warn  unsafe.Pointer
+	info  unsafe.Pointer
 	debug unsafe.Pointer
 	trace unsafe.Pointer
 }
@@ -88,7 +88,7 @@ func NewLogger(name string, level int, writer Writer) Logger {
 	return self
 }
 
-func (self * log_t) AddOutput(name string, level int, writer Writer) {
+func (self *log_t) AddOutput(name string, level int, writer Writer) {
 	if level <= LOG_ERROR {
 		add_output(&self.err, name, writer)
 	}
@@ -106,7 +106,7 @@ func (self * log_t) AddOutput(name string, level int, writer Writer) {
 	}
 }
 
-func (self * log_t) DelOutput(name string) {
+func (self *log_t) DelOutput(name string) {
 	del_output(&self.err, name)
 	del_output(&self.warn, name)
 	del_output(&self.info, name)
@@ -114,7 +114,7 @@ func (self * log_t) DelOutput(name string) {
 	del_output(&self.trace, name)
 }
 
-func (self * log_t) Clear() {
+func (self *log_t) Clear() {
 	atomic.StorePointer(&self.err, unsafe.Pointer(&writer_map_t{}))
 	atomic.StorePointer(&self.warn, unsafe.Pointer(&writer_map_t{}))
 	atomic.StorePointer(&self.info, unsafe.Pointer(&writer_map_t{}))
@@ -122,32 +122,32 @@ func (self * log_t) Clear() {
 	atomic.StorePointer(&self.trace, unsafe.Pointer(&writer_map_t{}))
 }
 
-func (self * log_t) Error(format string, args ...interface{}) {
-	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.err)) {
+func (self *log_t) Error(format string, args ...interface{}) {
+	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.err)) {
 		v.WriteLevel("ERROR", format, args...)
 	}
 }
 
-func (self * log_t) Warn(format string, args ...interface{}) {
-	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.warn)) {
+func (self *log_t) Warn(format string, args ...interface{}) {
+	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.warn)) {
 		v.WriteLevel("WARN", format, args...)
 	}
 }
 
-func (self * log_t) Info(format string, args ...interface{}) {
-	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.info)) {
+func (self *log_t) Info(format string, args ...interface{}) {
+	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.info)) {
 		v.WriteLevel("INFO", format, args...)
 	}
 }
 
-func (self * log_t) Debug(format string, args ...interface{}) {
-	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.debug)) {
+func (self *log_t) Debug(format string, args ...interface{}) {
+	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.debug)) {
 		v.WriteLevel("DEBUG", format, args...)
 	}
 }
 
-func (self * log_t) Trace(format string, args ...interface{}) {
-	for _, v := range *(* writer_map_t)(atomic.LoadPointer(&self.trace)) {
+func (self *log_t) Trace(format string, args ...interface{}) {
+	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.trace)) {
 		v.WriteLevel("TRACE", format, args...)
 	}
 }
@@ -176,7 +176,7 @@ func SetLogger(logger Logger) {
 	std = logger
 }
 
-func GetLogger() (Logger) {
+func GetLogger() Logger {
 	return std
 }
 
