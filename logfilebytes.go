@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var FileBytes = "20060102150405"
+
 type FileBytes_t struct {
 	mx           sync.Mutex
 	fp           *os.File
@@ -55,11 +57,11 @@ func (self *FileBytes_t) Write(p []byte) (n int, err error) {
 func (self *FileBytes_t) __cycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
-		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format("2006-01-02T15:04:05")))
+		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytes)))
 	}
 	self.bytes_count = 0
 	self.last_date = time.Now()
-	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format("2006-01-02T15:04:05")))
+	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytes)))
 	if len(self.files) > self.backup_count {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]
