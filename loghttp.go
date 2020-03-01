@@ -86,18 +86,18 @@ func (self *Http_t) worker() {
 		req, err := http.NewRequest("POST", self.url, buf.(*bytes.Buffer))
 		if err != nil {
 			self.pool.Put(buf)
-			fmt.Fprintf(os.Stderr, "LOG HTTP REQUEST: %v\n", err)
+			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 			continue
 		}
 		req.Header = self.header
 		resp, err := self.client.Do(req)
 		self.pool.Put(buf)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "LOG HTTP POST: %v\n", err)
+			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 		} else if resp.StatusCode >= 400 {
 			temp, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
-			fmt.Fprintf(os.Stderr, "LOG HTTP STATUS: %v %s\n", resp.Status, temp)
+			fmt.Fprintf(os.Stderr, "%v ERROR: %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, temp)
 		}
 	}
 }
