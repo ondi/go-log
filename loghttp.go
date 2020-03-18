@@ -47,7 +47,7 @@ func DefaultTransport(timeout time.Duration) http.RoundTripper {
 	}
 }
 
-func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string, convert Convert_t, timeout time.Duration, header http.Header) (self *Http_t) {
+func NewHttp(tr http.RoundTripper, queue_size int, writers int, post_url string, convert Convert_t, timeout time.Duration, header http.Header) (self *Http_t) {
 	self = &Http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool{New: func() interface{} { return new(bytes.Buffer) }}
@@ -58,8 +58,8 @@ func NewHttp(tr http.RoundTripper, queue_size int, workers int, post_url string,
 		Transport: tr,
 		Timeout:   timeout,
 	}
-	for i := 0; i < workers; i++ {
-		go self.worker()
+	for i := 0; i < writers; i++ {
+		go self.writer()
 	}
 	return
 }
@@ -72,6 +72,7 @@ func (self *Http_t) WriteLevel(level string, format string, args ...interface{})
 		return
 	}
 	if self.q.PushBackNoWait(buf) != 0 {
+		self.pool.Put(buf)
 		return 0, fmt.Errorf("LOG QUEUE OVERFLOW")
 	}
 	return
@@ -81,7 +82,7 @@ func (self *Http_t) Size() int {
 	return self.q.Size()
 }
 
-func (self *Http_t) worker() {
+func (self *Http_t) writer() {
 	for {
 		buf, ok := self.q.PopFront()
 		if ok == -1 {
