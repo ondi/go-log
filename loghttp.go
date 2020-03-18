@@ -77,6 +77,10 @@ func (self *Http_t) WriteLevel(level string, format string, args ...interface{})
 	return
 }
 
+func (self *Http_t) Size() int {
+	return self.q.Size()
+}
+
 func (self *Http_t) worker() {
 	for {
 		buf, ok := self.q.PopFront()
