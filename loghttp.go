@@ -99,10 +99,12 @@ func (self *Http_t) writer() {
 		self.pool.Put(buf)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
-		} else if resp.StatusCode >= 400 {
+			continue
+		}
+		if resp.StatusCode >= 400 {
 			temp, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
 			fmt.Fprintf(os.Stderr, "%v ERROR: %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, temp)
 		}
+		resp.Body.Close()
 	}
 }
