@@ -42,6 +42,12 @@ type Logger interface {
 
 type writer_map_t map[string]Writer
 
+type NoWriter_t struct{}
+
+func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
+	return 0, nil
+}
+
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {
 		temp := writer_map_t{}

@@ -7,6 +7,7 @@ package log
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -18,19 +19,41 @@ import (
 	"github.com/ondi/go-queue"
 )
 
-type Convert_t func(buf *bytes.Buffer, level string, format string, args ...interface{}) (int, error)
+type Convert interface {
+	Convert(buf *bytes.Buffer, level string, format string, args ...interface{}) (n int, err error)
+}
 
 type Http_t struct {
 	q       queue.Queue
 	pool    sync.Pool
-	convert Convert_t
+	convert Convert
 	url     string
 	header  http.Header
 	client  *http.Client
 }
 
-func Convert(buf *bytes.Buffer, level string, format string, args ...interface{}) (int, error) {
-	return fmt.Fprintf(buf, level+" "+format+"\n", args...)
+type Message_t struct {
+	ApplicationName string          `json:"ApplicationName"`
+	Environment     string          `json:"Environment"`
+	Level           string          `json:"Level"`
+	Data            json.RawMessage `json:"Data,omitempty"`
+	Message         json.RawMessage `json:"Message,omitempty"`
+}
+
+func (self Message_t) Convert(buf *bytes.Buffer, level string, format string, args ...interface{}) (n int, err error) {
+	self.Level = level
+	if len(format) == 0 {
+		if self.Data, err = json.Marshal(args); err != nil {
+			return
+		}
+	} else {
+		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
+			return
+		}
+	}
+	err = json.NewEncoder(buf).Encode(self)
+	n = buf.Len()
+	return
 }
 
 func DefaultTransport(timeout time.Duration) http.RoundTripper {
@@ -47,7 +70,7 @@ func DefaultTransport(timeout time.Duration) http.RoundTripper {
 	}
 }
 
-func NewHttp(tr http.RoundTripper, queue_size int, writers int, post_url string, convert Convert_t, timeout time.Duration, header http.Header) (self *Http_t) {
+func NewHttp(tr http.RoundTripper, queue_size int, writers int, post_url string, convert Convert, timeout time.Duration, header http.Header) (self *Http_t) {
 	self = &Http_t{}
 	self.q = queue.New(queue_size)
 	self.pool = sync.Pool{New: func() interface{} { return new(bytes.Buffer) }}
@@ -67,7 +90,7 @@ func NewHttp(tr http.RoundTripper, queue_size int, writers int, post_url string,
 func (self *Http_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
 	buf := self.pool.Get().(*bytes.Buffer)
 	buf.Reset()
-	if n, err = self.convert(buf, level, format, args...); err != nil {
+	if n, err = self.convert.Convert(buf, level, format, args...); err != nil {
 		self.pool.Put(buf)
 		return
 	}
