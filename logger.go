@@ -20,10 +20,16 @@ const (
 	LOG_ERROR = 4
 )
 
-var std = NewLogger("stderr", LOG_TRACE, NewStderr(DateTime))
+var DT = &DateTime_t{Format: "2006-01-02 15:04:05"}
+
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(DT))
 
 type Writer interface {
 	WriteLevel(level string, format string, args ...interface{}) (int, error)
+}
+
+type DateTime interface {
+	DateTime() string
 }
 
 type Logger interface {
@@ -40,17 +46,15 @@ type Logger interface {
 
 type writer_map_t map[string]Writer
 
+type DateTime_t struct {
+	Format string
+}
+
+func (self *DateTime_t) DateTime() string {
+	return time.Now().Format(self.Format)
+}
+
 type NoWriter_t struct{}
-
-type DateTime_t func() string
-
-func DateTime() string {
-	return time.Now().Format("2006-01-02 15:04:05")
-}
-
-func NoDateTime() string {
-	return ""
-}
 
 func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
 	return 0, nil
