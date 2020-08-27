@@ -8,33 +8,32 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 )
 
 type Stdany_t struct {
 	out      io.Writer
-	datetime func() string
+	datetime DateTime_t
 }
 
-func NewStdany(out io.Writer, datetime string) Writer {
-	self := &Stdany_t{out: out}
-	if len(datetime) > 0 {
-		datetime += " "
-		self.datetime = func() string { return time.Now().Format(datetime) }
-	} else {
-		self.datetime = func() string { return "" }
+func NewStdany(out io.Writer, datetime DateTime_t) Writer {
+	return &Stdany_t{
+		out:      out,
+		datetime: datetime,
 	}
-	return self
 }
 
 func (self *Stdany_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
-	return fmt.Fprintf(self.out, self.datetime()+level+" "+format+"\n", args...)
+	dt := self.datetime()
+	if len(dt) > 0 {
+		dt += " "
+	}
+	return fmt.Fprintf(self.out, dt+level+" "+format+"\n", args...)
 }
 
-func NewStderr(datetime string) Writer {
+func NewStderr(datetime DateTime_t) Writer {
 	return NewStdany(os.Stderr, datetime)
 }
 
-func NewStdout(datetime string) Writer {
+func NewStdout(datetime DateTime_t) Writer {
 	return NewStdany(os.Stdout, datetime)
 }

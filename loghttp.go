@@ -32,6 +32,7 @@ type Http_t struct {
 	client  *http.Client
 }
 
+// this is working example for Convert interface
 type Message_t struct {
 	ApplicationName string          `json:"ApplicationName"`
 	Environment     string          `json:"Environment"`

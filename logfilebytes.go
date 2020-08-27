@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-var FileBytes = "20060102150405"
+var FileBytesFormat = "20060102150405"
 
 type FileBytes_t struct {
 	mx           sync.Mutex
 	fp           *os.File
-	datetime     func() string
+	datetime     DateTime_t
 	filename     string
 	bytes_limit  int
 	bytes_count  int
@@ -25,20 +25,23 @@ type FileBytes_t struct {
 	files        []string
 }
 
-func NewFileBytes(filename string, datetime string, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
-	self = &FileBytes_t{filename: filename, bytes_limit: bytes_limit, backup_count: backup_count}
-	if len(datetime) > 0 {
-		datetime += " "
-		self.datetime = func() string { return time.Now().Format(datetime) }
-	} else {
-		self.datetime = func() string { return "" }
+func NewFileBytes(filename string, datetime DateTime_t, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
+	self = &FileBytes_t{
+		datetime:     datetime,
+		filename:     filename,
+		bytes_limit:  bytes_limit,
+		backup_count: backup_count,
 	}
 	err = self.__cycle()
 	return
 }
 
 func (self *FileBytes_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	return fmt.Fprintf(self, self.datetime()+level+" "+format+"\n", args...)
+	dt := self.datetime()
+	if len(dt) > 0 {
+		dt += " "
+	}
+	return fmt.Fprintf(self, dt+level+" "+format+"\n", args...)
 }
 
 func (self *FileBytes_t) Write(p []byte) (n int, err error) {
@@ -57,11 +60,11 @@ func (self *FileBytes_t) Write(p []byte) (n int, err error) {
 func (self *FileBytes_t) __cycle() (err error) {
 	if self.fp != nil {
 		self.fp.Close()
-		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytes)))
+		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytesFormat)))
 	}
 	self.bytes_count = 0
 	self.last_date = time.Now()
-	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytes)))
+	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytesFormat)))
 	if len(self.files) > self.backup_count {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]

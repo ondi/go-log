@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"sync/atomic"
+	"time"
 	"unsafe"
 )
 
@@ -17,12 +18,9 @@ const (
 	LOG_INFO  = 2
 	LOG_WARN  = 3
 	LOG_ERROR = 4
-
-	DATETIME1 = "2006-01-02 15:04:05"
-	DATETIME2 = "2006-01-02 15:04:05.000"
 )
 
-var std = NewLogger("stderr", LOG_TRACE, NewStderr(DATETIME1))
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(DateTime))
 
 type Writer interface {
 	WriteLevel(level string, format string, args ...interface{}) (int, error)
@@ -43,6 +41,16 @@ type Logger interface {
 type writer_map_t map[string]Writer
 
 type NoWriter_t struct{}
+
+type DateTime_t func() string
+
+func DateTime() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+func NoDateTime() string {
+	return ""
+}
 
 func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
 	return 0, nil
