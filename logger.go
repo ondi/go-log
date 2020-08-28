@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"sync/atomic"
-	"time"
 	"unsafe"
 )
 
@@ -19,18 +18,6 @@ const (
 	LOG_WARN  = 3
 	LOG_ERROR = 4
 )
-
-var DT = &DateTime_t{Format: "2006-01-02 15:04:05"}
-
-var std = NewLogger("stderr", LOG_TRACE, NewStderr(DT))
-
-type Writer interface {
-	WriteLevel(level string, format string, args ...interface{}) (int, error)
-}
-
-type DateTime interface {
-	DateTime() string
-}
 
 type Logger interface {
 	Trace(format string, args ...interface{})
@@ -44,21 +31,15 @@ type Logger interface {
 	Clear()
 }
 
+type Writer interface {
+	WriteLevel(level string, format string, args ...interface{}) (int, error)
+}
+
+type Prefix interface {
+	Prefix() string
+}
+
 type writer_map_t map[string]Writer
-
-type DateTime_t struct {
-	Format string
-}
-
-func (self *DateTime_t) DateTime() string {
-	return time.Now().Format(self.Format)
-}
-
-type NoWriter_t struct{}
-
-func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
-	return 0, nil
-}
 
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {

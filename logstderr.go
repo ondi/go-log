@@ -11,29 +11,29 @@ import (
 )
 
 type Stdany_t struct {
-	out      io.Writer
-	datetime DateTime
+	out    io.Writer
+	prefix Prefix
 }
 
-func NewStdany(out io.Writer, datetime DateTime) Writer {
+func NewStdany(out io.Writer, prefix Prefix) Writer {
 	return &Stdany_t{
-		out:      out,
-		datetime: datetime,
+		out:    out,
+		prefix: prefix,
 	}
 }
 
 func (self *Stdany_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
-	dt := self.datetime.DateTime()
-	if len(dt) > 0 {
-		dt += " "
+	p := self.prefix.Prefix()
+	if len(p) > 0 {
+		p += " "
 	}
-	return fmt.Fprintf(self.out, dt+level+" "+format+"\n", args...)
+	return fmt.Fprintf(self.out, p+level+" "+format+"\n", args...)
 }
 
-func NewStderr(datetime DateTime) Writer {
-	return NewStdany(os.Stderr, datetime)
+func NewStderr(prefix Prefix) Writer {
+	return NewStdany(os.Stderr, prefix)
 }
 
-func NewStdout(datetime DateTime) Writer {
-	return NewStdany(os.Stdout, datetime)
+func NewStdout(prefix Prefix) Writer {
+	return NewStdany(os.Stdout, prefix)
 }

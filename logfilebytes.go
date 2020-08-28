@@ -16,7 +16,7 @@ var FileBytesFormat = "20060102150405"
 type FileBytes_t struct {
 	mx           sync.Mutex
 	fp           *os.File
-	datetime     DateTime
+	prefix       Prefix
 	filename     string
 	bytes_limit  int
 	bytes_count  int
@@ -25,9 +25,9 @@ type FileBytes_t struct {
 	files        []string
 }
 
-func NewFileBytes(filename string, datetime DateTime, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
+func NewFileBytes(filename string, prefix Prefix, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
 	self = &FileBytes_t{
-		datetime:     datetime,
+		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
@@ -37,11 +37,11 @@ func NewFileBytes(filename string, datetime DateTime, bytes_limit int, backup_co
 }
 
 func (self *FileBytes_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	dt := self.datetime.DateTime()
-	if len(dt) > 0 {
-		dt += " "
+	p := self.prefix.Prefix()
+	if len(p) > 0 {
+		p += " "
 	}
-	return fmt.Fprintf(self, dt+level+" "+format+"\n", args...)
+	return fmt.Fprintf(self, p+level+" "+format+"\n", args...)
 }
 
 func (self *FileBytes_t) Write(p []byte) (n int, err error) {

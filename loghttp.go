@@ -41,6 +41,7 @@ type Message_t struct {
 	Message         json.RawMessage `json:"Message,omitempty"`
 }
 
+// self is copy
 func (self Message_t) Convert(buf *bytes.Buffer, level string, format string, args ...interface{}) (n int, err error) {
 	self.Level = level
 	if len(format) == 0 {

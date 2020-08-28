@@ -16,7 +16,7 @@ var FileTime = "20060102150405"
 type FileTime_t struct {
 	mx           sync.Mutex
 	fp           *os.File
-	datetime     DateTime
+	prefix       Prefix
 	filename     string
 	truncate     time.Duration
 	last_date    time.Time
@@ -24,9 +24,9 @@ type FileTime_t struct {
 	files        []string
 }
 
-func NewFileTime(filename string, datetime DateTime, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
+func NewFileTime(filename string, prefix Prefix, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
 	self = &FileTime_t{
-		datetime:     datetime,
+		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
 		backup_count: backup_count,
@@ -36,11 +36,11 @@ func NewFileTime(filename string, datetime DateTime, truncate time.Duration, bac
 }
 
 func (self *FileTime_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	dt := self.datetime.DateTime()
-	if len(dt) > 0 {
-		dt += " "
+	p := self.prefix.Prefix()
+	if len(p) > 0 {
+		p += " "
 	}
-	return fmt.Fprintf(self, dt+level+" "+format+"\n", args...)
+	return fmt.Fprintf(self, p+level+" "+format+"\n", args...)
 }
 
 func (self *FileTime_t) Write(p []byte) (n int, err error) {
