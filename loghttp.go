@@ -13,6 +13,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
+	"runtime"
 	"sync"
 	"time"
 
@@ -39,6 +41,10 @@ type Message_t struct {
 	Level           string          `json:"Level"`
 	Data            json.RawMessage `json:"Data,omitempty"`
 	Message         json.RawMessage `json:"Message,omitempty"`
+
+	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
+	CallDepth int    `json:"-"`
+	Location  string `json:"location,omitempty"`
 }
 
 // self is copy
@@ -51,6 +57,11 @@ func (self Message_t) Convert(buf *bytes.Buffer, level string, format string, ar
 	} else {
 		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
 			return
+		}
+	}
+	if self.CallDepth > 0 {
+		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
+			self.Location = fmt.Sprintf("%s:%d", path.Base(file), line)
 		}
 	}
 	err = json.NewEncoder(buf).Encode(self)
