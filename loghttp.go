@@ -44,7 +44,7 @@ type Message_t struct {
 
 	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
 	CallDepth int    `json:"-"`
-	Location  string `json:"location,omitempty"`
+	Source    string `json:"Source,omitempty"`
 }
 
 // self is copy
@@ -61,7 +61,7 @@ func (self Message_t) Convert(buf *bytes.Buffer, level string, format string, ar
 	}
 	if self.CallDepth > 0 {
 		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
-			self.Location = fmt.Sprintf("%s:%d", path.Base(file), line)
+			self.Source = fmt.Sprintf("%s:%d", path.Base(file), line)
 		}
 	}
 	err = json.NewEncoder(buf).Encode(self)
