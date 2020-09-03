@@ -5,8 +5,6 @@
 package log
 
 import (
-	"io"
-	"log"
 	"sync/atomic"
 	"unsafe"
 )
@@ -77,16 +75,16 @@ type log_t struct {
 	trace unsafe.Pointer
 }
 
-func NewEmpty() Logger {
-	self := &log_t{}
+func NewEmpty() (self Logger) {
+	self = &log_t{}
 	self.Clear()
-	return self
+	return
 }
 
-func NewLogger(name string, level int, writer Writer) Logger {
-	self := NewEmpty()
+func NewLogger(name string, level int, writer Writer) (self Logger) {
+	self = NewEmpty()
 	self.AddOutput(name, level, writer)
-	return self
+	return
 }
 
 func (self *log_t) AddOutput(name string, level int, writer Writer) {
@@ -179,9 +177,4 @@ func SetLogger(logger Logger) {
 
 func GetLogger() Logger {
 	return std
-}
-
-// SetOutput to std logger
-func SetOutput(writer io.Writer) {
-	log.SetOutput(writer)
 }
