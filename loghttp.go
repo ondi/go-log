@@ -21,7 +21,7 @@ import (
 	"github.com/ondi/go-queue"
 )
 
-type Convert interface {
+type Converter interface {
 	Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error)
 }
 
@@ -33,7 +33,7 @@ type Http_t struct {
 	q        queue.Queue
 	pool     sync.Pool
 	post_url string
-	convert  Convert
+	convert  Converter
 	client   Client
 	header   http.Header
 }
@@ -93,7 +93,7 @@ func DefaultClient(tr http.RoundTripper, timeout time.Duration) Client {
 	}
 }
 
-func NewHttp(queue_size int, writers int, post_url string, convert Convert, client Client, header http.Header) (self *Http_t) {
+func NewHttp(queue_size int, writers int, post_url string, convert Converter, client Client, header http.Header) (self *Http_t) {
 	self = &Http_t{
 		q:        queue.New(queue_size),
 		pool:     sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
