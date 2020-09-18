@@ -16,7 +16,7 @@ var FileBytesFormat = "20060102150405"
 type FileBytes_t struct {
 	mx           sync.Mutex
 	fp           *os.File
-	prefix       Prefix
+	prefix       Prefixer
 	filename     string
 	bytes_limit  int
 	bytes_count  int
@@ -25,7 +25,7 @@ type FileBytes_t struct {
 	files        []string
 }
 
-func NewFileBytes(filename string, prefix Prefix, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
+func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
 	self = &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,

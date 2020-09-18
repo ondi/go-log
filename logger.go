@@ -1,6 +1,8 @@
 //
 // Log with levels
 //
+// most used get_output() function will not allocate new slice or map for writers list
+//
 
 package log
 
@@ -33,17 +35,17 @@ type Writer interface {
 	WriteLevel(level string, format string, args ...interface{}) (int, error)
 }
 
-type Prefix interface {
+type Prefixer interface {
 	Prefix() string
 }
 
-type writer_map_t map[string]Writer
+type writers_t map[string]Writer
 
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {
-		temp := writer_map_t{}
+		temp := writers_t{}
 		p := atomic.LoadPointer(value)
-		for k, v := range *(*writer_map_t)(p) {
+		for k, v := range *(*writers_t)(p) {
 			temp[k] = v
 		}
 		temp[name] = writer
@@ -55,9 +57,9 @@ func add_output(value *unsafe.Pointer, name string, writer Writer) {
 
 func del_output(value *unsafe.Pointer, name string) {
 	for {
-		temp := writer_map_t{}
+		temp := writers_t{}
 		p := atomic.LoadPointer(value)
-		for k, v := range *(*writer_map_t)(p) {
+		for k, v := range *(*writers_t)(p) {
 			temp[k] = v
 		}
 		delete(temp, name)
@@ -65,6 +67,14 @@ func del_output(value *unsafe.Pointer, name string) {
 			return
 		}
 	}
+}
+
+func clear_output(value *unsafe.Pointer) {
+	atomic.StorePointer(value, unsafe.Pointer(&writers_t{}))
+}
+
+func get_output(value *unsafe.Pointer) writers_t {
+	return *(*writers_t)(atomic.LoadPointer(value))
 }
 
 type log_t struct {
@@ -114,39 +124,39 @@ func (self *log_t) DelOutput(name string) {
 }
 
 func (self *log_t) Clear() {
-	atomic.StorePointer(&self.err, unsafe.Pointer(&writer_map_t{}))
-	atomic.StorePointer(&self.warn, unsafe.Pointer(&writer_map_t{}))
-	atomic.StorePointer(&self.info, unsafe.Pointer(&writer_map_t{}))
-	atomic.StorePointer(&self.debug, unsafe.Pointer(&writer_map_t{}))
-	atomic.StorePointer(&self.trace, unsafe.Pointer(&writer_map_t{}))
+	clear_output(&self.err)
+	clear_output(&self.warn)
+	clear_output(&self.info)
+	clear_output(&self.debug)
+	clear_output(&self.trace)
 }
 
 func (self *log_t) Error(format string, args ...interface{}) {
-	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.err)) {
+	for _, v := range get_output(&self.err) {
 		v.WriteLevel("ERROR", format, args...)
 	}
 }
 
 func (self *log_t) Warn(format string, args ...interface{}) {
-	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.warn)) {
+	for _, v := range get_output(&self.warn) {
 		v.WriteLevel("WARN", format, args...)
 	}
 }
 
 func (self *log_t) Info(format string, args ...interface{}) {
-	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.info)) {
+	for _, v := range get_output(&self.info) {
 		v.WriteLevel("INFO", format, args...)
 	}
 }
 
 func (self *log_t) Debug(format string, args ...interface{}) {
-	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.debug)) {
+	for _, v := range get_output(&self.debug) {
 		v.WriteLevel("DEBUG", format, args...)
 	}
 }
 
 func (self *log_t) Trace(format string, args ...interface{}) {
-	for _, v := range *(*writer_map_t)(atomic.LoadPointer(&self.trace)) {
+	for _, v := range get_output(&self.trace) {
 		v.WriteLevel("TRACE", format, args...)
 	}
 }

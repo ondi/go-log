@@ -11,14 +11,14 @@ import (
 )
 
 type Stdany_t struct {
+	prefix Prefixer
 	out    io.Writer
-	prefix Prefix
 }
 
-func NewStdany(out io.Writer, prefix Prefix) Writer {
+func NewStdany(prefix Prefixer, out io.Writer) Writer {
 	return &Stdany_t{
-		out:    out,
 		prefix: prefix,
+		out:    out,
 	}
 }
 
@@ -30,10 +30,10 @@ func (self *Stdany_t) WriteLevel(level string, format string, args ...interface{
 	return fmt.Fprintf(self.out, p+level+" "+format+"\n", args...)
 }
 
-func NewStderr(prefix Prefix) Writer {
-	return NewStdany(os.Stderr, prefix)
+func NewStderr(prefix Prefixer) Writer {
+	return NewStdany(prefix, os.Stderr)
 }
 
-func NewStdout(prefix Prefix) Writer {
-	return NewStdany(os.Stdout, prefix)
+func NewStdout(prefix Prefixer) Writer {
+	return NewStdany(prefix, os.Stdout)
 }

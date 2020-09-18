@@ -16,7 +16,7 @@ var FileTime = "20060102150405"
 type FileTime_t struct {
 	mx           sync.Mutex
 	fp           *os.File
-	prefix       Prefix
+	prefix       Prefixer
 	filename     string
 	truncate     time.Duration
 	last_date    time.Time
@@ -24,7 +24,7 @@ type FileTime_t struct {
 	files        []string
 }
 
-func NewFileTime(filename string, prefix Prefix, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
+func NewFileTime(filename string, prefix Prefixer, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
 	self = &FileTime_t{
 		prefix:       prefix,
 		filename:     filename,
