@@ -22,18 +22,18 @@ func (NoRps_t) Overflow(time.Time) bool {
 }
 
 type Rps_t struct {
-	mx       sync.Mutex
-	c        *ttl_cache.Cache_t
-	truncate time.Duration
-	count    int
-	limit    int
+	mx        sync.Mutex
+	c         *ttl_cache.Cache_t
+	precision time.Duration
+	count     int
+	rps_limit int
 }
 
-func NewRps(ttl time.Duration, truncate time.Duration, rps_limit int) (self *Rps_t) {
+func NewRps(ttl time.Duration, precision time.Duration, rps_limit int) (self *Rps_t) {
 	self = &Rps_t{}
 	self.c = ttl_cache.New(1<<32-1, ttl, self.__evict)
-	self.truncate = truncate
-	self.limit = rps_limit
+	self.precision = precision
+	self.rps_limit = rps_limit
 	return
 }
 
@@ -46,7 +46,7 @@ func (self *Rps_t) Add(ts time.Time) (res int) {
 	self.mx.Lock()
 	self.c.Write(
 		ts,
-		ts.Truncate(self.truncate),
+		ts.Truncate(self.precision),
 		func() interface{} {
 			return 1
 		},
@@ -61,7 +61,7 @@ func (self *Rps_t) Add(ts time.Time) (res int) {
 }
 
 func (self *Rps_t) Overflow(ts time.Time) bool {
-	if self.Add(ts) > self.limit {
+	if self.Add(ts) > self.rps_limit {
 		return true
 	}
 	return false
