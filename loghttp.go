@@ -49,10 +49,16 @@ type Message_t struct {
 	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
 	CallDepth int    `json:"-"`
 	Location  string `json:"Location,omitempty"`
+
+	// request per second
+	Rps Rps `json:"-"`
 }
 
 // self is copy
 func (self Message_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+	if self.Rps != nil && self.Rps.Overflow(time.Now()) {
+		return 0, fmt.Errorf("RPS")
+	}
 	self.Level = level
 	if len(format) == 0 {
 		if self.Data, err = json.Marshal(args); err != nil {
