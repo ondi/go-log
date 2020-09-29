@@ -30,12 +30,13 @@ type Client interface {
 }
 
 type Http_t struct {
-	q        queue.Queue
-	pool     sync.Pool
-	post_url string
-	convert  Converter
-	client   Client
-	header   http.Header
+	q          queue.Queue
+	pool       sync.Pool
+	post_url   string
+	post_delay time.Duration
+	convert    Converter
+	client     Client
+	header     http.Header
 }
 
 // this is working example for Convert interface
@@ -99,14 +100,30 @@ func DefaultClient(tr http.RoundTripper, timeout time.Duration) Client {
 	}
 }
 
-func NewHttp(queue_size int, writers int, post_url string, convert Converter, client Client, header http.Header) (self *Http_t) {
+type HttpOption func(self *Http_t)
+
+func PostDelay(delay time.Duration) HttpOption {
+	return func(self *Http_t) {
+		self.post_delay = delay
+	}
+}
+
+func PostHeader(header http.Header) HttpOption {
+	return func(self *Http_t) {
+		self.header = header.Clone()
+	}
+}
+
+func NewHttp(queue_size int, writers int, post_url string, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
 	self = &Http_t{
 		q:        queue.New(queue_size),
 		pool:     sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
 		post_url: post_url,
 		convert:  convert,
 		client:   client,
-		header:   header.Clone(),
+	}
+	for _, opt := range opts {
+		opt(self)
 	}
 	for i := 0; i < writers; i++ {
 		go self.writer()
@@ -162,5 +179,6 @@ func (self *Http_t) writer() {
 		}
 		self.pool.Put(temp)
 		resp.Body.Close()
+		time.Sleep(self.post_delay)
 	}
 }

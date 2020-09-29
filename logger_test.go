@@ -18,7 +18,6 @@ func Example_log1() {
 		"http://localhost",
 		Message_t{},
 		DefaultClient(DefaultTransport(time.Second), time.Second),
-		nil,
 	)
 	logger.AddOutput("http", 0, log_http)
 
