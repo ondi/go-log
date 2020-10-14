@@ -37,9 +37,8 @@ func NewRps(ttl time.Duration, precision time.Duration, rps_limit int) (self *Rp
 	return
 }
 
-func (self *Rps_t) __evict(v interface{}) int {
-	self.count -= v.(ttl_cache.Value_t).Value.(int)
-	return 0
+func (self *Rps_t) __evict(key interface{}, value interface{}) {
+	self.count -= value.(int)
 }
 
 func (self *Rps_t) Add(ts time.Time) (res int) {
