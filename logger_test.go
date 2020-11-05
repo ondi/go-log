@@ -21,11 +21,11 @@ func Example_log1() {
 	)
 	logger.AddOutput("http", 0, log_http)
 
-	Debug("lalala")
-	Debug("bububu")
+	Debug("lalala %s", ByteSize(1024))
+	Debug("bububu %s", ByteSize(2048))
 	// Output:
-	// DEBUG lalala
-	// DEBUG bububu
+	// DEBUG lalala 1.00 KB
+	// DEBUG bububu 2.00 KB
 	//
 }
 

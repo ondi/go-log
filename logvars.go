@@ -41,3 +41,26 @@ type NoWriter_t struct{}
 func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
 	return 0, nil
 }
+
+func ByteUnit(bytes uint64) (float64, string) {
+	switch {
+	case bytes >= (1 << (10 * 6)):
+		return float64(bytes) / (1 << (10 * 6)), "EB"
+	case bytes >= (1 << (10 * 5)):
+		return float64(bytes) / (1 << (10 * 5)), "PB"
+	case bytes >= (1 << (10 * 4)):
+		return float64(bytes) / (1 << (10 * 4)), "TB"
+	case bytes >= (1 << (10 * 3)):
+		return float64(bytes) / (1 << (10 * 3)), "GB"
+	case bytes >= (1 << (10 * 2)):
+		return float64(bytes) / (1 << (10 * 2)), "MB"
+	case bytes >= (1 << (10 * 1)):
+		return float64(bytes) / (1 << (10 * 1)), "KB"
+	}
+	return float64(bytes), "B"
+}
+
+func ByteSize(bytes uint64) string {
+	a, b := ByteUnit(bytes)
+	return fmt.Sprintf("%.2f %s", a, b)
+}
