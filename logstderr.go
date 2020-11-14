@@ -10,6 +10,10 @@ import (
 	"os"
 )
 
+type Prefixer interface {
+	Prefix() string
+}
+
 type Stdany_t struct {
 	prefix Prefixer
 	out    io.Writer

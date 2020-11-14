@@ -40,10 +40,6 @@ type Writer interface {
 	WriteLevel(level string, format string, args ...interface{}) (int, error)
 }
 
-type Prefixer interface {
-	Prefix() string
-}
-
 type writers_t map[string]Writer
 
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
