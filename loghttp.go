@@ -30,13 +30,13 @@ type Client interface {
 }
 
 type Http_t struct {
-	q          queue.Queue
-	pool       sync.Pool
-	post_url   string
-	post_delay time.Duration
-	convert    Converter
-	client     Client
-	header     http.Header
+	q         queue.Queue
+	pool      sync.Pool
+	post_url  string
+	convert   Converter
+	client    Client
+	header    http.Header
+	rps_limit Rps
 }
 
 // this is working example for Convert interface
@@ -50,16 +50,10 @@ type Message_t struct {
 	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
 	CallDepth int    `json:"-"`
 	Location  string `json:"Location,omitempty"`
-
-	// request per second
-	Rps Rps `json:"-"`
 }
 
 // self is copy
 func (self Message_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
-	if self.Rps != nil && self.Rps.Overflow(time.Now()) {
-		return 0, fmt.Errorf("RPS")
-	}
 	self.Level = level
 	if len(format) == 0 {
 		if self.Data, err = json.Marshal(args); err != nil {
@@ -102,25 +96,26 @@ func DefaultClient(tr http.RoundTripper, timeout time.Duration) Client {
 
 type HttpOption func(self *Http_t)
 
-func PostDelay(delay time.Duration) HttpOption {
-	return func(self *Http_t) {
-		self.post_delay = delay
-	}
-}
-
 func PostHeader(header http.Header) HttpOption {
 	return func(self *Http_t) {
 		self.header = header.Clone()
 	}
 }
 
+func RpsLimit(rps_limit Rps) HttpOption {
+	return func(self *Http_t) {
+		self.rps_limit = rps_limit
+	}
+}
+
 func NewHttp(queue_size int, writers int, post_url string, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
 	self = &Http_t{
-		q:        queue.New(queue_size),
-		pool:     sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
-		post_url: post_url,
-		convert:  convert,
-		client:   client,
+		q:         queue.New(queue_size),
+		pool:      sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
+		post_url:  post_url,
+		convert:   convert,
+		client:    client,
+		rps_limit: NoRps_t{},
 	}
 	for _, opt := range opts {
 		opt(self)
@@ -132,6 +127,9 @@ func NewHttp(queue_size int, writers int, post_url string, convert Converter, cl
 }
 
 func (self *Http_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
+	if self.rps_limit.Overflow(time.Now()) {
+		return 0, fmt.Errorf("RPS")
+	}
 	buf := self.pool.Get().(*bytes.Buffer)
 	buf.Reset()
 	if n, err = self.convert.Convert(buf, level, format, args...); err != nil {
@@ -179,6 +177,5 @@ func (self *Http_t) writer() {
 		}
 		self.pool.Put(temp)
 		resp.Body.Close()
-		time.Sleep(self.post_delay)
 	}
 }
