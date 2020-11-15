@@ -22,11 +22,13 @@ func (NoRps_t) Overflow(time.Time) bool {
 }
 
 type Rps_t struct {
-	mx        sync.Mutex
-	c         *ttl_cache.Cache_t
-	evict     time.Duration
-	count     int
-	rps_limit int
+	mx         sync.Mutex
+	c          *ttl_cache.Cache_t
+	evict      time.Duration
+	rps_limit  int
+	count      int
+	reserve    int
+	reserve_ts time.Time
 }
 
 /*
@@ -47,7 +49,7 @@ func (self *Rps_t) __evict(key interface{}, value interface{}) {
 	self.count -= value.(int)
 }
 
-func (self *Rps_t) add(ts time.Time) (res int) {
+func (self *Rps_t) add(ts time.Time) (count int, reserve bool) {
 	self.mx.Lock()
 	self.c.Create(
 		ts,
@@ -59,14 +61,24 @@ func (self *Rps_t) add(ts time.Time) (res int) {
 			return prev.(int) + 1
 		},
 	)
+	if ts.Sub(self.reserve_ts) > self.c.TTL() {
+		if self.reserve < self.rps_limit {
+			self.reserve++
+			reserve = true
+		} else {
+			self.reserve = 0
+			self.reserve_ts = ts
+		}
+	}
 	self.count++
-	res = self.count
+	count = self.count
 	self.mx.Unlock()
 	return
 }
 
 func (self *Rps_t) Overflow(ts time.Time) bool {
-	if self.add(ts) > self.rps_limit {
+	count, reserve := self.add(ts)
+	if count > self.rps_limit && reserve == false {
 		return true
 	}
 	return false
