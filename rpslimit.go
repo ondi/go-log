@@ -49,7 +49,7 @@ func (self *Rps_t) __evict(key interface{}, value interface{}) {
 
 func (self *Rps_t) add(ts time.Time) (res int) {
 	self.mx.Lock()
-	self.c.Write(
+	self.c.Create(
 		ts,
 		ts.Truncate(self.evict),
 		func() interface{} {
