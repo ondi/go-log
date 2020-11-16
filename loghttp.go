@@ -30,13 +30,14 @@ type Client interface {
 }
 
 type Http_t struct {
-	q         queue.Queue
-	pool      sync.Pool
-	post_url  string
-	convert   Converter
-	client    Client
-	header    http.Header
-	rps_limit Rps
+	q          queue.Queue
+	pool       sync.Pool
+	post_url   string
+	convert    Converter
+	client     Client
+	header     http.Header
+	post_delay time.Duration
+	rps_limit  Rps
 }
 
 // this is working example for Convert interface
@@ -99,6 +100,12 @@ type HttpOption func(self *Http_t)
 func PostHeader(header http.Header) HttpOption {
 	return func(self *Http_t) {
 		self.header = header.Clone()
+	}
+}
+
+func PostDelay(delay time.Duration) HttpOption {
+	return func(self *Http_t) {
+		self.post_delay = delay
 	}
 }
 
@@ -177,5 +184,6 @@ func (self *Http_t) writer() {
 		}
 		self.pool.Put(temp)
 		resp.Body.Close()
+		time.Sleep(self.post_delay)
 	}
 }
