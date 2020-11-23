@@ -84,9 +84,9 @@ func (self *Rps_t) Overflow(ts time.Time) bool {
 	return false
 }
 
-func (self *Rps_t) Size() (res int) {
+func (self *Rps_t) Size(ts time.Time) (res int) {
 	self.mx.Lock()
-	res = self.c.Size()
+	res = self.c.Size(ts)
 	self.mx.Unlock()
 	return
 }
