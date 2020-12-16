@@ -29,10 +29,34 @@ type Client interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+type Urls interface {
+	String() string
+}
+
+type Urls_t struct {
+	mx   sync.Mutex
+	urls []string
+	i    int
+}
+
+func NewUrls(urls ...string) (self *Urls_t) {
+	self = &Urls_t{}
+	self.urls = append(self.urls, urls...)
+	return
+}
+
+func (self *Urls_t) String() (res string) {
+	self.mx.Lock()
+	res = self.urls[self.i]
+	self.i = (self.i + 1) % len(self.urls)
+	self.mx.Unlock()
+	return
+}
+
 type Http_t struct {
 	q          queue.Queue
 	pool       sync.Pool
-	post_url   string
+	urls       Urls
 	convert    Converter
 	client     Client
 	header     http.Header
@@ -115,11 +139,11 @@ func RpsLimit(rps_limit Rps) HttpOption {
 	}
 }
 
-func NewHttp(queue_size int, writers int, post_url string, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
+func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
 	self = &Http_t{
 		q:         queue.New(queue_size),
 		pool:      sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
-		post_url:  post_url,
+		urls:      urls,
 		convert:   convert,
 		client:    client,
 		rps_limit: NoRps_t{},
@@ -166,7 +190,7 @@ func (self *Http_t) writer() {
 			return
 		}
 		buf = temp.(*bytes.Buffer)
-		if req, err = http.NewRequest(http.MethodPost, self.post_url, buf); err != nil {
+		if req, err = http.NewRequest(http.MethodPost, self.urls.String(), buf); err != nil {
 			self.pool.Put(temp)
 			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 			continue

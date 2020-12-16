@@ -15,7 +15,7 @@ func Example_log1() {
 	log_http := NewHttp(
 		10,
 		1,
-		"http://localhost",
+		NewUrls("http://localhost"),
 		Message_t{},
 		DefaultClient(DefaultTransport(time.Second), time.Second),
 	)
