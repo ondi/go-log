@@ -30,22 +30,27 @@ type Client interface {
 }
 
 type Urls interface {
-	String() string
+	Range() []string
 }
 
 type Urls_t struct {
 	mx   sync.Mutex
-	urls []string
+	urls [][]string
 	i    int
 }
 
 func NewUrls(urls ...string) (self *Urls_t) {
 	self = &Urls_t{}
-	self.urls = append(self.urls, urls...)
+	self.urls = make([][]string, len(urls))
+	for i := 0; i < len(urls); i++ {
+		for k := i; k < len(urls)+i; k++ {
+			self.urls[i] = append(self.urls[i], urls[k%len(urls)])
+		}
+	}
 	return
 }
 
-func (self *Urls_t) String() (res string) {
+func (self *Urls_t) Range() (res []string) {
 	self.mx.Lock()
 	res = self.urls[self.i]
 	self.i = (self.i + 1) % len(self.urls)
@@ -190,24 +195,25 @@ func (self *Http_t) writer() {
 			return
 		}
 		buf = temp.(*bytes.Buffer)
-		if req, err = http.NewRequest(http.MethodPost, self.urls.String(), buf); err != nil {
-			self.pool.Put(temp)
-			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
-			continue
+		for _, v := range self.urls.Range() {
+			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(buf.Bytes())); err != nil {
+				continue
+			}
+			req.Header = self.header
+			if resp, err = self.client.Do(req); err != nil {
+				continue
+			}
+			resp.Body.Close()
+			if resp.StatusCode >= 400 {
+				err = fmt.Errorf(resp.Status)
+				continue
+			}
+			break
 		}
-		req.Header = self.header
-		if resp, err = self.client.Do(req); err != nil {
-			self.pool.Put(temp)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
-			continue
-		}
-		if resp.StatusCode >= 400 {
-			buf.Reset()
-			buf.ReadFrom(resp.Body)
-			fmt.Fprintf(os.Stderr, "%v ERROR: %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, buf.Bytes())
 		}
 		self.pool.Put(temp)
-		resp.Body.Close()
 		time.Sleep(self.post_delay)
 	}
 }
