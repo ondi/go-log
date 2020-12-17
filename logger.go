@@ -59,13 +59,20 @@ func add_output(value *unsafe.Pointer, name string, writer Writer) {
 
 func del_output(value *unsafe.Pointer, name string) {
 	for {
+		var writer Writer
 		temp := writers_t{}
 		p := atomic.LoadPointer(value)
 		for k, v := range *(*writers_t)(p) {
-			temp[k] = v
+			if k == name {
+				writer = v
+			} else {
+				temp[k] = v
+			}
 		}
-		delete(temp, name)
 		if atomic.CompareAndSwapPointer(value, p, unsafe.Pointer(&temp)) {
+			if writer != nil {
+				writer.Close()
+			}
 			return
 		}
 	}
