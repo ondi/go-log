@@ -42,6 +42,10 @@ func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (
 	return 0, nil
 }
 
+func (NoWriter_t) Close() error {
+	return nil
+}
+
 func ByteUnit(bytes uint64) (float64, string) {
 	switch {
 	case bytes >= (1 << (10 * 6)):
