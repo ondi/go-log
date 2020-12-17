@@ -67,6 +67,7 @@ type Http_t struct {
 	header     http.Header
 	post_delay time.Duration
 	rps_limit  Rps
+	wg         sync.WaitGroup
 }
 
 // this is working example for Convert interface
@@ -157,6 +158,7 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 		opt(self)
 	}
 	for i := 0; i < writers; i++ {
+		self.wg.Add(1)
 		go self.writer()
 	}
 	return
@@ -184,17 +186,17 @@ func (self *Http_t) Size() int {
 }
 
 func (self *Http_t) writer() {
-	var oki int
+	defer self.wg.Done()
+
 	var err error
-	var temp interface{}
-	var buf *bytes.Buffer
 	var req *http.Request
 	var resp *http.Response
 	for {
-		if temp, oki = self.q.PopFront(); oki == -1 {
+		temp, oki := self.q.PopFront()
+		if oki == -1 {
 			return
 		}
-		buf = temp.(*bytes.Buffer)
+		buf := temp.(*bytes.Buffer)
 		for _, v := range self.urls.Range() {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(buf.Bytes())); err != nil {
 				continue
@@ -216,4 +218,10 @@ func (self *Http_t) writer() {
 		self.pool.Put(temp)
 		time.Sleep(self.post_delay)
 	}
+}
+
+func (self *Http_t) Close() error {
+	self.q.Close()
+	self.wg.Wait()
+	return nil
 }

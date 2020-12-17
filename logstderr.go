@@ -34,6 +34,10 @@ func (self *Stdany_t) WriteLevel(level string, format string, args ...interface{
 	return fmt.Fprintf(self.out, p+level+" "+format+"\n", args...)
 }
 
+func (self *Stdany_t) Close() error {
+	return nil
+}
+
 func NewStderr(prefix Prefixer) Writer {
 	return NewStdany(prefix, os.Stderr)
 }

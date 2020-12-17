@@ -72,3 +72,7 @@ func (self *FileBytes_t) __cycle() (err error) {
 	self.fp, err = os.OpenFile(self.filename, os.O_WRONLY|os.O_CREATE /*|os.O_APPEND*/, 0644)
 	return
 }
+
+func (self *FileBytes_t) Close() error {
+	return self.fp.Close()
+}

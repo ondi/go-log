@@ -38,6 +38,7 @@ type Logger interface {
 
 type Writer interface {
 	WriteLevel(level string, format string, args ...interface{}) (int, error)
+	Close() error
 }
 
 type writers_t map[string]Writer
