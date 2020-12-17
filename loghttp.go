@@ -6,6 +6,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -68,6 +69,8 @@ type Http_t struct {
 	post_delay time.Duration
 	rps_limit  Rps
 	wg         sync.WaitGroup
+	ctx        context.Context
+	ctx_cancel context.CancelFunc
 }
 
 // this is working example for Convert interface
@@ -154,9 +157,13 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 		client:    client,
 		rps_limit: NoRps_t{},
 	}
+
 	for _, opt := range opts {
 		opt(self)
 	}
+
+	self.ctx, self.ctx_cancel = context.WithCancel(context.Background())
+
 	for i := 0; i < writers; i++ {
 		self.wg.Add(1)
 		go self.writer()
@@ -216,12 +223,16 @@ func (self *Http_t) writer() {
 			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 		}
 		self.pool.Put(temp)
-		time.Sleep(self.post_delay)
+		select {
+		case <-self.ctx.Done():
+		case <-time.After(self.post_delay):
+		}
 	}
 }
 
 func (self *Http_t) Close() error {
 	self.q.Close()
+	self.ctx_cancel()
 	self.wg.Wait()
 	return nil
 }
