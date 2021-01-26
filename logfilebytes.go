@@ -32,6 +32,7 @@ func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_coun
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
 	}
+	os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, time.Now().Add(-time.Second).Format(FileBytesFormat)))
 	err = self.__cycle()
 	return
 }

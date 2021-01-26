@@ -31,6 +31,7 @@ func NewFileTime(filename string, prefix Prefixer, truncate time.Duration, backu
 		truncate:     truncate,
 		backup_count: backup_count,
 	}
+	os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, time.Now().Add(-time.Second).Format(FileBytesFormat)))
 	err = self.__cycle()
 	return
 }
