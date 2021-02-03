@@ -60,15 +60,21 @@ func (self *Urls_t) Range() (res []string) {
 }
 
 type Http_t struct {
+	mx         sync.Mutex
 	q          queue.Queue
-	pool       sync.Pool
-	urls       Urls
-	convert    Converter
-	client     Client
-	header     http.Header
+	queue_size int
+
+	pool    sync.Pool
+	urls    Urls
+	convert Converter
+	client  Client
+	header  http.Header
+
 	post_delay time.Duration
 	rps_limit  Rps
-	wg         sync.WaitGroup
+
+	wg sync.WaitGroup
+
 	ctx        context.Context
 	ctx_cancel context.CancelFunc
 }
@@ -150,13 +156,15 @@ func RpsLimit(rps_limit Rps) HttpOption {
 
 func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
 	self = &Http_t{
-		q:         queue.New(queue_size),
-		pool:      sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
-		urls:      urls,
-		convert:   convert,
-		client:    client,
-		rps_limit: NoRps_t{},
+		queue_size: queue_size,
+		pool:       sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
+		urls:       urls,
+		convert:    convert,
+		client:     client,
+		rps_limit:  NoRps_t{},
 	}
+
+	self.q = queue.NewOpen(&self.mx, queue_size)
 
 	for _, opt := range opts {
 		opt(self)
@@ -181,15 +189,26 @@ func (self *Http_t) WriteLevel(level string, format string, args ...interface{})
 		self.pool.Put(buf)
 		return
 	}
-	if self.q.PushBackNoWait(buf) != 0 {
+
+	self.mx.Lock()
+	if self.q.Size() >= self.queue_size {
+		self.q.PopFront()
+	}
+	res := self.q.PushBackNoWait(buf)
+	self.mx.Unlock()
+
+	if res != 0 {
 		self.pool.Put(buf)
 		return 0, fmt.Errorf("LOG QUEUE OVERFLOW")
 	}
 	return
 }
 
-func (self *Http_t) Size() int {
-	return self.q.Size()
+func (self *Http_t) Size() (res int) {
+	self.mx.Lock()
+	res = self.q.Size()
+	self.mx.Unlock()
+	return
 }
 
 func (self *Http_t) writer() {
@@ -199,7 +218,9 @@ func (self *Http_t) writer() {
 	var req *http.Request
 	var resp *http.Response
 	for {
+		self.mx.Lock()
 		temp, oki := self.q.PopFront()
+		self.mx.Unlock()
 		if oki == -1 {
 			return
 		}
@@ -231,7 +252,10 @@ func (self *Http_t) writer() {
 }
 
 func (self *Http_t) Close() error {
-	self.q.Close()
+	self.mx.Lock()
+	self.q = queue.NewClosed(self.q.Close())
+	self.mx.Unlock()
+
 	self.ctx_cancel()
 	self.wg.Wait()
 	return nil
