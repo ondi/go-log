@@ -235,7 +235,7 @@ func (self *Http_t) writer() {
 			}
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
-				err = fmt.Errorf(resp.Status)
+				err = fmt.Errorf("%s: %s", resp.Status, buf.Bytes())
 				continue
 			}
 			break
