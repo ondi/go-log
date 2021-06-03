@@ -27,6 +27,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
+	"runtime"
 	"time"
 )
 
@@ -73,7 +75,38 @@ func SetupLogger(logs []Args_t) (err error) {
 	return
 }
 
-// ReplyMarkup	InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardRemove or ForceReply
+type Message_t struct {
+	ApplicationName string          `json:"ApplicationName"`
+	Environment     string          `json:"Environment"`
+	Level           string          `json:"Level"`
+	Data            json.RawMessage `json:"Data,omitempty"`
+	Message         json.RawMessage `json:"Message,omitempty"`
+
+	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
+	CallDepth int    `json:"-"`
+	Location  string `json:"Location,omitempty"`
+}
+
+func (self Message_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+	self.Level = level
+	if len(format) == 0 {
+		if self.Data, err = json.Marshal(args); err != nil {
+			return
+		}
+	} else {
+		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
+			return
+		}
+	}
+	if self.CallDepth > 0 {
+		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
+			self.Location = fmt.Sprintf("%s:%d", path.Base(file), line)
+		}
+	}
+	err = json.NewEncoder(out).Encode(self)
+	return
+}
+
 type SendMessage_t struct {
 	// Unique identifier for the target chat or username of the target channel (in the format @channelusername)
 	ChatID int64 `json:"chat_id,omitempty"`

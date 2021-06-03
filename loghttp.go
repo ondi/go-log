@@ -8,14 +8,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
-	"path"
-	"runtime"
 	"sync"
 	"time"
 
@@ -77,40 +74,6 @@ type Http_t struct {
 
 	ctx        context.Context
 	ctx_cancel context.CancelFunc
-}
-
-// this is working example for Convert interface
-type Message_t struct {
-	ApplicationName string          `json:"ApplicationName"`
-	Environment     string          `json:"Environment"`
-	Level           string          `json:"Level"`
-	Data            json.RawMessage `json:"Data,omitempty"`
-	Message         json.RawMessage `json:"Message,omitempty"`
-
-	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
-	CallDepth int    `json:"-"`
-	Location  string `json:"Location,omitempty"`
-}
-
-// self is copy
-func (self Message_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
-	self.Level = level
-	if len(format) == 0 {
-		if self.Data, err = json.Marshal(args); err != nil {
-			return
-		}
-	} else {
-		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
-			return
-		}
-	}
-	if self.CallDepth > 0 {
-		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
-			self.Location = fmt.Sprintf("%s:%d", path.Base(file), line)
-		}
-	}
-	err = json.NewEncoder(out).Encode(self)
-	return
 }
 
 func DefaultTransport(timeout time.Duration) http.RoundTripper {
