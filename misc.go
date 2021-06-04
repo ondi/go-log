@@ -75,19 +75,19 @@ func SetupLogger(logs []Args_t) (err error) {
 	return
 }
 
-type Message_t struct {
+type MessageKB_t struct {
 	ApplicationName string          `json:"ApplicationName"`
 	Environment     string          `json:"Environment"`
 	Level           string          `json:"Level"`
 	Data            json.RawMessage `json:"Data,omitempty"`
 	Message         json.RawMessage `json:"Message,omitempty"`
 
-	// if CallDepth > 0 Location = "file:line" from runtime.Caller(CallDepth)
+	// if CallDepth > 0 Location -> "file:line" from runtime.Caller(CallDepth)
 	CallDepth int    `json:"-"`
 	Location  string `json:"Location,omitempty"`
 }
 
-func (self Message_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	self.Level = level
 	if len(format) == 0 {
 		if self.Data, err = json.Marshal(args); err != nil {
@@ -107,7 +107,7 @@ func (self Message_t) Convert(out io.Writer, level string, format string, args .
 	return
 }
 
-type SendMessage_t struct {
+type MessageTG_t struct {
 	// Unique identifier for the target chat or username of the target channel (in the format @channelusername)
 	ChatID int64 `json:"chat_id,omitempty"`
 	// Text of the message to be sent
@@ -129,7 +129,7 @@ type SendMessage_t struct {
 	Hostname string
 }
 
-func (self SendMessage_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageTG_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	self.Text = self.Hostname + "\n" + fmt.Sprintf(format, args...)
 	err = json.NewEncoder(out).Encode(self)
 	return
