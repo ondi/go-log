@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-var DT = &DT_t{Format: "2006-01-02 15:04:05"}
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}))
 
-var std = NewLogger("stderr", LOG_TRACE, NewStderr(DT))
+var NoWriter = NoWriter_t{}
 
 type DT_t struct {
 	Format string

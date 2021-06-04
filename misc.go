@@ -19,6 +19,42 @@ Logs:
     LogSize: 10000000
     LogDuration: "24h"
     LogBackup: 15
+
+    if len(cfg.KibanaAPI) > 0 {
+		self.log_http = log.NewHttp(
+			64,
+			cfg.KibanaWriters,
+			log.NewUrls(cfg.KibanaAPI),
+			log.Message_t{
+				ApplicationName: cfg.KibanaAppName,
+				Environment:     cfg.KibanaEnvName,
+				CallDepth:       4,
+			},
+			self.client,
+			log.PostHeader(headers),
+			log.RpsLimit(log.NewRps(time.Second, 50*time.Millisecond, 1000)),
+		)
+		log.GetLogger().AddOutput("http", log.LOG_WARN, self.log_http)
+	} else {
+		self.log_http = log.NoWriter_t{}
+	}
+	if len(cfg.TGBotApi) > 0 {
+		self.log_tg = log.NewHttp(
+			64,
+			cfg.TGWriters,
+			log.NewUrls(cfg.TGBotApi+cfg.TGBotToken+"/sendMessage"),
+			log.SendMessage_t{
+				ChatID:   cfg.TGChatID,
+				Hostname: self.hostname,
+			},
+			self.client,
+			log.PostHeader(headers),
+			log.PostDelay(1500*time.Millisecond),
+		)
+		log.GetLogger().AddOutput("telegram", log.LOG_WARN, self.log_tg)
+	} else {
+		self.log_tg = log.NoWriter_t{}
+	}
 */
 
 package log
