@@ -66,6 +66,7 @@ import (
 	"path"
 	"runtime"
 	"time"
+	"unicode/utf8"
 )
 
 type Args_t struct {
@@ -162,11 +163,21 @@ type MessageTG_t struct {
 	// custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
 	ReplyMarkup interface{} `json:"reply_markup,omitempty"`
 
-	Hostname string
+	Hostname  string
+	TextLimit int
 }
 
 func (self MessageTG_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	self.Text = self.Hostname + "\n" + fmt.Sprintf(format, args...)
+	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
+		n := self.TextLimit
+		for ; n > 0; n-- {
+			if r, _ := utf8.DecodeLastRuneInString(self.Text[:n]); r != utf8.RuneError {
+				break
+			}
+		}
+		self.Text = self.Text[:n]
+	}
 	err = json.NewEncoder(out).Encode(self)
 	return
 }
