@@ -8,6 +8,8 @@ github.com/ondi/go-queue v0.0.0-20210203134643-cb81eaeb5b09 h1:ta1OQBzTNyYCle8Mk
 github.com/ondi/go-queue v0.0.0-20210203134643-cb81eaeb5b09/go.mod h1:6c0TVMfjB09hiUD9CjcrPlpLdTLkrhIutc0T7Ogb6gM=
 github.com/ondi/go-ttl-cache v0.0.0-20210616111752-68970079d6fe h1:6dKrEMUwXXLVaOv8h8Ocr++1QEC9YlZd5qXQdz2TkMQ=
 github.com/ondi/go-ttl-cache v0.0.0-20210616111752-68970079d6fe/go.mod h1:sTVnyHj56M5QeK4AbfHADGGyG5+gqC+GZbRxOm90sVI=
+github.com/ondi/go-ttl-cache v0.0.0-20210617133705-68a4afc54960 h1:CFMMPFoo+Q+NKVCFRLFN5DddI5e87xcvdhqv5NyNg0g=
+github.com/ondi/go-ttl-cache v0.0.0-20210617133705-68a4afc54960/go.mod h1:sTVnyHj56M5QeK4AbfHADGGyG5+gqC+GZbRxOm90sVI=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
