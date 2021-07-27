@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"path"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -20,7 +21,8 @@ type DT_t struct {
 }
 
 func (self *DT_t) Prefix() string {
-	return time.Now().Format(self.Format)
+	var b [64]byte
+	return string(time.Now().AppendFormat(b[:0], self.Format))
 }
 
 type DTFL_t struct {
@@ -29,11 +31,12 @@ type DTFL_t struct {
 }
 
 func (self *DTFL_t) Prefix() string {
+	var b [64]byte
 	_, file, line, ok := runtime.Caller(self.Depth)
 	if ok {
-		return fmt.Sprintf("%s %s:%d", time.Now().Format(self.Format), path.Base(file), line)
+		return string(time.Now().AppendFormat(b[:0], self.Format)) + " " + path.Base(file) + ":" + strconv.FormatInt(int64(line), 10)
 	}
-	return time.Now().Format(self.Format)
+	return string(time.Now().AppendFormat(b[:0], self.Format))
 }
 
 type NoWriter_t struct{}
