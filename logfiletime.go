@@ -36,12 +36,12 @@ func NewFileTime(filename string, prefix Prefixer, truncate time.Duration, backu
 	return
 }
 
-func (self *FileTime_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
+func (self *FileTime_t) WriteLevel(level Levels, format string, args ...interface{}) (n int, err error) {
 	p := self.prefix.Prefix()
 	if len(p) > 0 {
 		p += " "
 	}
-	return fmt.Fprintf(self, p+level+" "+format+"\n", args...)
+	return fmt.Fprintf(self, p+level.String()+" "+format+"\n", args...)
 }
 
 func (self *FileTime_t) Write(p []byte) (n int, err error) {

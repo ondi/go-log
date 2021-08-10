@@ -41,7 +41,7 @@ func (self *DTFL_t) Prefix() string {
 
 type NoWriter_t struct{}
 
-func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
+func (NoWriter_t) WriteLevel(level Levels, format string, args ...interface{}) (int, error) {
 	return 0, nil
 }
 

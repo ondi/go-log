@@ -26,12 +26,12 @@ func NewStdany(prefix Prefixer, out io.Writer) Writer {
 	}
 }
 
-func (self *Stdany_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
+func (self *Stdany_t) WriteLevel(level Levels, format string, args ...interface{}) (int, error) {
 	p := self.prefix.Prefix()
 	if len(p) > 0 {
 		p += " "
 	}
-	return fmt.Fprintf(self.out, p+level+" "+format+"\n", args...)
+	return fmt.Fprintf(self.out, p+level.String()+" "+format+"\n", args...)
 }
 
 func (self *Stdany_t) Close() error {

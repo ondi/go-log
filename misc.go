@@ -79,27 +79,42 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
+func WhatLevel(in int) Levels {
+	switch in {
+	case 4:
+		return LOG_ERROR
+	case 3:
+		return LOG_WARN
+	case 2:
+		return LOG_INFO
+	case 1:
+		return LOG_DEBUG
+	default:
+		return LOG_TRACE
+	}
+}
+
 func SetupLogger(logs []Args_t) (err error) {
 	logger := NewEmpty()
 	SetLogger(logger)
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 5}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
-				logger.AddOutput(v.LogFile, v.LogLevel, output)
+				logger.AddOutput(v.LogFile, WhatLevel(v.LogLevel), output)
 			}
 		case "filetime":
-			if output, err := NewFileTime(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 5}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
-				logger.AddOutput(v.LogFile, v.LogLevel, output)
+				logger.AddOutput(v.LogFile, WhatLevel(v.LogLevel), output)
 			}
 		case "stdout":
-			logger.AddOutput("stdout", v.LogLevel, NewStdout(&DTFL_t{Format: v.LogDate, Depth: 4}))
+			logger.AddOutput("stdout", WhatLevel(v.LogLevel), NewStdout(&DTFL_t{Format: v.LogDate, Depth: 5}))
 		case "stderr":
-			logger.AddOutput("stderr", v.LogLevel, NewStderr(&DTFL_t{Format: v.LogDate, Depth: 4}))
+			logger.AddOutput("stderr", WhatLevel(v.LogLevel), NewStderr(&DTFL_t{Format: v.LogDate, Depth: 5}))
 		case "dupstderr":
 			DupStderr(v.LogFile)
 		case "dupstdout":

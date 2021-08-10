@@ -142,13 +142,13 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 	return
 }
 
-func (self *Http_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
+func (self *Http_t) WriteLevel(level Levels, format string, args ...interface{}) (n int, err error) {
 	if self.rps_limit.Overflow(time.Now()) {
 		return 0, fmt.Errorf("RPS")
 	}
 	buf := self.pool.Get().(*bytes.Buffer)
 	buf.Reset()
-	if n, err = self.convert.Convert(buf, level, format, args...); err != nil {
+	if n, err = self.convert.Convert(buf, level.String(), format, args...); err != nil {
 		self.pool.Put(buf)
 		return
 	}
