@@ -1,10 +1,10 @@
 /*
 	Log with levels
 
-	// the most used range cycle will not allocate new map for writers list
-	func (self *log_t) Error(format string, args ...interface{}) {
-		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.err)) {
-			v.WriteLevel(Level_t{"ERROR"}, format, args...)
+	// no allocation and locks
+	func (self *log_t) WriteLevel(level Levels, format string, args ...interface{}) {
+		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[level.level])) {
+			v.WriteLevel(level.Name, format, args...)
 		}
 	}
 */
@@ -16,11 +16,16 @@ import (
 	"unsafe"
 )
 
-var LOG_TRACE = levels_t{Name: "TRACE", level: 0}
-var LOG_DEBUG = levels_t{Name: "DEBUG", level: 1}
-var LOG_INFO = levels_t{Name: "INFO", level: 2}
-var LOG_WARN = levels_t{Name: "WARN", level: 3}
-var LOG_ERROR = levels_t{Name: "ERROR", level: 4}
+type level_t struct {
+	Name  string
+	level int
+}
+
+var LOG_TRACE = level_t{Name: "TRACE", level: 0}
+var LOG_DEBUG = level_t{Name: "DEBUG", level: 1}
+var LOG_INFO = level_t{Name: "INFO", level: 2}
+var LOG_WARN = level_t{Name: "WARN", level: 3}
+var LOG_ERROR = level_t{Name: "ERROR", level: 4}
 
 type Logger interface {
 	Trace(format string, args ...interface{})
@@ -28,37 +33,19 @@ type Logger interface {
 	Info(format string, args ...interface{})
 	Warn(format string, args ...interface{})
 	Error(format string, args ...interface{})
-	WriteLevel(level Levels, format string, args ...interface{})
+	WriteLevel(level level_t, format string, args ...interface{})
 
-	AddOutput(name string, level Levels, writer Writer)
+	AddOutput(name string, level level_t, writer Writer)
 	DelOutput(name string)
 	Clear()
 }
 
-type Levels interface {
-	String() string
-	Level() int
-}
-
 type Writer interface {
-	WriteLevel(level Levels, format string, args ...interface{}) (int, error)
+	WriteLevel(level string, format string, args ...interface{}) (int, error)
 	Close() error
 }
 
 type writers_t map[string]Writer
-
-type levels_t struct {
-	Name  string
-	level int
-}
-
-func (self levels_t) String() string {
-	return self.Name
-}
-
-func (self levels_t) Level() int {
-	return self.level
-}
 
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {
@@ -105,26 +92,26 @@ func NewEmpty() (self Logger) {
 	return
 }
 
-func NewLogger(name string, level Levels, writer Writer) (self Logger) {
+func NewLogger(name string, level level_t, writer Writer) (self Logger) {
 	self = NewEmpty()
 	self.AddOutput(name, level, writer)
 	return
 }
 
-func (self *log_t) AddOutput(name string, level Levels, writer Writer) {
-	if level.Level() <= LOG_ERROR.level {
+func (self *log_t) AddOutput(name string, level level_t, writer Writer) {
+	if level.level <= LOG_ERROR.level {
 		add_output(&self.out[LOG_ERROR.level], name, writer)
 	}
-	if level.Level() <= LOG_WARN.level {
+	if level.level <= LOG_WARN.level {
 		add_output(&self.out[LOG_WARN.level], name, writer)
 	}
-	if level.Level() <= LOG_INFO.level {
+	if level.level <= LOG_INFO.level {
 		add_output(&self.out[LOG_INFO.level], name, writer)
 	}
-	if level.Level() <= LOG_DEBUG.level {
+	if level.level <= LOG_DEBUG.level {
 		add_output(&self.out[LOG_DEBUG.level], name, writer)
 	}
-	if level.Level() <= LOG_TRACE.level {
+	if level.level <= LOG_TRACE.level {
 		add_output(&self.out[LOG_TRACE.level], name, writer)
 	}
 }
@@ -165,9 +152,9 @@ func (self *log_t) Trace(format string, args ...interface{}) {
 	self.WriteLevel(LOG_TRACE, format, args...)
 }
 
-func (self *log_t) WriteLevel(level Levels, format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[level.Level()])) {
-		v.WriteLevel(level, format, args...)
+func (self *log_t) WriteLevel(level level_t, format string, args ...interface{}) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[level.level])) {
+		v.WriteLevel(level.Name, format, args...)
 	}
 }
 
@@ -191,7 +178,7 @@ func Error(format string, args ...interface{}) {
 	std.Error(format, args...)
 }
 
-func WriteLevel(level Levels, format string, args ...interface{}) {
+func WriteLevel(level level_t, format string, args ...interface{}) {
 	std.WriteLevel(level, format, args...)
 }
 

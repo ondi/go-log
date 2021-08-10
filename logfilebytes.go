@@ -37,12 +37,12 @@ func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_coun
 	return
 }
 
-func (self *FileBytes_t) WriteLevel(level Levels, format string, args ...interface{}) (n int, err error) {
+func (self *FileBytes_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
 	p := self.prefix.Prefix()
 	if len(p) > 0 {
 		p += " "
 	}
-	return fmt.Fprintf(self, p+level.String()+" "+format+"\n", args...)
+	return fmt.Fprintf(self, p+level+" "+format+"\n", args...)
 }
 
 func (self *FileBytes_t) Write(p []byte) (n int, err error) {

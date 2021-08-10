@@ -20,12 +20,12 @@ Logs:
     LogDuration: "24h"
     LogBackup: 15
 
-    if len(cfg.KibanaAPI) > 0 {
+	if len(cfg.KibanaAPI) > 0 {
 		self.log_http = log.NewHttp(
 			64,
 			cfg.KibanaWriters,
 			log.NewUrls(cfg.KibanaAPI),
-			log.Message_t{
+			log.MessageKB_t{
 				ApplicationName: cfg.KibanaAppName,
 				Environment:     cfg.KibanaEnvName,
 				CallDepth:       4,
@@ -43,9 +43,10 @@ Logs:
 			64,
 			cfg.TGWriters,
 			log.NewUrls(cfg.TGBotApi+cfg.TGBotToken+"/sendMessage"),
-			log.SendMessage_t{
-				ChatID:   cfg.TGChatID,
-				Hostname: self.hostname,
+			log.MessageTG_t{
+				ChatID:    cfg.TGChatID,
+				Hostname:  self.hostname,
+				TextLimit: 1024,
 			},
 			self.client,
 			log.PostHeader(headers),
@@ -79,7 +80,7 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
-func WhatLevel(in int) Levels {
+func WhatLevel(in int) level_t {
 	switch in {
 	case 4:
 		return LOG_ERROR

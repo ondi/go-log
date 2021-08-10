@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}))
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 5}))
 
 var NoWriter = NoWriter_t{}
 
@@ -41,7 +41,7 @@ func (self *DTFL_t) Prefix() string {
 
 type NoWriter_t struct{}
 
-func (NoWriter_t) WriteLevel(level Levels, format string, args ...interface{}) (int, error) {
+func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
 	return 0, nil
 }
 
