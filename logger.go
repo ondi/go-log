@@ -99,37 +99,23 @@ func NewLogger(name string, level level_t, writer Writer) (self Logger) {
 }
 
 func (self *log_t) AddOutput(name string, level level_t, writer Writer) {
-	if level.level <= LOG_ERROR.level {
-		add_output(&self.out[LOG_ERROR.level], name, writer)
-	}
-	if level.level <= LOG_WARN.level {
-		add_output(&self.out[LOG_WARN.level], name, writer)
-	}
-	if level.level <= LOG_INFO.level {
-		add_output(&self.out[LOG_INFO.level], name, writer)
-	}
-	if level.level <= LOG_DEBUG.level {
-		add_output(&self.out[LOG_DEBUG.level], name, writer)
-	}
-	if level.level <= LOG_TRACE.level {
-		add_output(&self.out[LOG_TRACE.level], name, writer)
+	for i := 0; i < len(self.out); i++ {
+		if level.level <= i {
+			add_output(&self.out[i], name, writer)
+		}
 	}
 }
 
 func (self *log_t) DelOutput(name string) {
-	del_output(&self.out[LOG_ERROR.level], name)
-	del_output(&self.out[LOG_WARN.level], name)
-	del_output(&self.out[LOG_INFO.level], name)
-	del_output(&self.out[LOG_DEBUG.level], name)
-	del_output(&self.out[LOG_TRACE.level], name)
+	for i := 0; i < len(self.out); i++ {
+		del_output(&self.out[i], name)
+	}
 }
 
 func (self *log_t) Clear() {
-	atomic.StorePointer(&self.out[LOG_ERROR.level], unsafe.Pointer(&writers_t{}))
-	atomic.StorePointer(&self.out[LOG_WARN.level], unsafe.Pointer(&writers_t{}))
-	atomic.StorePointer(&self.out[LOG_INFO.level], unsafe.Pointer(&writers_t{}))
-	atomic.StorePointer(&self.out[LOG_DEBUG.level], unsafe.Pointer(&writers_t{}))
-	atomic.StorePointer(&self.out[LOG_TRACE.level], unsafe.Pointer(&writers_t{}))
+	for i := 0; i < len(self.out); i++ {
+		atomic.StorePointer(&self.out[i], unsafe.Pointer(&writers_t{}))
+	}
 }
 
 func (self *log_t) Error(format string, args ...interface{}) {
