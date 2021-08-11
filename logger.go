@@ -99,10 +99,8 @@ func NewLogger(name string, level level_t, writer Writer) (self Logger) {
 }
 
 func (self *log_t) AddOutput(name string, level level_t, writer Writer) {
-	for i := 0; i < len(self.out); i++ {
-		if level.level <= i {
-			add_output(&self.out[i], name, writer)
-		}
+	for ; level.level < len(self.out); level.level++ {
+		add_output(&self.out[level.level], name, writer)
 	}
 }
 
