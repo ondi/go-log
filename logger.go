@@ -12,6 +12,7 @@
 package log
 
 import (
+	"context"
 	"sync/atomic"
 	"unsafe"
 )
@@ -33,7 +34,12 @@ type Logger interface {
 	Info(format string, args ...interface{})
 	Warn(format string, args ...interface{})
 	Error(format string, args ...interface{})
-	WriteLevel(level level_t, format string, args ...interface{})
+
+	TraceCtx(ctx context.Context, format string, args ...interface{})
+	DebugCtx(ctx context.Context, format string, args ...interface{})
+	InfoCtx(ctx context.Context, format string, args ...interface{})
+	WarnCtx(ctx context.Context, format string, args ...interface{})
+	ErrorCtx(ctx context.Context, format string, args ...interface{})
 
 	AddOutput(name string, level level_t, writer Writer)
 	DelOutput(name string)
@@ -46,6 +52,12 @@ type Writer interface {
 }
 
 type writers_t map[string]Writer
+
+type context_t string
+
+func CtxSet(ctx context.Context, value string) context.Context {
+	return context.WithValue(ctx, context_t("level"), value)
+}
 
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {
@@ -117,53 +129,123 @@ func (self *log_t) Clear() {
 }
 
 func (self *log_t) Error(format string, args ...interface{}) {
-	self.WriteLevel(LOG_ERROR, format, args...)
-}
-
-func (self *log_t) Warn(format string, args ...interface{}) {
-	self.WriteLevel(LOG_WARN, format, args...)
-}
-
-func (self *log_t) Info(format string, args ...interface{}) {
-	self.WriteLevel(LOG_INFO, format, args...)
-}
-
-func (self *log_t) Debug(format string, args ...interface{}) {
-	self.WriteLevel(LOG_DEBUG, format, args...)
-}
-
-func (self *log_t) Trace(format string, args ...interface{}) {
-	self.WriteLevel(LOG_TRACE, format, args...)
-}
-
-func (self *log_t) WriteLevel(level level_t, format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[level.level])) {
-		v.WriteLevel(level.Name, format, args...)
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
+		v.WriteLevel(LOG_ERROR.Name, format, args...)
 	}
 }
 
-func Trace(format string, args ...interface{}) {
-	std.Trace(format, args...)
+func (self *log_t) Warn(format string, args ...interface{}) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
+		v.WriteLevel(LOG_WARN.Name, format, args...)
+	}
 }
 
-func Debug(format string, args ...interface{}) {
-	std.Debug(format, args...)
+func (self *log_t) Info(format string, args ...interface{}) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
+		v.WriteLevel(LOG_INFO.Name, format, args...)
+	}
 }
 
-func Info(format string, args ...interface{}) {
-	std.Info(format, args...)
+func (self *log_t) Debug(format string, args ...interface{}) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
+		v.WriteLevel(LOG_DEBUG.Name, format, args...)
+	}
 }
 
-func Warn(format string, args ...interface{}) {
-	std.Warn(format, args...)
+func (self *log_t) Trace(format string, args ...interface{}) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
+		v.WriteLevel(LOG_TRACE.Name, format, args...)
+	}
+}
+
+func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
+	temp, _ := ctx.Value(context_t("level")).(string)
+	if len(temp) > 0 {
+		temp = " " + temp
+	}
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
+		v.WriteLevel(LOG_ERROR.Name+temp, format, args...)
+	}
+}
+
+func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
+	temp, _ := ctx.Value(context_t("level")).(string)
+	if len(temp) > 0 {
+		temp = " " + temp
+	}
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
+		v.WriteLevel(LOG_WARN.Name+temp, format, args...)
+	}
+}
+
+func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
+	temp, _ := ctx.Value(context_t("level")).(string)
+	if len(temp) > 0 {
+		temp = " " + temp
+	}
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
+		v.WriteLevel(LOG_INFO.Name+temp, format, args...)
+	}
+}
+
+func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
+	temp, _ := ctx.Value(context_t("level")).(string)
+	if len(temp) > 0 {
+		temp = " " + temp
+	}
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
+		v.WriteLevel(LOG_DEBUG.Name+temp, format, args...)
+	}
+}
+
+func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
+	temp, _ := ctx.Value(context_t("level")).(string)
+	if len(temp) > 0 {
+		temp = " " + temp
+	}
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
+		v.WriteLevel(LOG_TRACE.Name+temp, format, args...)
+	}
 }
 
 func Error(format string, args ...interface{}) {
 	std.Error(format, args...)
 }
 
-func WriteLevel(level level_t, format string, args ...interface{}) {
-	std.WriteLevel(level, format, args...)
+func Warn(format string, args ...interface{}) {
+	std.Warn(format, args...)
+}
+
+func Info(format string, args ...interface{}) {
+	std.Info(format, args...)
+}
+
+func Debug(format string, args ...interface{}) {
+	std.Debug(format, args...)
+}
+
+func TraceCtx(ctx context.Context, format string, args ...interface{}) {
+	std.TraceCtx(ctx, format, args...)
+}
+
+func ErrorCtx(ctx context.Context, format string, args ...interface{}) {
+	std.ErrorCtx(ctx, format, args...)
+}
+
+func WarnCtx(ctx context.Context, format string, args ...interface{}) {
+	std.WarnCtx(ctx, format, args...)
+}
+
+func InfoCtx(ctx context.Context, format string, args ...interface{}) {
+	std.InfoCtx(ctx, format, args...)
+}
+
+func DebugCtx(ctx context.Context, format string, args ...interface{}) {
+	std.DebugCtx(ctx, format, args...)
+}
+
+func Trace(format string, args ...interface{}) {
+	std.Trace(format, args...)
 }
 
 func SetLogger(logger Logger) {

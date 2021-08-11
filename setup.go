@@ -66,9 +66,47 @@ import (
 	"io"
 	"path"
 	"runtime"
+	"strconv"
 	"time"
 	"unicode/utf8"
 )
+
+var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}))
+
+var NoWriter = NoWriter_t{}
+
+type DT_t struct {
+	Format string
+}
+
+func (self *DT_t) Prefix() string {
+	var b [64]byte
+	return string(time.Now().AppendFormat(b[:0], self.Format))
+}
+
+type DTFL_t struct {
+	Format string
+	Depth  int
+}
+
+func (self *DTFL_t) Prefix() string {
+	var b [64]byte
+	_, file, line, ok := runtime.Caller(self.Depth)
+	if ok {
+		return string(time.Now().AppendFormat(b[:0], self.Format)) + " " + path.Base(file) + ":" + strconv.FormatInt(int64(line), 10)
+	}
+	return string(time.Now().AppendFormat(b[:0], self.Format))
+}
+
+type NoWriter_t struct{}
+
+func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
+	return 0, nil
+}
+
+func (NoWriter_t) Close() error {
+	return nil
+}
 
 type Args_t struct {
 	LogType     string        `yaml:"LogType"`
@@ -101,21 +139,21 @@ func SetupLogger(logs []Args_t) (err error) {
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 5}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, WhatLevel(v.LogLevel), output)
 			}
 		case "filetime":
-			if output, err := NewFileTime(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 5}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, WhatLevel(v.LogLevel), output)
 			}
 		case "stdout":
-			logger.AddOutput("stdout", WhatLevel(v.LogLevel), NewStdout(&DTFL_t{Format: v.LogDate, Depth: 5}))
+			logger.AddOutput("stdout", WhatLevel(v.LogLevel), NewStdout(&DTFL_t{Format: v.LogDate, Depth: 4}))
 		case "stderr":
-			logger.AddOutput("stderr", WhatLevel(v.LogLevel), NewStderr(&DTFL_t{Format: v.LogDate, Depth: 5}))
+			logger.AddOutput("stderr", WhatLevel(v.LogLevel), NewStderr(&DTFL_t{Format: v.LogDate, Depth: 4}))
 		case "dupstderr":
 			DupStderr(v.LogFile)
 		case "dupstdout":
@@ -196,4 +234,27 @@ func (self MessageTG_t) Convert(out io.Writer, level string, format string, args
 	}
 	err = json.NewEncoder(out).Encode(self)
 	return
+}
+
+func ByteUnit(bytes uint64) (float64, string) {
+	switch {
+	case bytes >= (1 << (10 * 6)):
+		return float64(bytes) / (1 << (10 * 6)), "EB"
+	case bytes >= (1 << (10 * 5)):
+		return float64(bytes) / (1 << (10 * 5)), "PB"
+	case bytes >= (1 << (10 * 4)):
+		return float64(bytes) / (1 << (10 * 4)), "TB"
+	case bytes >= (1 << (10 * 3)):
+		return float64(bytes) / (1 << (10 * 3)), "GB"
+	case bytes >= (1 << (10 * 2)):
+		return float64(bytes) / (1 << (10 * 2)), "MB"
+	case bytes >= (1 << (10 * 1)):
+		return float64(bytes) / (1 << (10 * 1)), "KB"
+	}
+	return float64(bytes), "B"
+}
+
+func ByteSize(bytes uint64) string {
+	a, b := ByteUnit(bytes)
+	return fmt.Sprintf("%.2f %s", a, b)
 }

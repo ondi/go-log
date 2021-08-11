@@ -1,15 +1,21 @@
 package log
 
 import (
+	"bytes"
+	"context"
 	"testing"
 	"time"
+
+	"gotest.tools/assert"
 )
 
-func Example_log1() {
+func Test1(t *testing.T) {
 	logger := NewEmpty()
 	SetLogger(logger)
 
+	var buf bytes.Buffer
 	logger.AddOutput("stdout", LOG_TRACE, NewStdout(&DT_t{}))
+	logger.AddOutput("buf", LOG_TRACE, NewStdany(&DT_t{}, &buf))
 	log_file, _ := NewFileBytes("/tmp/test.log", &DT_t{}, 1024, 10)
 	logger.AddOutput("file", LOG_TRACE, log_file)
 	log_http := NewHttp(
@@ -23,12 +29,21 @@ func Example_log1() {
 
 	Debug("lalala %s", ByteSize(1024))
 	Debug("bububu %s", ByteSize(2048))
-	// Output:
-	// DEBUG lalala 1.00 KB
-	// DEBUG bububu 2.00 KB
-	//
+
+	assert.Assert(t, buf.String() == "DEBUG lalala 1.00 KB\nDEBUG bububu 2.00 KB\n", buf.String())
 }
 
-func TestLog1(t *testing.T) {
+func Test2(t *testing.T) {
+	ctx := CtxSet(context.Background(), "b0dd37be-0f1e-421d-98c8-222cc57acae0")
 
+	logger := NewEmpty()
+	SetLogger(logger)
+
+	var buf bytes.Buffer
+	logger.AddOutput("stdout", LOG_TRACE, NewStdout(&DT_t{}))
+	logger.AddOutput("buf", LOG_TRACE, NewStdany(&DT_t{}, &buf))
+
+	DebugCtx(ctx, "test")
+
+	assert.Assert(t, buf.String() == "DEBUG b0dd37be-0f1e-421d-98c8-222cc57acae0 test\n", buf.String())
 }
