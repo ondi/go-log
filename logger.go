@@ -160,51 +160,36 @@ func (self *log_t) Trace(format string, args ...interface{}) {
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
 	temp, _ := ctx.Value(context_t("level")).(string)
-	if len(temp) > 0 {
-		temp = " " + temp
-	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
-		v.WriteLevel(LOG_ERROR.Name+temp, format, args...)
+		v.WriteLevel(LOG_ERROR.Name+" "+temp, format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
 	temp, _ := ctx.Value(context_t("level")).(string)
-	if len(temp) > 0 {
-		temp = " " + temp
-	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
-		v.WriteLevel(LOG_WARN.Name+temp, format, args...)
+		v.WriteLevel(LOG_WARN.Name+" "+temp, format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
 	temp, _ := ctx.Value(context_t("level")).(string)
-	if len(temp) > 0 {
-		temp = " " + temp
-	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
-		v.WriteLevel(LOG_INFO.Name+temp, format, args...)
+		v.WriteLevel(LOG_INFO.Name+" "+temp, format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
 	temp, _ := ctx.Value(context_t("level")).(string)
-	if len(temp) > 0 {
-		temp = " " + temp
-	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
-		v.WriteLevel(LOG_DEBUG.Name+temp, format, args...)
+		v.WriteLevel(LOG_DEBUG.Name+" "+temp, format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
 	temp, _ := ctx.Value(context_t("level")).(string)
-	if len(temp) > 0 {
-		temp = " " + temp
-	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
-		v.WriteLevel(LOG_TRACE.Name+temp, format, args...)
+		v.WriteLevel(LOG_TRACE.Name+" "+temp, format, args...)
 	}
 }
 
