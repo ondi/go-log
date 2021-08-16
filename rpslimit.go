@@ -53,14 +53,14 @@ func (self *Rps_t) add(ts time.Time) (count int) {
 		ts,
 		ts.Truncate(self.truncate),
 		func() interface{} {
-			if self.count > self.rps_limit {
+			if self.count == self.rps_limit {
 				return 0
 			}
 			self.count++
 			return 1
 		},
 		func(prev interface{}) interface{} {
-			if self.count > self.rps_limit {
+			if self.count == self.rps_limit {
 				return prev
 			}
 			self.count++
@@ -73,7 +73,7 @@ func (self *Rps_t) add(ts time.Time) (count int) {
 }
 
 func (self *Rps_t) Overflow(ts time.Time) bool {
-	return self.add(ts) > self.rps_limit
+	return self.add(ts) == self.rps_limit
 }
 
 func (self *Rps_t) Size(ts time.Time) (res int) {

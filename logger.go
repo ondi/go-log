@@ -2,9 +2,9 @@
 	Log with levels
 
 	// no allocation and locks
-	func (self *log_t) WriteLevel(level Levels, format string, args ...interface{}) {
-		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[level.level])) {
-			v.WriteLevel(level.Name, format, args...)
+	func (self *log_t) Debug(format string, args ...interface{}) {
+		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
+			v.WriteLevel(LOG_DEBUG.Name, format, args...)
 		}
 	}
 */
