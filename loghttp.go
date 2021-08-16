@@ -6,7 +6,6 @@ package log
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -61,7 +60,6 @@ type Http_t struct {
 	q          queue.Queue
 	queue_size int
 
-	pool    sync.Pool
 	urls    Urls
 	convert Converter
 	client  Client
@@ -71,9 +69,6 @@ type Http_t struct {
 	rps_limit  Rps
 
 	wg sync.WaitGroup
-
-	ctx        context.Context
-	ctx_cancel context.CancelFunc
 }
 
 func DefaultTransport(timeout time.Duration) http.RoundTripper {
@@ -120,7 +115,6 @@ func RpsLimit(rps_limit Rps) HttpOption {
 func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
 	self = &Http_t{
 		queue_size: queue_size,
-		pool:       sync.Pool{New: func() interface{} { return bytes.NewBuffer(nil) }},
 		urls:       urls,
 		convert:    convert,
 		client:     client,
@@ -133,8 +127,6 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 		opt(self)
 	}
 
-	self.ctx, self.ctx_cancel = context.WithCancel(context.Background())
-
 	for i := 0; i < writers; i++ {
 		self.wg.Add(1)
 		go self.writer()
@@ -146,10 +138,8 @@ func (self *Http_t) WriteLevel(level string, format string, args ...interface{})
 	if self.rps_limit.Overflow(time.Now()) {
 		return 0, fmt.Errorf("RPS")
 	}
-	buf := self.pool.Get().(*bytes.Buffer)
-	buf.Reset()
-	if n, err = self.convert.Convert(buf, level, format, args...); err != nil {
-		self.pool.Put(buf)
+	var buf bytes.Buffer
+	if n, err = self.convert.Convert(&buf, level, format, args...); err != nil {
 		return
 	}
 
@@ -161,7 +151,6 @@ func (self *Http_t) WriteLevel(level string, format string, args ...interface{})
 	self.mx.Unlock()
 
 	if res != 0 {
-		self.pool.Put(buf)
 		return 0, fmt.Errorf("LOG QUEUE OVERFLOW")
 	}
 	return
@@ -174,10 +163,9 @@ func (self *Http_t) Size() (res int) {
 	return
 }
 
-func (self *Http_t) writer() {
+func (self *Http_t) writer() (err error) {
 	defer self.wg.Done()
 
-	var err error
 	var req *http.Request
 	var resp *http.Response
 	for {
@@ -187,7 +175,7 @@ func (self *Http_t) writer() {
 		if oki == -1 {
 			return
 		}
-		buf := temp.(*bytes.Buffer)
+		buf := temp.(bytes.Buffer)
 		for _, v := range self.urls.Range() {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(buf.Bytes())); err != nil {
 				continue
@@ -206,11 +194,7 @@ func (self *Http_t) writer() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 		}
-		self.pool.Put(temp)
-		select {
-		case <-self.ctx.Done():
-		case <-time.After(self.post_delay):
-		}
+		time.Sleep(self.post_delay)
 	}
 }
 
@@ -218,8 +202,6 @@ func (self *Http_t) Close() error {
 	self.mx.Lock()
 	self.q = queue.NewClosed(self.q.Close())
 	self.mx.Unlock()
-
-	self.ctx_cancel()
 	self.wg.Wait()
 	return nil
 }
