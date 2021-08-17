@@ -12,13 +12,13 @@ import (
 )
 
 type Rps interface {
-	Overflow(time.Time) bool
+	Add(time.Time) (ok bool)
 }
 
 type NoRps_t struct{}
 
-func (NoRps_t) Overflow(time.Time) bool {
-	return false
+func (NoRps_t) Add(time.Time) bool {
+	return true
 }
 
 type Rps_t struct {
@@ -47,7 +47,7 @@ func (self *Rps_t) __evict(key interface{}, value interface{}) {
 	self.count -= value.(int)
 }
 
-func (self *Rps_t) add(ts time.Time) (count int) {
+func (self *Rps_t) Add(ts time.Time) (ok bool) {
 	self.mx.Lock()
 	self.c.Create(
 		ts,
@@ -56,6 +56,7 @@ func (self *Rps_t) add(ts time.Time) (count int) {
 			if self.count == self.rps_limit {
 				return 0
 			}
+			ok = true
 			self.count++
 			return 1
 		},
@@ -63,17 +64,13 @@ func (self *Rps_t) add(ts time.Time) (count int) {
 			if self.count == self.rps_limit {
 				return prev
 			}
+			ok = true
 			self.count++
 			return prev.(int) + 1
 		},
 	)
-	count = self.count
 	self.mx.Unlock()
 	return
-}
-
-func (self *Rps_t) Overflow(ts time.Time) bool {
-	return self.add(ts) == self.rps_limit
 }
 
 func (self *Rps_t) Size(ts time.Time) (res int) {
