@@ -32,13 +32,13 @@ type Rps_t struct {
 /*
 example 1000 rps:
 ttl = time.Second
-truncate = 50*time.Millisecond
+buckets = 100
 rps_limit=1000
 */
-func NewRps(ttl time.Duration, truncate time.Duration, rps_limit int) (self *Rps_t) {
+func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 	self = &Rps_t{}
 	self.c = ttl_cache.New(1<<32-1, ttl, self.__evict)
-	self.truncate = truncate
+	self.truncate = ttl / time.Duration(buckets)
 	self.rps_limit = rps_limit
 	return
 }

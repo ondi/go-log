@@ -24,6 +24,8 @@ func Test1(t *testing.T) {
 		NewUrls("http://localhost"),
 		MessageKB_t{},
 		DefaultClient(DefaultTransport(time.Second), time.Second),
+		RpsLimit(NewRps(time.Second, 100, 1000)),
+		PostDelay(time.Millisecond),
 	)
 	logger.AddOutput("http", LOG_TRACE, log_http)
 

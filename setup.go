@@ -32,7 +32,7 @@ Logs:
 			},
 			self.client,
 			log.PostHeader(headers),
-			log.RpsLimit(log.NewRps(time.Second, 50*time.Millisecond, 1000)),
+			log.RpsLimit(log.NewRps(time.Second, 100, 1000)),
 		)
 		log.GetLogger().AddOutput("http", log.LOG_WARN, self.log_http)
 	} else {
