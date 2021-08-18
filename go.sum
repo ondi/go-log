@@ -6,8 +6,6 @@ github.com/ondi/go-circular v0.0.0-20210726154101-9fad127ee38f h1:VQ660oQX4I59vc
 github.com/ondi/go-circular v0.0.0-20210726154101-9fad127ee38f/go.mod h1:HiocNbmHk9jweKWyhDJFxF7vk/1JpyeOOmybKG/jRk0=
 github.com/ondi/go-queue v0.0.0-20210726162458-ac52b650e8c3 h1:UfRFkltyWqni4pDxpOBdzFlUvvtF8b5JaoFEOM4xdk0=
 github.com/ondi/go-queue v0.0.0-20210726162458-ac52b650e8c3/go.mod h1:DPfXX47I9aSttrS2n42L8tlPGMKL61ntWJTcFeA5Tdo=
-github.com/ondi/go-ttl-cache v0.0.0-20210726160039-e1687346aff5 h1:7XkdLzUYLcGfAM5m4VpxBVsV0Gr0ePzV7faSa/G+KAo=
-github.com/ondi/go-ttl-cache v0.0.0-20210726160039-e1687346aff5/go.mod h1:VMl0VhBxXNaPsh+vnjcyGEdVWDyWqIqAVT28mKsRCmE=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=
