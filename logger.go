@@ -53,12 +53,6 @@ type Writer interface {
 
 type writers_t map[string]Writer
 
-type context_t string
-
-func CtxSet(ctx context.Context, value string) context.Context {
-	return context.WithValue(ctx, context_t("level"), value)
-}
-
 func add_output(value *unsafe.Pointer, name string, writer Writer) {
 	for {
 		temp := writers_t{}
@@ -159,37 +153,32 @@ func (self *log_t) Trace(format string, args ...interface{}) {
 }
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
-	temp, _ := ctx.Value(context_t("level")).(string)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
-		v.WriteLevel(LOG_ERROR.Name+" "+temp, format, args...)
+		v.WriteLevel(LOG_ERROR.Name+" "+CTXGET(ctx), format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
-	temp, _ := ctx.Value(context_t("level")).(string)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
-		v.WriteLevel(LOG_WARN.Name+" "+temp, format, args...)
+		v.WriteLevel(LOG_WARN.Name+" "+CTXGET(ctx), format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
-	temp, _ := ctx.Value(context_t("level")).(string)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
-		v.WriteLevel(LOG_INFO.Name+" "+temp, format, args...)
+		v.WriteLevel(LOG_INFO.Name+" "+CTXGET(ctx), format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
-	temp, _ := ctx.Value(context_t("level")).(string)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
-		v.WriteLevel(LOG_DEBUG.Name+" "+temp, format, args...)
+		v.WriteLevel(LOG_DEBUG.Name+" "+CTXGET(ctx), format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
-	temp, _ := ctx.Value(context_t("level")).(string)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
-		v.WriteLevel(LOG_TRACE.Name+" "+temp, format, args...)
+		v.WriteLevel(LOG_TRACE.Name+" "+CTXGET(ctx), format, args...)
 	}
 }
 

@@ -61,6 +61,7 @@ Logs:
 package log
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -73,7 +74,18 @@ import (
 
 var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}))
 
-var NoWriter = NoWriter_t{}
+var CTXGET = CtxGet
+
+type context_t string
+
+func CtxSet(ctx context.Context, value string) context.Context {
+	return context.WithValue(ctx, context_t("level"), value)
+}
+
+func CtxGet(ctx context.Context) (res string) {
+	res, _ = ctx.Value(context_t("level")).(string)
+	return
+}
 
 type DT_t struct {
 	Format string
