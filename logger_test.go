@@ -23,7 +23,7 @@ func Test1(t *testing.T) {
 		1,
 		NewUrls("http://localhost"),
 		MessageKB_t{},
-		DefaultClient(DefaultTransport(time.Second), time.Second),
+		DefaultClient(DefaultTransport(time.Second, 100, 2), time.Second),
 		RpsLimit(NewRps(time.Second, 100, 1000)),
 		PostDelay(time.Millisecond),
 	)

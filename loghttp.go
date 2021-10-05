@@ -71,12 +71,15 @@ type Http_t struct {
 	wg sync.WaitGroup
 }
 
-func DefaultTransport(timeout time.Duration) http.RoundTripper {
+// Default
+// MaxIdleConns:        100,
+// MaxIdleConnsPerHost: 2,
+func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
 	return &http.Transport{
 		DialContext:           (&net.Dialer{Timeout: timeout}).DialContext,
 		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		MaxIdleConnsPerHost:   2,
+		MaxIdleConns:          MaxIdleConns,
+		MaxIdleConnsPerHost:   MaxIdleConnsPerHost,
 		IdleConnTimeout:       timeout,
 		ResponseHeaderTimeout: timeout,
 		ExpectContinueTimeout: timeout,
