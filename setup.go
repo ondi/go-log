@@ -75,12 +75,10 @@ import (
 
 var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}))
 
-var CTXGET = CtxGet
-
 type context_key_t string
 
 type Context interface {
-	Value(level string, format string, args ...interface{}) (level_and_name string)
+	Value(level string, format string, args ...interface{}) (name string)
 }
 
 type Context_t struct {
@@ -100,7 +98,7 @@ func (self *Context_t) Value(level string, format string, args ...interface{}) (
 	self.mx.Lock()
 	self.logs[level]++
 	self.mx.Unlock()
-	return level + " " + self.name
+	return self.name
 }
 
 func (self *Context_t) String() (res string) {
@@ -117,7 +115,7 @@ func CtxSet(ctx context.Context, value Context) context.Context {
 func CtxGet(ctx context.Context, level string, format string, args ...interface{}) string {
 	res, ok := ctx.Value(context_key_t("log_ctx")).(Context)
 	if ok {
-		return res.Value(level, format, args...)
+		return level + " " + res.Value(level, format, args...)
 	}
 	return level
 }

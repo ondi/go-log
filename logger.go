@@ -154,31 +154,31 @@ func (self *log_t) Trace(format string, args ...interface{}) {
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
-		v.WriteLevel(CTXGET(ctx, LOG_ERROR.Name, format, args...), format, args...)
+		v.WriteLevel(CtxGet(ctx, LOG_ERROR.Name, format, args...), format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
-		v.WriteLevel(CTXGET(ctx, LOG_WARN.Name, format, args...), format, args...)
+		v.WriteLevel(CtxGet(ctx, LOG_WARN.Name, format, args...), format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
-		v.WriteLevel(CTXGET(ctx, LOG_INFO.Name, format, args...), format, args...)
+		v.WriteLevel(CtxGet(ctx, LOG_INFO.Name, format, args...), format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
-		v.WriteLevel(CTXGET(ctx, LOG_DEBUG.Name, format, args...), format, args...)
+		v.WriteLevel(CtxGet(ctx, LOG_DEBUG.Name, format, args...), format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
-		v.WriteLevel(CTXGET(ctx, LOG_TRACE.Name, format, args...), format, args...)
+		v.WriteLevel(CtxGet(ctx, LOG_TRACE.Name, format, args...), format, args...)
 	}
 }
 
