@@ -68,6 +68,7 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"sync"
 	"time"
 	"unicode/utf8"
 )
@@ -76,15 +77,49 @@ var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 1
 
 var CTXGET = CtxGet
 
-type context_t string
+type context_key_t string
 
-func CtxSet(ctx context.Context, value string) context.Context {
-	return context.WithValue(ctx, context_t("level"), value)
+type Context interface {
+	Value(level string, format string, args ...interface{}) (level_and_name string)
 }
 
-func CtxGet(ctx context.Context) (res string) {
-	res, _ = ctx.Value(context_t("level")).(string)
+type Context_t struct {
+	name string
+	mx   sync.Mutex
+	logs map[string]int
+}
+
+func NewContext(name string) Context {
+	return &Context_t{
+		name: name,
+		logs: map[string]int{},
+	}
+}
+
+func (self *Context_t) Value(level string, format string, args ...interface{}) (name string) {
+	self.mx.Lock()
+	self.logs[level]++
+	self.mx.Unlock()
+	return level + " " + self.name
+}
+
+func (self *Context_t) String() (res string) {
+	self.mx.Lock()
+	res = fmt.Sprintf("%v %+v", self.name, self.logs)
+	self.mx.Unlock()
 	return
+}
+
+func CtxSet(ctx context.Context, value Context) context.Context {
+	return context.WithValue(ctx, context_key_t("log_ctx"), value)
+}
+
+func CtxGet(ctx context.Context, level string, format string, args ...interface{}) string {
+	res, ok := ctx.Value(context_key_t("log_ctx")).(Context)
+	if ok {
+		return res.Value(level, format, args...)
+	}
+	return level
 }
 
 type DT_t struct {
