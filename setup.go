@@ -68,6 +68,7 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
@@ -87,7 +88,7 @@ type Context_t struct {
 	logs map[string]int
 }
 
-func NewContext(name string) Context {
+func NewContext(name string) *Context_t {
 	return &Context_t{
 		name: name,
 		logs: map[string]int{},
@@ -95,15 +96,22 @@ func NewContext(name string) Context {
 }
 
 func (self *Context_t) Value(level string, format string, args ...interface{}) (name string) {
-	self.mx.Lock()
-	self.logs[level]++
-	self.mx.Unlock()
+	if level == "ERROR" {
+		ix := strings.Index(format, " ")
+		if ix > 0 {
+			self.mx.Lock()
+			self.logs[format[:ix]]++
+			self.mx.Unlock()
+		}
+	}
 	return self.name
 }
 
-func (self *Context_t) String() (res string) {
+func (self *Context_t) Errors() (res []string) {
 	self.mx.Lock()
-	res = fmt.Sprintf("%v %+v", self.name, self.logs)
+	for k := range self.logs {
+		res = append(res, k)
+	}
 	self.mx.Unlock()
 	return
 }
