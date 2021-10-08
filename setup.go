@@ -125,14 +125,6 @@ func ContextGet(ctx context.Context) (value Context, ok bool) {
 	return
 }
 
-func ContextCopy(ctx context.Context) (context.Context, bool) {
-	value, ok := ContextGet(ctx)
-	if ok {
-		return context.WithValue(ctx, context_key_t("log_ctx"), value), true
-	}
-	return ctx, false
-}
-
 func ContextName(ctx context.Context, level string, format string, args ...interface{}) string {
 	if value, ok := ContextGet(ctx); ok {
 		return level + " " + value.Value(level, format, args...)
