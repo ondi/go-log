@@ -88,13 +88,6 @@ type Context_t struct {
 	logs map[string]int
 }
 
-func NewContext(name string) *Context_t {
-	return &Context_t{
-		name: name,
-		logs: map[string]int{},
-	}
-}
-
 func (self *Context_t) Value(level string, format string, args ...interface{}) (name string) {
 	if level == "ERROR" {
 		ix := strings.Index(format, " ")
@@ -114,6 +107,13 @@ func (self *Context_t) Errors() (res []string) {
 	}
 	self.mx.Unlock()
 	return
+}
+
+func ContextNew(name string) *Context_t {
+	return &Context_t{
+		name: name,
+		logs: map[string]int{},
+	}
 }
 
 func ContextSet(ctx context.Context, value Context) context.Context {
