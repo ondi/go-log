@@ -37,7 +37,7 @@ func Test1(t *testing.T) {
 
 func Test2(t *testing.T) {
 	c := NewContext("b0dd37be-0f1e-421d-98c8-222cc57acae0")
-	ctx := CtxSet(context.Background(), c)
+	ctx := ContextSet(context.Background(), c)
 
 	logger := NewEmpty()
 	SetLogger(logger)

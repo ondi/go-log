@@ -116,14 +116,26 @@ func (self *Context_t) Errors() (res []string) {
 	return
 }
 
-func CtxSet(ctx context.Context, value Context) context.Context {
+func ContextSet(ctx context.Context, value Context) context.Context {
 	return context.WithValue(ctx, context_key_t("log_ctx"), value)
 }
 
-func CtxGet(ctx context.Context, level string, format string, args ...interface{}) string {
-	res, ok := ctx.Value(context_key_t("log_ctx")).(Context)
+func ContextGet(ctx context.Context) (value Context, ok bool) {
+	value, ok = ctx.Value(context_key_t("log_ctx")).(Context)
+	return
+}
+
+func ContextCopy(ctx context.Context) (context.Context, bool) {
+	value, ok := ContextGet(ctx)
 	if ok {
-		return level + " " + res.Value(level, format, args...)
+		return context.WithValue(ctx, context_key_t("log_ctx"), value), true
+	}
+	return ctx, false
+}
+
+func ContextName(ctx context.Context, level string, format string, args ...interface{}) string {
+	if value, ok := ContextGet(ctx); ok {
+		return level + " " + value.Value(level, format, args...)
 	}
 	return level
 }
