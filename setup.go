@@ -120,13 +120,13 @@ func ContextSet(ctx context.Context, value Context) context.Context {
 	return context.WithValue(ctx, context_key_t("log_ctx"), value)
 }
 
-func ContextGet(ctx context.Context) (value Context, ok bool) {
-	value, ok = ctx.Value(context_key_t("log_ctx")).(Context)
+func ContextGet(ctx context.Context) (value Context) {
+	value, _ = ctx.Value(context_key_t("log_ctx")).(Context)
 	return
 }
 
 func ContextName(ctx context.Context, level string, format string, args ...interface{}) string {
-	if value, ok := ContextGet(ctx); ok {
+	if value := ContextGet(ctx); value != nil {
 		return level + " " + value.Value(level, format, args...)
 	}
 	return level
