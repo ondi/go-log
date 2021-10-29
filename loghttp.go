@@ -76,14 +76,14 @@ type Http_t struct {
 // MaxIdleConnsPerHost: 2,
 func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
 	return &http.Transport{
-		DialContext:           (&net.Dialer{Timeout: timeout}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          MaxIdleConns,
-		MaxIdleConnsPerHost:   MaxIdleConnsPerHost,
-		IdleConnTimeout:       timeout,
+		DialContext:         (&net.Dialer{Timeout: timeout}).DialContext,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        MaxIdleConns,
+		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+		TLSHandshakeTimeout: timeout,
+		// IdleConnTimeout:       timeout,
 		ResponseHeaderTimeout: timeout,
 		ExpectContinueTimeout: timeout,
-		TLSHandshakeTimeout:   timeout,
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 	}
 }
