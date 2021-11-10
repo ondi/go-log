@@ -67,7 +67,6 @@ import (
 	"io"
 	"path"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -84,9 +83,9 @@ type Context interface {
 }
 
 type Context_t struct {
-	name string
-	mx   sync.Mutex
-	logs map[string]int
+	name   string
+	mx     sync.Mutex
+	errors []string
 }
 
 func (self *Context_t) Value(level string, format string, args ...interface{}) (name string) {
@@ -94,7 +93,9 @@ func (self *Context_t) Value(level string, format string, args ...interface{}) (
 		ix := strings.Index(format, " ")
 		if ix > 0 {
 			self.mx.Lock()
-			self.logs[format[:ix]]++
+			if len(self.errors) < 16 {
+				self.errors = append(self.errors, format[:ix])
+			}
 			self.mx.Unlock()
 		}
 	}
@@ -103,18 +104,14 @@ func (self *Context_t) Value(level string, format string, args ...interface{}) (
 
 func (self *Context_t) Errors() (res []string) {
 	self.mx.Lock()
-	for k := range self.logs {
-		res = append(res, k)
-	}
+	res = self.errors
 	self.mx.Unlock()
-	sort.Slice(res, func(i int, j int) bool { return res[i] < res[j] })
 	return
 }
 
 func ContextNew(name string) *Context_t {
 	return &Context_t{
 		name: name,
-		logs: map[string]int{},
 	}
 }
 
