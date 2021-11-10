@@ -67,6 +67,7 @@ import (
 	"io"
 	"path"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -106,6 +107,7 @@ func (self *Context_t) Errors() (res []string) {
 		res = append(res, k)
 	}
 	self.mx.Unlock()
+	sort.Slice(res, func(i int, j int) bool { return res[i] < res[j] })
 	return
 }
 
