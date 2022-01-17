@@ -177,15 +177,15 @@ type Args_t struct {
 func WhatLevel(in int) []level_t {
 	switch in {
 	case 4:
-		return []level_t{LOG_ERROR}
+		return LOG_ERROR.Levels
 	case 3:
-		return []level_t{LOG_WARN, LOG_ERROR}
+		return LOG_WARN.Levels
 	case 2:
-		return []level_t{LOG_INFO, LOG_WARN, LOG_ERROR}
+		return LOG_INFO.Levels
 	case 1:
-		return []level_t{LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR}
+		return LOG_DEBUG.Levels
 	default:
-		return []level_t{LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR}
+		return LOG_TRACE.Levels
 	}
 }
 
