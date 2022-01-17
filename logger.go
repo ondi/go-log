@@ -19,14 +19,14 @@ import (
 
 type level_t struct {
 	Name  string
-	level int
+	Level int
 }
 
-var LOG_TRACE = level_t{Name: "TRACE", level: 0}
-var LOG_DEBUG = level_t{Name: "DEBUG", level: 1}
-var LOG_INFO = level_t{Name: "INFO", level: 2}
-var LOG_WARN = level_t{Name: "WARN", level: 3}
-var LOG_ERROR = level_t{Name: "ERROR", level: 4}
+var LOG_TRACE = level_t{Name: "TRACE", Level: 0}
+var LOG_DEBUG = level_t{Name: "DEBUG", Level: 1}
+var LOG_INFO = level_t{Name: "INFO", Level: 2}
+var LOG_WARN = level_t{Name: "WARN", Level: 3}
+var LOG_ERROR = level_t{Name: "ERROR", Level: 4}
 
 type Logger interface {
 	Trace(format string, args ...interface{})
@@ -106,7 +106,7 @@ func NewLogger(name string, writer Writer, level []level_t) (self Logger) {
 
 func (self *log_t) AddOutput(name string, writer Writer, level []level_t) {
 	for _, v := range level {
-		add_output(&self.out[v.level], name, writer)
+		add_output(&self.out[v.Level], name, writer)
 	}
 }
 
@@ -123,66 +123,66 @@ func (self *log_t) Clear() {
 }
 
 func (self *log_t) Error(format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Level])) {
 		v.WriteLevel(LOG_ERROR.Name, format, args...)
 	}
 }
 
 func (self *log_t) Warn(format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Level])) {
 		v.WriteLevel(LOG_WARN.Name, format, args...)
 	}
 }
 
 func (self *log_t) Info(format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Level])) {
 		v.WriteLevel(LOG_INFO.Name, format, args...)
 	}
 }
 
 func (self *log_t) Debug(format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Level])) {
 		v.WriteLevel(LOG_DEBUG.Name, format, args...)
 	}
 }
 
 func (self *log_t) Trace(format string, args ...interface{}) {
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Level])) {
 		v.WriteLevel(LOG_TRACE.Name, format, args...)
 	}
 }
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
 	level := ContextName(ctx, LOG_ERROR.Name, format, args...)
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Level])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
 	level := ContextName(ctx, LOG_WARN.Name, format, args...)
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Level])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
 	level := ContextName(ctx, LOG_INFO.Name, format, args...)
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Level])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
 	level := ContextName(ctx, LOG_DEBUG.Name, format, args...)
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Level])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
 	level := ContextName(ctx, LOG_TRACE.Name, format, args...)
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.level])) {
+	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Level])) {
 		v.WriteLevel(level, format, args...)
 	}
 }

@@ -14,10 +14,10 @@ func Test1(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdout(&DT_t{}), WhatLevel(LOG_TRACE.level))
-	logger.AddOutput("buf", NewStdany(&DT_t{}, &buf), WhatLevel(LOG_TRACE.level))
+	logger.AddOutput("stdout", NewStdout(&DT_t{}), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewStdany(&DT_t{}, &buf), WhatLevel(LOG_TRACE.Level))
 	log_file, _ := NewFileBytes("/tmp/test.log", &DT_t{}, 1024, 10)
-	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.level))
+	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.Level))
 	log_http := NewHttp(
 		10,
 		1,
@@ -27,7 +27,7 @@ func Test1(t *testing.T) {
 		RpsLimit(NewRps(time.Second, 100, 1000)),
 		PostDelay(time.Millisecond),
 	)
-	logger.AddOutput("http", log_http, WhatLevel(LOG_TRACE.level))
+	logger.AddOutput("http", log_http, WhatLevel(LOG_TRACE.Level))
 
 	Debug("lalala %s", ByteSize(1024))
 	Debug("bububu %s", ByteSize(2048))
@@ -43,8 +43,8 @@ func Test2(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdout(&DT_t{}), WhatLevel(LOG_TRACE.level))
-	logger.AddOutput("buf", NewStdany(&DT_t{}, &buf), WhatLevel(LOG_TRACE.level))
+	logger.AddOutput("stdout", NewStdout(&DT_t{}), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewStdany(&DT_t{}, &buf), WhatLevel(LOG_TRACE.Level))
 
 	DebugCtx(ctx, "test")
 
