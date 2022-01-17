@@ -41,7 +41,7 @@ type Logger interface {
 	WarnCtx(ctx context.Context, format string, args ...interface{})
 	ErrorCtx(ctx context.Context, format string, args ...interface{})
 
-	AddOutput(name string, level level_t, writer Writer)
+	AddOutput(name string, writer Writer, level []level_t)
 	DelOutput(name string)
 	Clear()
 }
@@ -98,15 +98,15 @@ func NewEmpty() (self Logger) {
 	return
 }
 
-func NewLogger(name string, level level_t, writer Writer) (self Logger) {
+func NewLogger(name string, writer Writer, level []level_t) (self Logger) {
 	self = NewEmpty()
-	self.AddOutput(name, level, writer)
+	self.AddOutput(name, writer, level)
 	return
 }
 
-func (self *log_t) AddOutput(name string, level level_t, writer Writer) {
-	for ; level.level < len(self.out); level.level++ {
-		add_output(&self.out[level.level], name, writer)
+func (self *log_t) AddOutput(name string, writer Writer, level []level_t) {
+	for _, v := range level {
+		add_output(&self.out[v.level], name, writer)
 	}
 }
 

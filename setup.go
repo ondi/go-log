@@ -74,7 +74,7 @@ import (
 	"unicode/utf8"
 )
 
-var std = NewLogger("stderr", LOG_TRACE, NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}))
+var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}), WhatLevel(0))
 
 type context_key_t string
 
@@ -174,18 +174,18 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
-func WhatLevel(in int) level_t {
+func WhatLevel(in int) []level_t {
 	switch in {
 	case 4:
-		return LOG_ERROR
+		return []level_t{LOG_ERROR}
 	case 3:
-		return LOG_WARN
+		return []level_t{LOG_WARN, LOG_ERROR}
 	case 2:
-		return LOG_INFO
+		return []level_t{LOG_INFO, LOG_WARN, LOG_ERROR}
 	case 1:
-		return LOG_DEBUG
+		return []level_t{LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR}
 	default:
-		return LOG_TRACE
+		return []level_t{LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR}
 	}
 }
 
@@ -198,18 +198,18 @@ func SetupLogger(logs []Args_t) (err error) {
 			if output, err := NewFileBytes(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
-				logger.AddOutput(v.LogFile, WhatLevel(v.LogLevel), output)
+				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
 			if output, err := NewFileTime(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
-				logger.AddOutput(v.LogFile, WhatLevel(v.LogLevel), output)
+				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			logger.AddOutput("stdout", WhatLevel(v.LogLevel), NewStdout(&DTFL_t{Format: v.LogDate, Depth: 4}))
+			logger.AddOutput("stdout", NewStdout(&DTFL_t{Format: v.LogDate, Depth: 4}), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", WhatLevel(v.LogLevel), NewStderr(&DTFL_t{Format: v.LogDate, Depth: 4}))
+			logger.AddOutput("stderr", NewStderr(&DTFL_t{Format: v.LogDate, Depth: 4}), WhatLevel(v.LogLevel))
 		case "dupstderr":
 			DupStderr(v.LogFile)
 		case "dupstdout":
