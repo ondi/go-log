@@ -203,8 +203,8 @@ func Debug(format string, args ...interface{}) {
 	std.Debug(format, args...)
 }
 
-func TraceCtx(ctx context.Context, format string, args ...interface{}) {
-	std.TraceCtx(ctx, format, args...)
+func Trace(format string, args ...interface{}) {
+	std.Trace(format, args...)
 }
 
 func ErrorCtx(ctx context.Context, format string, args ...interface{}) {
@@ -223,8 +223,8 @@ func DebugCtx(ctx context.Context, format string, args ...interface{}) {
 	std.DebugCtx(ctx, format, args...)
 }
 
-func Trace(format string, args ...interface{}) {
-	std.Trace(format, args...)
+func TraceCtx(ctx context.Context, format string, args ...interface{}) {
+	std.TraceCtx(ctx, format, args...)
 }
 
 func SetLogger(logger Logger) {
