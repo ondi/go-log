@@ -183,9 +183,9 @@ func (self *Http_t) writer() (err error) {
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
 				if buf.Len() > 1024 {
-					err = fmt.Errorf("%s: %q", resp.Status, buf.Bytes()[:1024])
+					err = fmt.Errorf("%s: %s", resp.Status, buf.Bytes()[:1024])
 				} else {
-					err = fmt.Errorf("%s: %q", resp.Status, buf.Bytes())
+					err = fmt.Errorf("%s: %s", resp.Status, bytes.TrimRight(buf.Bytes(), "\r\n"))
 				}
 				continue
 			}
