@@ -88,13 +88,6 @@ func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHo
 	}
 }
 
-func DefaultClient(tr http.RoundTripper, timeout time.Duration) Client {
-	return &http.Client{
-		Transport: tr,
-		Timeout:   timeout,
-	}
-}
-
 type HttpOption func(self *Http_t)
 
 func PostHeader(header http.Header) HttpOption {

@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,7 +24,10 @@ func Test1(t *testing.T) {
 		1,
 		NewUrls("http://localhost"),
 		MessageKB_t{},
-		DefaultClient(DefaultTransport(time.Second, 100, 2), time.Second),
+		&http.Client{
+			Transport: DefaultTransport(time.Second, 100, 2),
+			Timeout:   time.Second,
+		},
 		RpsLimit(NewRps(time.Second, 100, 1000)),
 		PostDelay(time.Millisecond),
 	)
