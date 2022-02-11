@@ -166,7 +166,7 @@ func (NoWriter_t) Close() error {
 
 type Args_t struct {
 	LogType     string        `yaml:"LogType"`
-	LogLevel    int           `yaml:"LogLevel"`
+	LogLevel    int64         `yaml:"LogLevel"`
 	LogDate     string        `yaml:"LogDate"`
 	LogFile     string        `yaml:"LogFile"`
 	LogSize     int           `yaml:"LogSize"`
@@ -174,7 +174,7 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
-func WhatLevel(in int) []level_t {
+func WhatLevel(in int64) []level_t {
 	switch in {
 	case 4:
 		return LOG_ERROR.Levels
