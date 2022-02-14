@@ -245,7 +245,7 @@ type MessageKB_t struct {
 	CallDepth int    `json:"-"`
 	Location  string `json:"Location,omitempty"`
 
-	Index MessageIndexKB_t
+	Index MessageIndexKB_t `json:"-"`
 }
 
 func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
