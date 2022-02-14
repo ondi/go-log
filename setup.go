@@ -222,6 +222,18 @@ func SetupLogger(logs []Args_t) (err error) {
 	return
 }
 
+type MessageIndexNameKB_t struct {
+	Format string `json:"-"`
+	Index  string `json:"_index"`
+	Type   string `json:"_type"`
+}
+
+// {"index":{"_index":"logs-2022-01","_type":"_doc"}}
+type MessageIndexKB_t struct {
+	Send  bool                 `json:"-"`
+	Index MessageIndexNameKB_t `json:"index"`
+}
+
 type MessageKB_t struct {
 	ApplicationName string          `json:"ApplicationName"`
 	Environment     string          `json:"Environment"`
@@ -229,9 +241,11 @@ type MessageKB_t struct {
 	Data            json.RawMessage `json:"Data,omitempty"`
 	Message         json.RawMessage `json:"Message,omitempty"`
 
-	// if CallDepth > 0 Location -> "file:line" from runtime.Caller(CallDepth)
+	// when CallDepth > 0 then Location -> "file:line" from runtime.Caller(CallDepth)
 	CallDepth int    `json:"-"`
 	Location  string `json:"Location,omitempty"`
+
+	Index MessageIndexKB_t
 }
 
 func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
@@ -249,6 +263,12 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
 			self.Location = fmt.Sprintf("%s:%d", path.Base(file), line)
 		}
+	}
+	if self.Index.Send {
+		if len(self.Index.Index.Format) > 0 {
+			self.Index.Index.Index += time.Now().Format(self.Index.Index.Format)
+		}
+		json.NewEncoder(out).Encode(self.Index)
 	}
 	err = json.NewEncoder(out).Encode(self)
 	return
