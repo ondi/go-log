@@ -240,6 +240,7 @@ type MessageKB_t struct {
 	Level           string          `json:"Level"`
 	Data            json.RawMessage `json:"Data,omitempty"`
 	Message         json.RawMessage `json:"Message,omitempty"`
+	Timestamp       string          `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
 
 	// when CallDepth > 0 then Location -> "file:line" from runtime.Caller(CallDepth)
 	CallDepth int    `json:"-"`
@@ -249,27 +250,41 @@ type MessageKB_t struct {
 }
 
 func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+	var b [64]byte
+	ts := time.Now()
+
+	if self.Index.Send {
+		if len(self.Index.Index.Format) > 0 {
+			self.Index.Index.Index += string(ts.AppendFormat(b[:0], self.Index.Index.Format))
+		}
+		json.NewEncoder(out).Encode(self.Index)
+	}
+
 	self.Level = level
 	if len(format) == 0 {
-		if self.Data, err = json.Marshal(args); err != nil {
-			return
+		if len(args) == 1 {
+			if self.Data, err = json.Marshal(args[0]); err != nil {
+				return
+			}
+		} else {
+			if self.Data, err = json.Marshal(args); err != nil {
+				return
+			}
 		}
 	} else {
 		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
 			return
 		}
 	}
+
+	self.Timestamp = string(ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
+
 	if self.CallDepth > 0 {
 		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
-			self.Location = fmt.Sprintf("%s:%d", path.Base(file), line)
+			self.Location = path.Base(file) + ":" + strconv.FormatInt(int64(line), 10)
 		}
 	}
-	if self.Index.Send {
-		if len(self.Index.Index.Format) > 0 {
-			self.Index.Index.Index += time.Now().Format(self.Index.Index.Format)
-		}
-		json.NewEncoder(out).Encode(self.Index)
-	}
+
 	err = json.NewEncoder(out).Encode(self)
 	return
 }
