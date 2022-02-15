@@ -78,17 +78,26 @@ var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", D
 
 type context_key_t string
 
+var context_key context_key_t = "log_ctx"
+
 type Context interface {
-	Value(level string, format string, args ...interface{}) (name string)
+	Store(level string, format string, args ...interface{}) (name string)
+	Values() (res []string)
 }
 
-type Context_t struct {
+type StoreErrors_t struct {
 	name   string
 	mx     sync.Mutex
 	errors []string
 }
 
-func (self *Context_t) Value(level string, format string, args ...interface{}) (name string) {
+func ContextNew(name string) Context {
+	return &StoreErrors_t{
+		name: name,
+	}
+}
+
+func (self *StoreErrors_t) Store(level string, format string, args ...interface{}) (name string) {
 	if level == "ERROR" {
 		ix := strings.Index(format, " ")
 		if ix > 0 {
@@ -102,31 +111,25 @@ func (self *Context_t) Value(level string, format string, args ...interface{}) (
 	return self.name
 }
 
-func (self *Context_t) Errors() (res []string) {
+func (self *StoreErrors_t) Values() (res []string) {
 	self.mx.Lock()
 	res = self.errors
 	self.mx.Unlock()
 	return
 }
 
-func ContextNew(name string) *Context_t {
-	return &Context_t{
-		name: name,
-	}
-}
-
 func ContextSet(ctx context.Context, value Context) context.Context {
-	return context.WithValue(ctx, context_key_t("log_ctx"), value)
+	return context.WithValue(ctx, context_key, value)
 }
 
 func ContextGet(ctx context.Context) (value Context) {
-	value, _ = ctx.Value(context_key_t("log_ctx")).(Context)
+	value, _ = ctx.Value(context_key).(Context)
 	return
 }
 
 func ContextName(ctx context.Context, level string, format string, args ...interface{}) string {
-	if value := ContextGet(ctx); value != nil {
-		return level + " " + value.Value(level, format, args...)
+	if v := ContextGet(ctx); v != nil {
+		return level + " " + v.Store(level, format, args...)
 	}
 	return level
 }
