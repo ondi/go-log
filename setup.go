@@ -264,16 +264,13 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 	}
 
 	self.Level = level
-	// format: json1, json
-	if strings.HasPrefix(format, "json") {
-		if len(format) > 4 && format[4] == '1' && len(args) > 0 {
-			if self.Data, err = json.Marshal(args[0]); err != nil {
-				return
-			}
-		} else {
-			if self.Data, err = json.Marshal(args); err != nil {
-				return
-			}
+	if strings.HasPrefix(format, "json1") && len(args) > 0 {
+		if self.Data, err = json.Marshal(args[0]); err != nil {
+			return
+		}
+	} else if strings.HasPrefix(format, "json") {
+		if self.Data, err = json.Marshal(args); err != nil {
+			return
 		}
 	} else {
 		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
