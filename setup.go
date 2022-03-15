@@ -264,8 +264,9 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 	}
 
 	self.Level = level
+	// format: json1, json
 	if strings.HasPrefix(format, "json") {
-		if len(args) == 1 {
+		if len(format) > 4 && format[4] == '1' && len(args) > 0 {
 			if self.Data, err = json.Marshal(args[0]); err != nil {
 				return
 			}
