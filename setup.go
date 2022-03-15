@@ -227,8 +227,8 @@ func SetupLogger(logs []Args_t) (err error) {
 
 type MessageIndexNameKB_t struct {
 	Format string `json:"-"`
-	Index  string `json:"_index"`
-	Type   string `json:"_type"`
+	Index  string `json:"_index,omitempty"`
+	Type   string `json:"_type,omitempty"`
 }
 
 // {"index":{"_index":"logs-2022-01","_type":"_doc"}}
