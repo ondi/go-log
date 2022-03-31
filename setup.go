@@ -20,31 +20,36 @@ Logs:
     LogDuration: "24h"
     LogBackup: 15
 
-	if len(cfg.KibanaAPI) > 0 {
-		self.log_http = log.NewHttp(
+	for k, v := range cfg.Kibana {
+		log_http := log.NewHttp(
 			64,
-			cfg.KibanaWriters,
-			log.NewUrls(cfg.KibanaAPI),
+			v.Writers,
+			log.NewUrls(v.Api),
 			log.MessageKB_t{
-				ApplicationName: cfg.KibanaAppName,
-				Environment:     cfg.KibanaEnvName,
+				ApplicationName: v.AppName,
+				Environment:     v.EnvName,
 				CallDepth:       4,
+				Index: log.MessageIndexKB_t{
+					Send: len(v.IndexName) > 0,
+					Index: log.MessageIndexNameKB_t{
+						Format: v.IndexFormat,
+						Index:  v.IndexName,
+					},
+				},
 			},
 			self.client,
 			log.PostHeader(headers),
 			log.RpsLimit(log.NewRps(time.Second, 100, 1000)),
 		)
-		log.GetLogger().AddOutput("http", log.LOG_WARN, self.log_http)
-	} else {
-		self.log_http = log.NoWriter_t{}
+		log.GetLogger().AddOutput("http"+strconv.FormatInt(k, 10), log_http, log.WhatLevel(k))
 	}
-	if len(cfg.TGBotApi) > 0 {
-		self.log_tg = log.NewHttp(
+	for k, v := range cfg.Telegram {
+		log_tg := log.NewHttp(
 			64,
-			cfg.TGWriters,
-			log.NewUrls(cfg.TGBotApi+cfg.TGBotToken+"/sendMessage"),
+			v.Writers,
+			log.NewUrls(v.Api),
 			log.MessageTG_t{
-				ChatID:    cfg.TGChatID,
+				ChatID:    v.ChatID,
 				Hostname:  self.hostname,
 				TextLimit: 1024,
 			},
@@ -52,9 +57,7 @@ Logs:
 			log.PostHeader(headers),
 			log.PostDelay(1500*time.Millisecond),
 		)
-		log.GetLogger().AddOutput("telegram", log.LOG_WARN, self.log_tg)
-	} else {
-		self.log_tg = log.NoWriter_t{}
+		log.GetLogger().AddOutput("telegram"+strconv.FormatInt(k, 10), log_tg, log.WhatLevel(k))
 	}
 */
 
@@ -273,7 +276,7 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 			return
 		}
 	} else {
-		if self.Message, err = json.Marshal(fmt.Sprintf(format, args...)); err != nil {
+		if self.Message, err = json.Marshal(level + " " + fmt.Sprintf(format, args...)); err != nil {
 			return
 		}
 	}
@@ -314,7 +317,7 @@ type MessageTG_t struct {
 }
 
 func (self MessageTG_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
-	self.Text = self.Hostname + "\n" + fmt.Sprintf(format, args...)
+	self.Text = self.Hostname + "\n" + level + " " + fmt.Sprintf(format, args...)
 	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
 		n := self.TextLimit
 		for ; n > 0; n-- {
