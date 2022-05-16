@@ -130,7 +130,7 @@ func ContextGet(ctx context.Context) (value Context) {
 	return
 }
 
-func ContextName(ctx context.Context, level string, format string, args ...interface{}) string {
+func ContextStore(ctx context.Context, level string, format string, args ...interface{}) string {
 	if v := ContextGet(ctx); v != nil {
 		return level + " " + v.Store(level, format, args...)
 	}
