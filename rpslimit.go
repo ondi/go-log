@@ -23,7 +23,7 @@ func (NoRps_t) Add(time.Time) bool {
 
 type Rps_t struct {
 	mx        sync.Mutex
-	c         *cache.Cache_t
+	c         *cache.Cache_t[time.Time, int]
 	ttl       time.Duration
 	truncate  time.Duration
 	count     int
@@ -38,7 +38,7 @@ rps_limit=1000
 */
 func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 	self = &Rps_t{}
-	self.c = cache.New()
+	self.c = cache.New[time.Time, int]()
 	self.ttl = ttl
 	self.truncate = ttl / time.Duration(buckets)
 	self.rps_limit = rps_limit
@@ -47,9 +47,9 @@ func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 
 func (self *Rps_t) Flush(ts time.Time) {
 	for it := self.c.Front(); it != self.c.End(); it = it.Next() {
-		if ts.After(it.Key.(time.Time)) {
+		if ts.After(it.Key) {
 			self.c.Remove(it.Key)
-			self.count -= it.Value.(int)
+			self.count -= it.Value
 		} else {
 			return
 		}
@@ -65,11 +65,9 @@ func (self *Rps_t) Add(ts time.Time) bool {
 	}
 	it, _ := self.c.CreateBack(
 		ts.Add(self.ttl).Truncate(self.truncate),
-		func() interface{} {
-			return 0
-		},
+		func() int { return 0 },
 	)
-	it.Value = it.Value.(int) + 1
+	it.Value = it.Value + 1
 	self.count++
 	self.mx.Unlock()
 	return true

@@ -216,10 +216,6 @@ func SetupLogger(logs []Args_t) (err error) {
 			logger.AddOutput("stdout", NewStdout(&DTFL_t{Format: v.LogDate, Depth: 4}), WhatLevel(v.LogLevel))
 		case "stderr":
 			logger.AddOutput("stderr", NewStderr(&DTFL_t{Format: v.LogDate, Depth: 4}), WhatLevel(v.LogLevel))
-		case "dupstderr":
-			DupStderr(v.LogFile)
-		case "dupstdout":
-			DupStdout(v.LogFile)
 		}
 	}
 	for _, v := range logs {
