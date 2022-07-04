@@ -1,7 +1,7 @@
 github.com/google/go-cmp v0.5.6 h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
-github.com/ondi/go-cache v0.0.0-20220703190933-441a16d68a86 h1:+7jWGqJXSySKl9PiJBvnwba2mqOQfj+/a/xJ7gfmeiA=
-github.com/ondi/go-cache v0.0.0-20220703190933-441a16d68a86/go.mod h1:x8J3FOjzA2bQL33EoyKfBfTcbBFZ8U2KZPbAQplNlw8=
+github.com/ondi/go-cache v0.0.0-20220704121214-cfa7a2d1a77d h1:sujBlLxN3wrZAO4MQQRxNfHlFr4Qj2BAZQRhC3PfiDM=
+github.com/ondi/go-cache v0.0.0-20220704121214-cfa7a2d1a77d/go.mod h1:x8J3FOjzA2bQL33EoyKfBfTcbBFZ8U2KZPbAQplNlw8=
 github.com/ondi/go-circular v0.0.0-20210820211818-b5fe0a3a1f71 h1:BC5GsuxYuGk0/nLwfln6Y3EhmpEmEONydtcBhyYtOlM=
 github.com/ondi/go-circular v0.0.0-20210820211818-b5fe0a3a1f71/go.mod h1:PbkhK0L4QmTxVqjMQ5ezDT00u9pGav3/dBrNWbz9968=
 github.com/ondi/go-queue v0.0.0-20210820212020-bdc17d37111b h1:/rXiUDREo48FIypwq0bPKtgKsQaATiaSB1libMc4Wh8=
