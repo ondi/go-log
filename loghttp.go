@@ -57,7 +57,7 @@ func (self *Urls_t) Range() (res []string) {
 
 type Http_t struct {
 	mx         sync.Mutex
-	q          queue.Queue
+	q          queue.Queue[bytes.Buffer]
 	queue_size int
 
 	urls    Urls
@@ -117,7 +117,7 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 		rps_limit:  NoRps_t{},
 	}
 
-	self.q = queue.NewOpen(&self.mx, queue_size)
+	self.q = queue.NewOpen[bytes.Buffer](&self.mx, queue_size)
 
 	for _, opt := range opts {
 		opt(self)
@@ -166,12 +166,11 @@ func (self *Http_t) writer() (err error) {
 	var resp *http.Response
 	for {
 		self.mx.Lock()
-		temp, oki := self.q.PopFront()
+		buf, oki := self.q.PopFront()
 		self.mx.Unlock()
 		if oki == -1 {
 			return
 		}
-		buf := temp.(bytes.Buffer)
 		for _, v := range self.urls.Range() {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(buf.Bytes())); err != nil {
 				continue
