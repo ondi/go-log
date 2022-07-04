@@ -3,7 +3,7 @@ module github.com/ondi/go-log
 go 1.18
 
 require (
-	github.com/ondi/go-cache v0.0.0-20220704121214-cfa7a2d1a77d
+	github.com/ondi/go-cache v0.0.0-20220704124719-e18a5c0fa086
 	github.com/ondi/go-queue v0.0.0-20210820212020-bdc17d37111b
 	gotest.tools v2.2.0+incompatible
 )
