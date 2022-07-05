@@ -199,7 +199,7 @@ func (self *Http_t) writer() (err error) {
 
 func (self *Http_t) Close() error {
 	self.mx.Lock()
-	self.q = queue.NewClosed(self.q.Close())
+	self.q.Close()
 	self.mx.Unlock()
 	self.wg.Wait()
 	return nil
