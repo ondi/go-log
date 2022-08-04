@@ -77,31 +77,38 @@ import (
 	"unicode/utf8"
 )
 
-var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}), WhatLevel(0))
-
 type context_key_t string
 
 var context_key context_key_t = "log_ctx"
 
+var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}), WhatLevel(0))
+
 type Context interface {
-	Store(level string, format string, args ...interface{}) (name string)
+	Name() string
+	Store(level string, format string, args ...interface{})
 	Values() (res []string)
 }
 
 type StoreErrors_t struct {
 	name   string
+	levels string
 	mx     sync.Mutex
 	errors []string
 }
 
-func ContextNew(name string) Context {
+func ContextNew(name string, levels string) Context {
 	return &StoreErrors_t{
-		name: name,
+		name:   name,
+		levels: levels,
 	}
 }
 
-func (self *StoreErrors_t) Store(level string, format string, args ...interface{}) (name string) {
-	if level == "ERROR" {
+func (self *StoreErrors_t) Name() string {
+	return self.name
+}
+
+func (self *StoreErrors_t) Store(level string, format string, args ...interface{}) {
+	if strings.Contains(self.levels, level) {
 		ix := strings.Index(format, " ")
 		if ix > 0 {
 			self.mx.Lock()
@@ -111,7 +118,6 @@ func (self *StoreErrors_t) Store(level string, format string, args ...interface{
 			self.mx.Unlock()
 		}
 	}
-	return self.name
 }
 
 func (self *StoreErrors_t) Values() (res []string) {
@@ -132,7 +138,8 @@ func ContextGet(ctx context.Context) (value Context) {
 
 func ContextStore(ctx context.Context, level string, format string, args ...interface{}) string {
 	if v := ContextGet(ctx); v != nil {
-		return level + " " + v.Store(level, format, args...)
+		v.Store(level, format, args...)
+		return level + " " + v.Name()
 	}
 	return level
 }
