@@ -109,14 +109,17 @@ func (self *StoreErrors_t) Name() string {
 
 func (self *StoreErrors_t) Store(level string, format string, args ...interface{}) {
 	if strings.Contains(self.levels, level) {
-		ix := strings.Index(format, " ")
-		if ix > 0 {
-			self.mx.Lock()
-			if len(self.errors) < 16 {
-				self.errors = append(self.errors, format[:ix])
-			}
-			self.mx.Unlock()
+		var res string
+		if ix := strings.Index(format, " "); ix > 0 {
+			res = format[:ix]
+		} else {
+			res = format
 		}
+		self.mx.Lock()
+		if len(self.errors) < 16 {
+			self.errors = append(self.errors, res)
+		}
+		self.mx.Unlock()
 	}
 }
 
