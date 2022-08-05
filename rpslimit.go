@@ -80,7 +80,7 @@ func (self *Rps_t) Add(id string, ts time.Time) bool {
 		},
 		func() int { return 0 },
 	)
-	it.Value = it.Value + 1
+	it.Value++
 	self.count[id]++
 	self.mx.Unlock()
 	return true
