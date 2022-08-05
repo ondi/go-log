@@ -32,6 +32,7 @@ type Rps_t struct {
 	count     map[string]int
 	ttl       time.Duration
 	truncate  time.Duration
+	buckets   int64
 	rps_limit int
 }
 
@@ -47,28 +48,30 @@ func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 		count: map[string]int{},
 		ttl: ttl,
 		truncate: ttl / time.Duration(buckets),
+		buckets: buckets,
 		rps_limit: rps_limit,
 	}
 	return
 }
 
-func (self *Rps_t) Flush(ts time.Time) {
+func (self *Rps_t) __flush(ts time.Time) {
 	for it := self.c.Front(); it != self.c.End(); it = it.Next() {
-		if ts.Before(it.Key.Ts) {
-			return
-		}
-		self.c.Remove(it.Key)
-		if self.count[it.Key.Id] == it.Value {
-			delete(self.count, it.Key.Id)
+		if ts.After(it.Key.Ts) || self.c.Size() > len(self.count) * int(self.buckets) {
+			self.c.Remove(it.Key)
+			if self.count[it.Key.Id] == it.Value {
+				delete(self.count, it.Key.Id)
+			} else {
+				self.count[it.Key.Id] -= it.Value
+			}
 		} else {
-			self.count[it.Key.Id] -= it.Value
+			return
 		}
 	}
 }
 
 func (self *Rps_t) Add(id string, ts time.Time) bool {
 	self.mx.Lock()
-	self.Flush(ts)
+	self.__flush(ts)
 	if self.count[id] == self.rps_limit {
 		self.mx.Unlock()
 		return false
@@ -88,7 +91,7 @@ func (self *Rps_t) Add(id string, ts time.Time) bool {
 
 func (self *Rps_t) Size(ts time.Time) (s1 int, s2 int) {
 	self.mx.Lock()
-	self.Flush(ts)
+	self.__flush(ts)
 	s1 = self.c.Size()
 	s2 = len(self.count)
 	self.mx.Unlock()
