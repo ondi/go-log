@@ -58,21 +58,20 @@ func Test2(t *testing.T) {
 func Test3(t *testing.T) {
 	rps := NewRps(100*time.Millisecond, 10, 100)
 	for i := 0; i < 1000; i++ {
-		rps.Add("a", time.Now())
+		rps.Add(time.Now())
 		time.Sleep(1 * time.Millisecond)
 	}
 	for i := 0; i < 1000; i++ {
-		rps.Add("b", time.Now())
+		rps.Add(time.Now())
 		time.Sleep(1 * time.Millisecond)
 	}
 	for i := 0; i < 1000; i++ {
-		rps.Add("c", time.Now())
+		rps.Add(time.Now())
 		time.Sleep(1 * time.Millisecond)
 	}
 
 	time.Sleep(100 * time.Millisecond)
 
-	s1, s2 := rps.Size(time.Now())
+	s1 := rps.Size(time.Now())
 	assert.Assert(t, s1 == 0, s1)
-	assert.Assert(t, s2 == 0, s2)
 }

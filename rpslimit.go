@@ -12,27 +12,22 @@ import (
 )
 
 type Rps interface {
-	Add(id string, ts time.Time) (ok bool)
+	Add(ts time.Time) (ok bool)
 }
 
 type NoRps_t struct{}
 
-func (NoRps_t) Add(string, time.Time) bool {
+func (NoRps_t) Add(time.Time) bool {
 	return true
-}
-
-type RpsKey_t struct {
-	Id string
-	Ts time.Time
 }
 
 type Rps_t struct {
 	mx        sync.Mutex
-	c         *cache.Cache_t[RpsKey_t, int]
-	count     map[string]int
+	c         *cache.Cache_t[time.Time, int]
 	ttl       time.Duration
 	truncate  time.Duration
-	buckets   int64
+	count     int
+	buckets   int
 	rps_limit int
 }
 
@@ -44,11 +39,10 @@ rps_limit=1000
 */
 func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 	self = &Rps_t{
-		c: cache.New[RpsKey_t, int](),
-		count: map[string]int{},
+		c: cache.New[time.Time, int](),
 		ttl: ttl,
 		truncate: ttl / time.Duration(buckets),
-		buckets: buckets,
+		buckets: int(buckets),
 		rps_limit: rps_limit,
 	}
 	return
@@ -56,51 +50,43 @@ func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 
 func (self *Rps_t) __flush(ts time.Time) {
 	for it := self.c.Front(); it != self.c.End(); it = it.Next() {
-		if ts.After(it.Key.Ts) || self.c.Size() > len(self.count) * int(self.buckets) {
+		if ts.After(it.Key) || self.c.Size() > self.buckets {
 			self.c.Remove(it.Key)
-			if self.count[it.Key.Id] == it.Value {
-				delete(self.count, it.Key.Id)
-			} else {
-				self.count[it.Key.Id] -= it.Value
-			}
+			self.count -= it.Value
 		} else {
 			return
 		}
 	}
 }
 
-func (self *Rps_t) Add(id string, ts time.Time) bool {
+func (self *Rps_t) Add(ts time.Time) bool {
 	self.mx.Lock()
 	self.__flush(ts)
-	if self.count[id] == self.rps_limit {
+	if self.count == self.rps_limit {
 		self.mx.Unlock()
 		return false
 	}
 	it, _ := self.c.CreateBack(
-		RpsKey_t{
-			Id: id,
-			Ts: ts.Add(self.ttl).Truncate(self.truncate),
-		},
+		ts.Add(self.ttl).Truncate(self.truncate),
 		func() int { return 0 },
 	)
 	it.Value++
-	self.count[id]++
+	self.count++
 	self.mx.Unlock()
 	return true
 }
 
-func (self *Rps_t) Size(ts time.Time) (s1 int, s2 int) {
+func (self *Rps_t) Size(ts time.Time) (s1 int) {
 	self.mx.Lock()
 	self.__flush(ts)
 	s1 = self.c.Size()
-	s2 = len(self.count)
 	self.mx.Unlock()
 	return
 }
 
 func (self *Rps_t) Count(id string) (res int) {
 	self.mx.Lock()
-	res = self.count[id]
+	res = self.count
 	self.mx.Unlock()
 	return
 }
