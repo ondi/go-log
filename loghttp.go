@@ -131,7 +131,7 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 }
 
 func (self *Http_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	if !self.rps_limit.Add(time.Now()) {
+	if !self.rps_limit.Add("", time.Now()) {
 		return 0, fmt.Errorf("RPS")
 	}
 	var buf bytes.Buffer
