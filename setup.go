@@ -86,21 +86,21 @@ var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", D
 type Context interface {
 	Name() string
 	Store(level string, format string, args ...interface{})
-	Values(func(string, int) bool)
+	Values(func(string, int64) bool)
 }
 
 type StoreErrors_t struct {
 	name   string
 	levels string
 	mx     sync.Mutex
-	errors map[string]int
+	errors map[string]int64
 }
 
 func ContextNew(name string, levels string) Context {
 	return &StoreErrors_t{
 		name:   name,
 		levels: levels,
-		errors: map[string]int{},
+		errors: map[string]int64{},
 	}
 }
 
@@ -128,7 +128,7 @@ func (self *StoreErrors_t) Store(level string, format string, args ...interface{
 	}
 }
 
-func (self *StoreErrors_t) Values(f func(string, int) bool) {
+func (self *StoreErrors_t) Values(f func(string, int64) bool) {
 	self.mx.Lock()
 	for k, v := range self.errors {
 		if f(k, v) == false {
@@ -147,10 +147,22 @@ func ContextGet(ctx context.Context) (value Context) {
 	return
 }
 
-func ErrorsGet(ctx context.Context, f func(string, int) bool) {
-	if v := ContextGet(ctx); v != nil {
-		v.Values(f)
+func ErrorsGet(ctx context.Context, sb *strings.Builder) {
+	v := ContextGet(ctx)
+	if v == nil {
+		return
 	}
+	var count int
+	v.Values(func(in string, num int64) bool {
+		if count > 0 {
+			sb.WriteString(",")
+		}
+		sb.WriteString(in)
+		sb.WriteString(":")
+		sb.WriteString(strconv.FormatInt(num, 10))
+		count++
+		return true
+	})
 }
 
 func ContextStore(ctx context.Context, level string, format string, args ...interface{}) string {
