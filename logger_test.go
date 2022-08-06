@@ -40,7 +40,7 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	c := ContextNew("b0dd37be-0f1e-421d-98c8-222cc57acae0", "ERROR")
+	c := StoreErrorsNew("b0dd37be-0f1e-421d-98c8-222cc57acae0", "ERROR")
 	ctx := ContextSet(context.Background(), c)
 
 	logger := NewEmpty()

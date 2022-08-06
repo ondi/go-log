@@ -96,7 +96,7 @@ type StoreErrors_t struct {
 	errors map[string]int64
 }
 
-func ContextNew(name string, levels string) Context {
+func StoreErrorsNew(name string, levels string) Context {
 	return &StoreErrors_t{
 		name:   name,
 		levels: levels,
@@ -136,6 +136,10 @@ func (self *StoreErrors_t) Values(f func(string, int64) bool) {
 		}
 	}
 	self.mx.Unlock()
+}
+
+func SetStoreErrorsContext(ctx context.Context, name string, levels string) context.Context {
+	return ContextSet(ctx, StoreErrorsNew(name, levels))
 }
 
 func ContextSet(ctx context.Context, value Context) context.Context {
