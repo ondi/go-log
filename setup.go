@@ -147,10 +147,10 @@ func ContextGet(ctx context.Context) (value Context) {
 	return
 }
 
-func ErrorsGet(ctx context.Context, sb *strings.Builder) {
+func ErrorsGet(ctx context.Context, sb *strings.Builder) *strings.Builder {
 	v := ContextGet(ctx)
 	if v == nil {
-		return
+		return sb
 	}
 	var count int
 	v.Values(func(in string, num int64) bool {
@@ -163,6 +163,7 @@ func ErrorsGet(ctx context.Context, sb *strings.Builder) {
 		count++
 		return true
 	})
+	return sb
 }
 
 func ContextStore(ctx context.Context, level string, format string, args ...interface{}) string {
