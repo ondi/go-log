@@ -21,6 +21,7 @@ type FileTime_t struct {
 	truncate     time.Duration
 	last_date    time.Time
 	backup_count int
+	cycle        int
 	files        []string
 }
 
@@ -30,9 +31,9 @@ func NewFileTime(filename string, prefix Prefixer, truncate time.Duration, backu
 		filename:     filename,
 		truncate:     truncate,
 		backup_count: backup_count,
+		last_date:    time.Now(),
 	}
-	os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, time.Now().Add(-time.Second).Format(FileBytesFormat)))
-	err = self.__cycle()
+	err = self.__cycle(self.last_date)
 	return
 }
 
@@ -49,7 +50,8 @@ func (self *FileTime_t) Write(p []byte) (n int, err error) {
 	defer self.mx.Unlock()
 	ts := time.Now()
 	if !self.last_date.Equal(ts.Truncate(self.truncate)) {
-		self.__cycle()
+		self.__cycle(ts)
+		self.last_date = ts.Truncate(self.truncate)
 	}
 	if n, err = self.fp.Write(p); err != nil {
 		return
@@ -57,13 +59,14 @@ func (self *FileTime_t) Write(p []byte) (n int, err error) {
 	return
 }
 
-func (self *FileTime_t) __cycle() (err error) {
+func (self *FileTime_t) __cycle(ts time.Time) (err error) {
 	if self.fp != nil {
+		self.cycle++
 		self.fp.Close()
-		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileTime)))
+		backlog_file := fmt.Sprintf("%s.%d.%s", self.filename, self.cycle, ts.Format(FileTime))
+		os.Rename(self.filename, backlog_file)
+		self.files = append(self.files, backlog_file)
 	}
-	self.last_date = time.Now().Truncate(self.truncate)
-	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileTime)))
 	if len(self.files) > self.backup_count {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]

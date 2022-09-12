@@ -20,7 +20,7 @@ type FileBytes_t struct {
 	filename     string
 	bytes_limit  int
 	bytes_count  int
-	last_date    time.Time
+	cycle        int
 	backup_count int
 	files        []string
 }
@@ -32,8 +32,7 @@ func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_coun
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
 	}
-	os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, time.Now().Add(-time.Second).Format(FileBytesFormat)))
-	err = self.__cycle()
+	err = self.__cycle(time.Now())
 	return
 }
 
@@ -53,19 +52,20 @@ func (self *FileBytes_t) Write(p []byte) (n int, err error) {
 	}
 	self.bytes_count += n
 	if self.bytes_count >= self.bytes_limit {
-		self.__cycle()
+		self.__cycle(time.Now())
+		self.bytes_count = 0
 	}
 	return
 }
 
-func (self *FileBytes_t) __cycle() (err error) {
+func (self *FileBytes_t) __cycle(ts time.Time) (err error) {
 	if self.fp != nil {
+		self.cycle++
+		backlog_file := fmt.Sprintf("%s.%d.%s", self.filename, self.cycle, ts.Format(FileBytesFormat))
 		self.fp.Close()
-		os.Rename(self.filename, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytesFormat)))
+		os.Rename(self.filename, backlog_file)
+		self.files = append(self.files, backlog_file)
 	}
-	self.bytes_count = 0
-	self.last_date = time.Now()
-	self.files = append(self.files, fmt.Sprintf("%s.%s", self.filename, self.last_date.Format(FileBytesFormat)))
 	if len(self.files) > self.backup_count {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]
