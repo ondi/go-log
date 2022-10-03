@@ -273,7 +273,6 @@ type MessageIndexNameKB_t struct {
 
 // {"index":{"_index":"logs-2022-01","_type":"_doc"}}
 type MessageIndexKB_t struct {
-	Send  bool                 `json:"-"`
 	Index MessageIndexNameKB_t `json:"index"`
 }
 
@@ -296,10 +295,8 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 	var b [64]byte
 	ts := time.Now()
 
-	if self.Index.Send {
-		if len(self.Index.Index.Format) > 0 {
-			self.Index.Index.Index += string(ts.AppendFormat(b[:0], self.Index.Index.Format))
-		}
+	if len(self.Index.Index.Format) > 0 {
+		self.Index.Index.Index = string(ts.AppendFormat(b[:0], self.Index.Index.Format))
 		json.NewEncoder(out).Encode(self.Index)
 	}
 
