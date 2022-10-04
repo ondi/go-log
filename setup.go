@@ -30,10 +30,8 @@ Logs:
 				Environment:     v.EnvName,
 				CallDepth:       4,
 				Index: log.MessageIndexKB_t{
-					Send: len(v.IndexName) > 0,
 					Index: log.MessageIndexNameKB_t{
 						Format: v.IndexFormat,
-						Index:  v.IndexName,
 					},
 				},
 			},
