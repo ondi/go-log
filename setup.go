@@ -282,11 +282,9 @@ type MessageKB_t struct {
 	Message         json.RawMessage `json:"Message,omitempty"`
 	Timestamp       string          `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
 
-	// when CallDepth > 0 then Location -> "file:line" from runtime.Caller(CallDepth)
-	CallDepth int    `json:"-"`
-	Location  string `json:"Location,omitempty"`
-
-	Index MessageIndexKB_t `json:"-"`
+	CallDepth int              `json:"-"`
+	Location  string           `json:"Location,omitempty"`
+	Index     MessageIndexKB_t `json:"-"`
 }
 
 func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
@@ -344,12 +342,21 @@ type MessageTG_t struct {
 	// custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
 	ReplyMarkup interface{} `json:"reply_markup,omitempty"`
 
-	Hostname  string
-	TextLimit int
+	Hostname  string `json:"-"`
+	CallDepth int    `json:"-"`
+	TextLimit int    `json:"-"`
 }
 
 func (self MessageTG_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
-	self.Text = self.Hostname + "\n" + level + " " + fmt.Sprintf(format, args...)
+	if len(self.Hostname) > 0 {
+		self.Text += self.Hostname + " "
+	}
+	if self.CallDepth > 0 {
+		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
+			self.Text += path.Base(file) + ":" + strconv.FormatInt(int64(line), 10) + " "
+		}
+	}
+	self.Text += level + " " + fmt.Sprintf(format, args...)
 	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
 		n := self.TextLimit
 		for ; n > 0; n-- {
