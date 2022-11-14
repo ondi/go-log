@@ -88,10 +88,10 @@ type Context interface {
 }
 
 type StoreErrors_t struct {
-	name   string
-	levels string
 	mx     sync.Mutex
 	errors map[string]int64
+	name   string
+	levels string
 }
 
 func StoreErrorsNew(name string, levels string) Context {
@@ -211,9 +211,9 @@ func (NoWriter_t) Close() error {
 
 type Args_t struct {
 	LogType     string        `yaml:"LogType"`
-	LogLevel    int64         `yaml:"LogLevel"`
-	LogDate     string        `yaml:"LogDate"`
 	LogFile     string        `yaml:"LogFile"`
+	LogDate     string        `yaml:"LogDate"`
+	LogLevel    int64         `yaml:"LogLevel"`
 	LogSize     int           `yaml:"LogSize"`
 	LogBackup   int           `yaml:"LogBackup"`
 	LogDuration time.Duration `yaml:"LogDuration"`
@@ -275,16 +275,15 @@ type MessageIndexKB_t struct {
 }
 
 type MessageKB_t struct {
-	ApplicationName string          `json:"ApplicationName"`
-	Environment     string          `json:"Environment"`
-	Level           string          `json:"Level"`
-	Data            json.RawMessage `json:"Data,omitempty"`
-	Message         json.RawMessage `json:"Message,omitempty"`
-	Timestamp       string          `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
-
-	CallDepth int              `json:"-"`
-	Location  string           `json:"Location,omitempty"`
-	Index     MessageIndexKB_t `json:"-"`
+	Index           MessageIndexKB_t `json:"-"`
+	ApplicationName string           `json:"ApplicationName"`
+	Environment     string           `json:"Environment"`
+	Level           string           `json:"Level"`
+	Timestamp       string           `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
+	Location        string           `json:"Location,omitempty"`
+	Data            json.RawMessage  `json:"Data,omitempty"`
+	Message         json.RawMessage  `json:"Message,omitempty"`
+	CallDepth       int              `json:"-"`
 }
 
 func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {

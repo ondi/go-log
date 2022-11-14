@@ -15,14 +15,14 @@ var FileTime = "20060102150405"
 
 type FileTime_t struct {
 	mx           sync.Mutex
-	fp           *os.File
-	prefix       Prefixer
-	filename     string
-	truncate     time.Duration
 	last_date    time.Time
+	prefix       Prefixer
+	fp           *os.File
+	filename     string
+	files        []string
+	truncate     time.Duration
 	backup_count int
 	cycle        int
-	files        []string
 }
 
 func NewFileTime(filename string, prefix Prefixer, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {

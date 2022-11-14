@@ -57,18 +57,15 @@ func (self *Urls_t) Range() (res []string) {
 
 type Http_t struct {
 	mx         sync.Mutex
+	wg         sync.WaitGroup
 	q          queue.Queue[bytes.Buffer]
-	queue_size int
-
-	urls    Urls
-	convert Converter
-	client  Client
-	header  http.Header
-
-	post_delay time.Duration
+	urls       Urls
+	convert    Converter
+	client     Client
 	rps_limit  Rps
-
-	wg sync.WaitGroup
+	header     http.Header
+	post_delay time.Duration
+	queue_size int
 }
 
 // Default
@@ -191,7 +188,7 @@ func (self *Http_t) writer() (err error) {
 			break
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
+			fmt.Fprintf(os.Stderr, "%v LOG ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 		}
 		time.Sleep(self.post_delay)
 	}

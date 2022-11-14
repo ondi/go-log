@@ -15,14 +15,14 @@ var FileBytesFormat = "20060102150405"
 
 type FileBytes_t struct {
 	mx           sync.Mutex
-	fp           *os.File
 	prefix       Prefixer
+	fp           *os.File
 	filename     string
+	files        []string
 	bytes_limit  int
 	bytes_count  int
-	cycle        int
 	backup_count int
-	files        []string
+	cycle        int
 }
 
 func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
