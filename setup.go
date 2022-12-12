@@ -24,7 +24,7 @@ Logs:
 		log_http := log.NewHttp(
 			64,
 			v.Writers,
-			log.NewUrls(v.Api),
+			log.NewUrls(v.Host),
 			log.MessageKB_t{
 				ApplicationName: v.AppName,
 				Environment:     v.EnvName,
@@ -39,13 +39,13 @@ Logs:
 			log.PostHeader(headers),
 			log.RpsLimit(log.NewRps(time.Second, 100, 1000)),
 		)
-		log.GetLogger().AddOutput("http"+strconv.FormatInt(k, 10), log_http, log.WhatLevel(k))
+		log.GetLogger().AddOutput(k, log_http, log.WhatLevel(v.Level))
 	}
 	for k, v := range cfg.Telegram {
 		log_tg := log.NewHttp(
 			64,
 			v.Writers,
-			log.NewUrls(v.Api),
+			log.NewUrls(v.Host),
 			log.MessageTG_t{
 				ChatID:    v.ChatID,
 				Hostname:  self.hostname,
@@ -55,7 +55,7 @@ Logs:
 			log.PostHeader(headers),
 			log.PostDelay(1500*time.Millisecond),
 		)
-		log.GetLogger().AddOutput("telegram"+strconv.FormatInt(k, 10), log_tg, log.WhatLevel(k))
+		log.GetLogger().AddOutput(k, log_tg, log.WhatLevel(v.Level)[:1])
 	}
 */
 
