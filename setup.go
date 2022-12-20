@@ -136,7 +136,7 @@ func (self *StoreErrors_t) Values(f func(string, int64) bool) {
 	self.mx.Unlock()
 }
 
-func SetStoreErrorsContext(ctx context.Context, name string, levels string) context.Context {
+func ContextSetStoreErrors(ctx context.Context, name string, levels string) context.Context {
 	return ContextSet(ctx, StoreErrorsNew(name, levels))
 }
 
@@ -149,7 +149,7 @@ func ContextGet(ctx context.Context) (value Context) {
 	return
 }
 
-func ErrorsGet(ctx context.Context, sb *strings.Builder) *strings.Builder {
+func ContextGetErrors(ctx context.Context, sb *strings.Builder) *strings.Builder {
 	v := ContextGet(ctx)
 	if v == nil {
 		return sb
