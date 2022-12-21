@@ -68,6 +68,7 @@ import (
 	"io"
 	"path"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -84,12 +85,12 @@ var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", D
 type Context interface {
 	Name() string
 	Store(level string, format string, args ...interface{})
-	Values(func(string, int64) bool)
+	Values(func(string) bool)
 }
 
 type StoreErrors_t struct {
 	mx     sync.Mutex
-	errors map[string]int64
+	errors map[string]struct{}
 	name   string
 	levels string
 }
@@ -98,7 +99,7 @@ func StoreErrorsNew(name string, levels string) Context {
 	return &StoreErrors_t{
 		name:   name,
 		levels: levels,
-		errors: map[string]int64{},
+		errors: map[string]struct{}{},
 	}
 }
 
@@ -115,21 +116,17 @@ func (self *StoreErrors_t) Store(level string, format string, args ...interface{
 			res = format
 		}
 		self.mx.Lock()
-		self.errors[res]++
-		if len(self.errors) > 16 {
-			for k := range self.errors {
-				delete(self.errors, k)
-				break
-			}
+		if len(self.errors) < 16 {
+			self.errors[res] = struct{}{}
 		}
 		self.mx.Unlock()
 	}
 }
 
-func (self *StoreErrors_t) Values(f func(string, int64) bool) {
+func (self *StoreErrors_t) Values(f func(string) bool) {
 	self.mx.Lock()
-	for k, v := range self.errors {
-		if f(k, v) == false {
+	for k := range self.errors {
+		if f(k) == false {
 			break
 		}
 	}
@@ -154,17 +151,18 @@ func ContextGetErrors(ctx context.Context, sb *strings.Builder) *strings.Builder
 	if v == nil {
 		return sb
 	}
-	var count int
-	v.Values(func(in string, num int64) bool {
-		if count > 0 {
-			sb.WriteString(",")
-		}
-		sb.WriteString(in)
-		sb.WriteString(":")
-		sb.WriteString(strconv.FormatInt(num, 10))
-		count++
+	var res []string
+	v.Values(func(name string) bool {
+		res = append(res, name)
 		return true
 	})
+	sort.Strings(res)
+	for i, v := range res {
+		if i > 0 {
+			sb.WriteString(",")
+		}
+		sb.WriteString(v)
+	}
 	return sb
 }
 
