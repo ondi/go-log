@@ -76,38 +76,38 @@ import (
 	"unicode/utf8"
 )
 
-type context_key_t string
+type errors_context_t string
 
-var context_key context_key_t = "log_ctx"
+var errors_context errors_context_t = "log_ctx"
 
 var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}), WhatLevel(0))
 
-type Context interface {
-	Name() string
-	Store(level string, format string, args ...interface{})
+type ErrorsContext interface {
+	Id() string
+	Set(level string, format string, args ...interface{})
 	Values(func(string) bool)
 }
 
-type StoreErrors_t struct {
+type ErrorsContext_t struct {
 	mx     sync.Mutex
 	errors map[string]struct{}
-	name   string
+	id     string
 	levels string
 }
 
-func StoreErrorsNew(name string, levels string) Context {
-	return &StoreErrors_t{
-		name:   name,
+func NewErrorsContext(id string, levels string) ErrorsContext {
+	return &ErrorsContext_t{
+		id:     id,
 		levels: levels,
 		errors: map[string]struct{}{},
 	}
 }
 
-func (self *StoreErrors_t) Name() string {
-	return self.name
+func (self *ErrorsContext_t) Id() string {
+	return self.id
 }
 
-func (self *StoreErrors_t) Store(level string, format string, args ...interface{}) {
+func (self *ErrorsContext_t) Set(level string, format string, args ...interface{}) {
 	if strings.Contains(self.levels, level) {
 		var res string
 		if ix := strings.Index(format, " "); ix > 0 {
@@ -116,14 +116,14 @@ func (self *StoreErrors_t) Store(level string, format string, args ...interface{
 			res = format
 		}
 		self.mx.Lock()
-		if len(self.errors) < 16 {
+		if len(self.errors) < 10 {
 			self.errors[res] = struct{}{}
 		}
 		self.mx.Unlock()
 	}
 }
 
-func (self *StoreErrors_t) Values(f func(string) bool) {
+func (self *ErrorsContext_t) Values(f func(string) bool) {
 	self.mx.Lock()
 	for k := range self.errors {
 		if f(k) == false {
@@ -133,21 +133,25 @@ func (self *StoreErrors_t) Values(f func(string) bool) {
 	self.mx.Unlock()
 }
 
-func ContextSetStoreErrors(ctx context.Context, name string, levels string) context.Context {
-	return ContextSet(ctx, StoreErrorsNew(name, levels))
+func SetErrorsContext(ctx context.Context, value ErrorsContext) context.Context {
+	return context.WithValue(ctx, errors_context, value)
 }
 
-func ContextSet(ctx context.Context, value Context) context.Context {
-	return context.WithValue(ctx, context_key, value)
-}
-
-func ContextGet(ctx context.Context) (value Context) {
-	value, _ = ctx.Value(context_key).(Context)
+func GetErrorsContext(ctx context.Context) (value ErrorsContext) {
+	value, _ = ctx.Value(errors_context).(ErrorsContext)
 	return
 }
 
-func ContextGetErrors(ctx context.Context, sb *strings.Builder) *strings.Builder {
-	v := ContextGet(ctx)
+func SetErrors(ctx context.Context, level string, format string, args ...interface{}) string {
+	if v := GetErrorsContext(ctx); v != nil {
+		v.Set(level, format, args...)
+		return level + " " + v.Id()
+	}
+	return level
+}
+
+func GetErrors(ctx context.Context, sb *strings.Builder) *strings.Builder {
+	v := GetErrorsContext(ctx)
 	if v == nil {
 		return sb
 	}
@@ -164,14 +168,6 @@ func ContextGetErrors(ctx context.Context, sb *strings.Builder) *strings.Builder
 		sb.WriteString(v)
 	}
 	return sb
-}
-
-func ContextStore(ctx context.Context, level string, format string, args ...interface{}) string {
-	if v := ContextGet(ctx); v != nil {
-		v.Store(level, format, args...)
-		return level + " " + v.Name()
-	}
-	return level
 }
 
 type DT_t struct {

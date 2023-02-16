@@ -155,35 +155,35 @@ func (self *log_t) Trace(format string, args ...interface{}) {
 }
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
-	level := ContextStore(ctx, LOG_ERROR.Name, format, args...)
+	level := SetErrors(ctx, LOG_ERROR.Name, format, args...)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Levels[0]])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
-	level := ContextStore(ctx, LOG_WARN.Name, format, args...)
+	level := SetErrors(ctx, LOG_WARN.Name, format, args...)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Levels[0]])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
-	level := ContextStore(ctx, LOG_INFO.Name, format, args...)
+	level := SetErrors(ctx, LOG_INFO.Name, format, args...)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Levels[0]])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
-	level := ContextStore(ctx, LOG_DEBUG.Name, format, args...)
+	level := SetErrors(ctx, LOG_DEBUG.Name, format, args...)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
 		v.WriteLevel(level, format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
-	level := ContextStore(ctx, LOG_TRACE.Name, format, args...)
+	level := SetErrors(ctx, LOG_TRACE.Name, format, args...)
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Levels[0]])) {
 		v.WriteLevel(level, format, args...)
 	}
