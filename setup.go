@@ -133,6 +133,10 @@ func (self *ErrorsContext_t) Values(f func(string) bool) {
 	self.mx.Unlock()
 }
 
+func SetNewErrorsContext(ctx context.Context, id string, levels string) context.Context {
+	return context.WithValue(ctx, errors_context, NewErrorsContext(id, levels))
+}
+
 func SetErrorsContext(ctx context.Context, value ErrorsContext) context.Context {
 	return context.WithValue(ctx, errors_context, value)
 }
