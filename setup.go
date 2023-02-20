@@ -62,13 +62,13 @@ Logs:
 package log
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"path"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -85,21 +85,20 @@ var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", D
 type ErrorsContext interface {
 	Id() string
 	Set(level string, format string, args ...interface{})
-	Values(func(string) bool)
+	Get(out *bytes.Buffer)
 }
 
 type ErrorsContext_t struct {
 	mx     sync.Mutex
-	errors map[string]struct{}
 	id     string
 	levels string
+	errors bytes.Buffer
 }
 
 func NewErrorsContext(id string, levels string) ErrorsContext {
 	return &ErrorsContext_t{
 		id:     id,
 		levels: levels,
-		errors: map[string]struct{}{},
 	}
 }
 
@@ -116,21 +115,21 @@ func (self *ErrorsContext_t) Set(level string, format string, args ...interface{
 			res = format
 		}
 		self.mx.Lock()
-		if len(self.errors) < 10 {
-			self.errors[res] = struct{}{}
+		if self.errors.Len() < 256 && strings.Contains(self.errors.String(), res) == false {
+			if self.errors.Len() > 0 {
+				self.errors.WriteString(";")
+			}
+			self.errors.WriteString(res)
 		}
 		self.mx.Unlock()
 	}
 }
 
-func (self *ErrorsContext_t) Values(f func(string) bool) {
+func (self *ErrorsContext_t) Get(out *bytes.Buffer) {
 	self.mx.Lock()
-	for k := range self.errors {
-		if f(k) == false {
-			break
-		}
-	}
+	out.ReadFrom(&self.errors)
 	self.mx.Unlock()
+	return
 }
 
 func SetNewErrorsContext(ctx context.Context, id string, levels string) context.Context {
@@ -154,24 +153,10 @@ func SetErrors(ctx context.Context, level string, format string, args ...interfa
 	return level
 }
 
-func GetErrors(ctx context.Context, sb *strings.Builder) *strings.Builder {
-	v := GetErrorsContext(ctx)
-	if v == nil {
-		return sb
+func GetErrors(ctx context.Context, sb *bytes.Buffer) {
+	if v := GetErrorsContext(ctx); v != nil {
+		v.Get(sb)
 	}
-	var res []string
-	v.Values(func(name string) bool {
-		res = append(res, name)
-		return true
-	})
-	sort.Strings(res)
-	for i, v := range res {
-		if i > 0 {
-			sb.WriteString(",")
-		}
-		sb.WriteString(v)
-	}
-	return sb
 }
 
 type DT_t struct {
