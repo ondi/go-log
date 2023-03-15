@@ -83,27 +83,28 @@ var errors_context errors_context_t = "log_ctx"
 var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}), WhatLevel(0))
 
 type ErrorsContext interface {
-	Id() string
+	Name() string
 	Set(level string, format string, args ...interface{})
-	Get(out *bytes.Buffer)
+	Get(out io.Writer)
+	Reset()
 }
 
 type ErrorsContext_t struct {
 	mx     sync.Mutex
-	id     string
+	name   string
 	levels string
 	errors string
 }
 
-func NewErrorsContext(id string, levels string) ErrorsContext {
+func NewErrorsContext(name string, levels string) ErrorsContext {
 	return &ErrorsContext_t{
-		id:     id,
+		name:   name,
 		levels: levels,
 	}
 }
 
-func (self *ErrorsContext_t) Id() string {
-	return self.id
+func (self *ErrorsContext_t) Name() string {
+	return self.name
 }
 
 func (self *ErrorsContext_t) Set(level string, format string, args ...interface{}) {
@@ -118,11 +119,15 @@ func (self *ErrorsContext_t) Set(level string, format string, args ...interface{
 	}
 }
 
-func (self *ErrorsContext_t) Get(out *bytes.Buffer) {
+func (self *ErrorsContext_t) Get(out io.Writer) {
 	self.mx.Lock()
-	out.WriteString(self.errors)
+	io.WriteString(out, self.errors)
 	self.mx.Unlock()
 	return
+}
+
+func (self *ErrorsContext_t) Reset() {
+	self.errors = ""
 }
 
 func SetErrorsContextNew(ctx context.Context, id string, levels string) context.Context {
@@ -141,7 +146,7 @@ func GetErrorsContext(ctx context.Context) (value ErrorsContext) {
 func SetErrors(ctx context.Context, level string, format string, args ...interface{}) string {
 	if v := GetErrorsContext(ctx); v != nil {
 		v.Set(level, format, args...)
-		return level + " " + v.Id()
+		return level + " " + v.Name()
 	}
 	return level
 }
