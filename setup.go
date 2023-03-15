@@ -92,7 +92,7 @@ type ErrorsContext_t struct {
 	mx     sync.Mutex
 	id     string
 	levels string
-	errors bytes.Buffer
+	errors string
 }
 
 func NewErrorsContext(id string, levels string) ErrorsContext {
@@ -108,18 +108,11 @@ func (self *ErrorsContext_t) Id() string {
 
 func (self *ErrorsContext_t) Set(level string, format string, args ...interface{}) {
 	if strings.Contains(self.levels, level) {
-		var res string
-		if ix := strings.Index(format, " "); ix > 0 {
-			res = format[:ix]
-		} else {
-			res = format
-		}
 		self.mx.Lock()
-		if self.errors.Len() < 256 && strings.Contains(self.errors.String(), res) == false {
-			if self.errors.Len() > 0 {
-				self.errors.WriteString(";")
-			}
-			self.errors.WriteString(res)
+		if ix := strings.Index(format, " "); ix > 0 {
+			self.errors = format[:ix]
+		} else {
+			self.errors = format
 		}
 		self.mx.Unlock()
 	}
@@ -127,7 +120,7 @@ func (self *ErrorsContext_t) Set(level string, format string, args ...interface{
 
 func (self *ErrorsContext_t) Get(out *bytes.Buffer) {
 	self.mx.Lock()
-	out.ReadFrom(&self.errors)
+	out.WriteString(self.errors)
 	self.mx.Unlock()
 	return
 }
