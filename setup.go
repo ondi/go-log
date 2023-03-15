@@ -125,7 +125,7 @@ func (self *ErrorsContext_t) Get(out *bytes.Buffer) {
 	return
 }
 
-func SetNewErrorsContext(ctx context.Context, id string, levels string) context.Context {
+func SetErrorsContextNew(ctx context.Context, id string, levels string) context.Context {
 	return context.WithValue(ctx, errors_context, NewErrorsContext(id, levels))
 }
 
