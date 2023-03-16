@@ -62,7 +62,6 @@ Logs:
 package log
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -143,17 +142,9 @@ func GetErrorsContext(ctx context.Context) (value ErrorsContext) {
 	return
 }
 
-func SetErrors(ctx context.Context, level string, format string, args ...interface{}) string {
-	if v := GetErrorsContext(ctx); v != nil {
-		v.Set(level, format, args...)
-		return level + " " + v.Name()
-	}
-	return level
-}
-
-func GetErrors(ctx context.Context, sb *bytes.Buffer) {
-	if v := GetErrorsContext(ctx); v != nil {
-		v.Get(sb)
+func GetErrors(ctx context.Context, out io.Writer) {
+	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
+		v.Get(out)
 	}
 }
 
