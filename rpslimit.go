@@ -39,10 +39,10 @@ rps_limit=1000
 */
 func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 	self = &Rps_t{
-		c: cache.New[time.Time, int](),
-		ttl: ttl,
-		truncate: ttl / time.Duration(buckets),
-		buckets: int(buckets),
+		c:         cache.New[time.Time, int](),
+		ttl:       ttl,
+		truncate:  ttl / time.Duration(buckets),
+		buckets:   int(buckets),
 		rps_limit: rps_limit,
 	}
 	return
@@ -68,7 +68,7 @@ func (self *Rps_t) Add(ts time.Time) bool {
 	}
 	it, _ := self.c.CreateBack(
 		ts.Add(self.ttl).Truncate(self.truncate),
-		func() int { return 0 },
+		func(p *int) { *p = 0 },
 	)
 	it.Value++
 	self.count++
