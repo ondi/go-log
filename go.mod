@@ -1,9 +1,9 @@
 module github.com/ondi/go-log
 
-go 1.18
+go 1.20
 
 require (
-	github.com/ondi/go-cache v0.0.0-20230322100319-5f3878d58ef3
+	github.com/ondi/go-cache v0.0.0-20230323112532-7ecd710c8376
 	github.com/ondi/go-queue v0.0.0-20220705093149-83582bcfd7bb
 	gotest.tools v2.2.0+incompatible
 )

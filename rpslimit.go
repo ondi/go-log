@@ -69,6 +69,7 @@ func (self *Rps_t) Add(ts time.Time) bool {
 	it, _ := self.c.CreateBack(
 		ts.Add(self.ttl).Truncate(self.truncate),
 		func(p *int) { *p = 0 },
+		func(p *int) {},
 	)
 	it.Value++
 	self.count++
