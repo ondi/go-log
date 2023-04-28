@@ -77,7 +77,7 @@ func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHo
 		ForceAttemptHTTP2:   true,
 		MaxIdleConns:        MaxIdleConns,
 		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
-		// TLSHandshakeTimeout: timeout,
+		// TLSHandshakeTimeout:   timeout,
 		// IdleConnTimeout:       timeout,
 		// ResponseHeaderTimeout: timeout,
 		// ExpectContinueTimeout: timeout,
