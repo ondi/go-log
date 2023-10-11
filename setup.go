@@ -62,18 +62,18 @@ Logs:
 package log
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"path"
-	"runtime"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
 )
 
 var std = NewLogger("stderr", NewStderr([]Prefixer{&DT_t{Format: "2006-01-02 15:04:05"}, &FL_t{}}), WhatLevel(0))
+
+var fl = &FL_t{}
 
 type NoWriter_t struct{}
 
@@ -159,7 +159,6 @@ type MessageKB_t struct {
 	Location        string           `json:"Location,omitempty"`
 	Data            json.RawMessage  `json:"Data,omitempty"`
 	Message         json.RawMessage  `json:"Message,omitempty"`
-	CallDepth       int              `json:"-"`
 }
 
 func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
@@ -188,11 +187,9 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 
 	self.Timestamp = string(ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
-	if self.CallDepth > 0 {
-		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
-			self.Location = path.Base(file) + ":" + strconv.FormatInt(int64(line), 10)
-		}
-	}
+	var temp bytes.Buffer
+	fl.Prefix(&temp)
+	self.Location = temp.String()
 
 	err = json.NewEncoder(out).Encode(self)
 	return
@@ -218,7 +215,6 @@ type MessageTG_t struct {
 	ReplyMarkup interface{} `json:"reply_markup,omitempty"`
 
 	Hostname  string `json:"-"`
-	CallDepth int    `json:"-"`
 	TextLimit int    `json:"-"`
 }
 
@@ -226,11 +222,11 @@ func (self MessageTG_t) Convert(out io.Writer, level string, format string, args
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
-	if self.CallDepth > 0 {
-		if _, file, line, ok := runtime.Caller(self.CallDepth); ok {
-			self.Text += path.Base(file) + ":" + strconv.FormatInt(int64(line), 10) + " "
-		}
-	}
+
+	var temp bytes.Buffer
+	fl.Prefix(&temp)
+	self.Text += temp.String()
+
 	self.Text += level + " " + fmt.Sprintf(format, args...)
 	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
 		n := self.TextLimit
