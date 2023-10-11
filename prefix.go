@@ -13,16 +13,16 @@ import (
 )
 
 type Prefixer interface {
-	Prefix(out io.Writer) (int, error)
+	Prefix(ts time.Time, out io.Writer) (int, error)
 }
 
 type DT_t struct {
 	Format string
 }
 
-func (self *DT_t) Prefix(out io.Writer) (n int, err error) {
+func (self *DT_t) Prefix(ts time.Time, out io.Writer) (n int, err error) {
 	var b [64]byte
-	if n, err = out.Write(time.Now().AppendFormat(b[:0], self.Format)); n > 0 {
+	if n, err = out.Write(ts.AppendFormat(b[:0], self.Format)); n > 0 {
 		io.WriteString(out, " ")
 	}
 	return
@@ -30,11 +30,10 @@ func (self *DT_t) Prefix(out io.Writer) (n int, err error) {
 
 type FL_t struct{}
 
-func (self *FL_t) Prefix(out io.Writer) (n int, err error) {
-	var ok bool
-	var prev_path, next_path string
-	var prev_line, next_line int
-	_, prev_path, prev_line, ok = runtime.Caller(1)
+func (self *FL_t) Prefix(ts time.Time, out io.Writer) (n int, err error) {
+	var next_line int
+	var next_path string
+	_, prev_path, prev_line, ok := runtime.Caller(1)
 	for i := 2; i < 100; i++ {
 		if _, next_path, next_line, ok = runtime.Caller(i); ok {
 			if filepath.Dir(prev_path) != filepath.Dir(next_path) {

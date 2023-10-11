@@ -14,6 +14,7 @@ package log
 import (
 	"context"
 	"sync/atomic"
+	"time"
 	"unsafe"
 )
 
@@ -49,7 +50,7 @@ type Logger interface {
 }
 
 type Writer interface {
-	WriteLevel(level string, format string, args ...interface{}) (int, error)
+	WriteLevel(ts time.Time, level string, format string, args ...interface{}) (int, error)
 	Close() error
 }
 
@@ -125,87 +126,97 @@ func (self *log_t) Clear() {
 }
 
 func (self *log_t) Error(format string, args ...interface{}) {
+	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Levels[0]])) {
-		v.WriteLevel(LOG_ERROR.Name, format, args...)
+		v.WriteLevel(ts, LOG_ERROR.Name, format, args...)
 	}
 }
 
 func (self *log_t) Warn(format string, args ...interface{}) {
+	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Levels[0]])) {
-		v.WriteLevel(LOG_WARN.Name, format, args...)
+		v.WriteLevel(ts, LOG_WARN.Name, format, args...)
 	}
 }
 
 func (self *log_t) Info(format string, args ...interface{}) {
+	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Levels[0]])) {
-		v.WriteLevel(LOG_INFO.Name, format, args...)
+		v.WriteLevel(ts, LOG_INFO.Name, format, args...)
 	}
 }
 
 func (self *log_t) Debug(format string, args ...interface{}) {
+	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
-		v.WriteLevel(LOG_DEBUG.Name, format, args...)
+		v.WriteLevel(ts, LOG_DEBUG.Name, format, args...)
 	}
 }
 
 func (self *log_t) Trace(format string, args ...interface{}) {
+	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Levels[0]])) {
-		v.WriteLevel(LOG_TRACE.Name, format, args...)
+		v.WriteLevel(ts, LOG_TRACE.Name, format, args...)
 	}
 }
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...interface{}) {
+	ts := time.Now()
 	level := LOG_ERROR.Name
 	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
 		v.Set(LOG_ERROR.Name, format, args...)
 		level += " " + v.Name()
 	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Levels[0]])) {
-		v.WriteLevel(level, format, args...)
+		v.WriteLevel(ts, level, format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...interface{}) {
+	ts := time.Now()
 	level := LOG_WARN.Name
 	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
 		v.Set(LOG_WARN.Name, format, args...)
 		level += " " + v.Name()
 	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Levels[0]])) {
-		v.WriteLevel(level, format, args...)
+		v.WriteLevel(ts, level, format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...interface{}) {
+	ts := time.Now()
 	level := LOG_INFO.Name
 	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
 		v.Set(LOG_INFO.Name, format, args...)
 		level += " " + v.Name()
 	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Levels[0]])) {
-		v.WriteLevel(level, format, args...)
+		v.WriteLevel(ts, level, format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...interface{}) {
+	ts := time.Now()
 	level := LOG_DEBUG.Name
 	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
 		v.Set(LOG_DEBUG.Name, format, args...)
 		level += " " + v.Name()
 	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
-		v.WriteLevel(level, format, args...)
+		v.WriteLevel(ts, level, format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...interface{}) {
+	ts := time.Now()
 	level := LOG_TRACE.Name
 	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
 		v.Set(LOG_TRACE.Name, format, args...)
 		level += " " + v.Name()
 	}
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Levels[0]])) {
-		v.WriteLevel(level, format, args...)
+		v.WriteLevel(ts, level, format, args...)
 	}
 }
 

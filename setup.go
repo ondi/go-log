@@ -110,19 +110,19 @@ func WhatLevel(in int64) []level_t {
 	}
 }
 
-func SetupLogger(logs []Args_t) (err error) {
+func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 	logger := NewEmpty()
 	SetLogger(logger)
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewFileTime(v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
@@ -161,9 +161,8 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageKB_t) Convert(ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	var b [64]byte
-	ts := time.Now()
 
 	if len(self.Index.Index.Format) > 0 {
 		self.Index.Index.Index = string(ts.AppendFormat(b[:0], self.Index.Index.Format))
@@ -188,7 +187,7 @@ func (self MessageKB_t) Convert(out io.Writer, level string, format string, args
 	self.Timestamp = string(ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp bytes.Buffer
-	fl.Prefix(&temp)
+	fl.Prefix(ts, &temp)
 	self.Location = temp.String()
 
 	err = json.NewEncoder(out).Encode(self)
@@ -218,13 +217,13 @@ type MessageTG_t struct {
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageTG_t) Convert(ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
 
 	var temp bytes.Buffer
-	fl.Prefix(&temp)
+	fl.Prefix(ts, &temp)
 	self.Text += temp.String()
 
 	self.Text += level + " " + fmt.Sprintf(format, args...)

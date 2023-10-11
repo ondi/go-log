@@ -26,37 +26,34 @@ type FileBytes_t struct {
 	cycle        int
 }
 
-func NewFileBytes(filename string, prefix []Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
+func NewFileBytes(ts time.Time, filename string, prefix []Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
 	self = &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
 	}
-	err = self.__cycle(time.Now())
+	err = self.__cycle(ts)
 	return
 }
 
-func (self *FileBytes_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	for _, v := range self.prefix {
-		v.Prefix(self.out)
-	}
-	io.WriteString(self.out, level)
-	io.WriteString(self.out, " ")
-	n, err = fmt.Fprintf(self, format, args...)
-	io.WriteString(self.out, "\n")
-	return
-}
-
-func (self *FileBytes_t) Write(p []byte) (n int, err error) {
+func (self *FileBytes_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	if n, err = self.out.Write(p); err != nil {
-		return
+	for _, v := range self.prefix {
+		n, err = v.Prefix(ts, self.out)
+		self.bytes_count += n
 	}
+	n, err = io.WriteString(self.out, level)
+	self.bytes_count += n
+	n, err = io.WriteString(self.out, " ")
+	self.bytes_count += n
+	n, err = fmt.Fprintf(self.out, format, args...)
+	self.bytes_count += n
+	n, err = io.WriteString(self.out, "\n")
 	self.bytes_count += n
 	if self.bytes_count >= self.bytes_limit {
-		self.__cycle(time.Now())
+		self.__cycle(ts)
 		self.bytes_count = 0
 	}
 	return

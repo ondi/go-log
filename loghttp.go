@@ -19,7 +19,7 @@ import (
 )
 
 type Converter interface {
-	Convert(out io.Writer, level string, format string, args ...interface{}) (n int, err error)
+	Convert(ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error)
 }
 
 type Client interface {
@@ -127,12 +127,12 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 	return
 }
 
-func (self *Http_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	if !self.rps_limit.Add(time.Now()) {
+func (self *Http_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+	if !self.rps_limit.Add(ts) {
 		return 0, fmt.Errorf("RPS")
 	}
 	var buf bytes.Buffer
-	if n, err = self.convert.Convert(&buf, level, format, args...); err != nil {
+	if n, err = self.convert.Convert(ts, &buf, level, format, args...); err != nil {
 		return
 	}
 

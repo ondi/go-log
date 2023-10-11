@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 type Stdany_t struct {
@@ -22,9 +23,9 @@ func NewStdany(prefix []Prefixer, out io.Writer) Writer {
 	}
 }
 
-func (self *Stdany_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
+func (self *Stdany_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	for _, v := range self.prefix {
-		v.Prefix(self.out)
+		v.Prefix(ts, self.out)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

@@ -26,38 +26,33 @@ type FileTime_t struct {
 	cycle        int
 }
 
-func NewFileTime(filename string, prefix []Prefixer, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
+func NewFileTime(ts time.Time, filename string, prefix []Prefixer, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
 	self = &FileTime_t{
 		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
 		backup_count: backup_count,
-		last_date:    time.Now(),
+		last_date:    ts,
 	}
 	err = self.__cycle(self.last_date)
 	return
 }
 
-func (self *FileTime_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
+func (self *FileTime_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	if tr := ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
+		self.__cycle(ts)
+		self.last_date = tr
+	}
 	for _, v := range self.prefix {
-		v.Prefix(self.out)
+		v.Prefix(ts, self.out)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")
-	n, err = fmt.Fprintf(self, format, args...)
+	n, err = fmt.Fprintf(self.out, format, args...)
 	io.WriteString(self.out, "\n")
 	return
-}
-
-func (self *FileTime_t) Write(p []byte) (int, error) {
-	self.mx.Lock()
-	defer self.mx.Unlock()
-	ts := time.Now()
-	if !self.last_date.Equal(ts.Truncate(self.truncate)) {
-		self.__cycle(ts)
-		self.last_date = ts.Truncate(self.truncate)
-	}
-	return self.out.Write(p)
 }
 
 func (self *FileTime_t) __cycle(ts time.Time) (err error) {

@@ -16,9 +16,10 @@ func Test1(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
+	ts := time.Now()
 	logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{}}), LOG_TRACE.Levels)
 	logger.AddOutput("buf", NewStdany([]Prefixer{&DT_t{}}, &buf), LOG_TRACE.Levels)
-	log_file, _ := NewFileBytes("/tmp/test.log", []Prefixer{&DT_t{}}, 1024, 10)
+	log_file, _ := NewFileBytes(ts, "/tmp/test.log", []Prefixer{&DT_t{}}, 1024, 10)
 	logger.AddOutput("file", log_file, LOG_TRACE.Levels)
 	log_http := NewHttp(
 		10,
