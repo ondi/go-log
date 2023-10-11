@@ -62,7 +62,6 @@ Logs:
 package log
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -70,106 +69,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 )
 
-type errors_context_t string
-
-var errors_context errors_context_t = "log_ctx"
-
-var std = NewLogger("stderr", NewStderr(&DTFL_t{Format: "2006-01-02 15:04:05", Depth: 4}), WhatLevel(0))
-
-type ErrorsContext interface {
-	Name() string
-	Set(level string, format string, args ...interface{})
-	Get(out io.Writer)
-	Reset()
-}
-
-type ErrorsContext_t struct {
-	mx     sync.Mutex
-	name   string
-	levels string
-	errors string
-}
-
-func NewErrorsContext(name string, levels string) ErrorsContext {
-	return &ErrorsContext_t{
-		name:   name,
-		levels: levels,
-	}
-}
-
-func (self *ErrorsContext_t) Name() string {
-	return self.name
-}
-
-func (self *ErrorsContext_t) Set(level string, format string, args ...interface{}) {
-	if strings.Contains(self.levels, level) {
-		self.mx.Lock()
-		if ix := strings.Index(format, " "); ix > 0 {
-			self.errors = format[:ix]
-		} else {
-			self.errors = format
-		}
-		self.mx.Unlock()
-	}
-}
-
-func (self *ErrorsContext_t) Get(out io.Writer) {
-	self.mx.Lock()
-	io.WriteString(out, self.errors)
-	self.mx.Unlock()
-	return
-}
-
-func (self *ErrorsContext_t) Reset() {
-	self.errors = ""
-}
-
-func SetErrorsContextNew(ctx context.Context, id string, levels string) context.Context {
-	return context.WithValue(ctx, errors_context, NewErrorsContext(id, levels))
-}
-
-func SetErrorsContext(ctx context.Context, value ErrorsContext) context.Context {
-	return context.WithValue(ctx, errors_context, value)
-}
-
-func GetErrorsContext(ctx context.Context) (value ErrorsContext) {
-	value, _ = ctx.Value(errors_context).(ErrorsContext)
-	return
-}
-
-func GetErrors(ctx context.Context, out io.Writer) {
-	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
-		v.Get(out)
-	}
-}
-
-type DT_t struct {
-	Format string
-}
-
-func (self *DT_t) Prefix() string {
-	var b [64]byte
-	return string(time.Now().AppendFormat(b[:0], self.Format))
-}
-
-type DTFL_t struct {
-	Format string
-	Depth  int
-}
-
-func (self *DTFL_t) Prefix() string {
-	var b [64]byte
-	_, file, line, ok := runtime.Caller(self.Depth)
-	if ok {
-		return string(time.Now().AppendFormat(b[:0], self.Format)) + " " + path.Base(file) + ":" + strconv.FormatInt(int64(line), 10)
-	}
-	return string(time.Now().AppendFormat(b[:0], self.Format))
-}
+var std = NewLogger("stderr", NewStderr([]Prefixer{&DT_t{Format: "2006-01-02 15:04:05"}, &FL_t{}}), WhatLevel(0))
 
 type NoWriter_t struct{}
 
@@ -212,21 +116,21 @@ func SetupLogger(logs []Args_t) (err error) {
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewFileTime(v.LogFile, &DTFL_t{Format: v.LogDate, Depth: 4}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			logger.AddOutput("stdout", NewStdout(&DTFL_t{Format: v.LogDate, Depth: 4}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", NewStderr(&DTFL_t{Format: v.LogDate, Depth: 4}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStderr([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {

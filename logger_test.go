@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -15,9 +16,9 @@ func Test1(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdout(&DT_t{}), LOG_TRACE.Levels)
-	logger.AddOutput("buf", NewStdany(&DT_t{}, &buf), LOG_TRACE.Levels)
-	log_file, _ := NewFileBytes("/tmp/test.log", &DT_t{}, 1024, 10)
+	logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{}}), LOG_TRACE.Levels)
+	logger.AddOutput("buf", NewStdany([]Prefixer{&DT_t{}}, &buf), LOG_TRACE.Levels)
+	log_file, _ := NewFileBytes("/tmp/test.log", []Prefixer{&DT_t{}}, 1024, 10)
 	logger.AddOutput("file", log_file, LOG_TRACE.Levels)
 	log_http := NewHttp(
 		10,
@@ -36,7 +37,7 @@ func Test1(t *testing.T) {
 	Debug("lalala %s", ByteSize(1024))
 	Debug("bububu %s", ByteSize(2048))
 
-	assert.Assert(t, buf.String() == "DEBUG lalala 1.00 KB\nDEBUG bububu 2.00 KB\n", buf.String())
+	assert.Assert(t, buf.String() == " DEBUG lalala 1.00 KB\n DEBUG bububu 2.00 KB\n", fmt.Sprintf("%q", buf.String()))
 }
 
 func Test2(t *testing.T) {
@@ -47,12 +48,12 @@ func Test2(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdout(&DT_t{}), LOG_TRACE.Levels)
-	logger.AddOutput("buf", NewStdany(&DT_t{}, &buf), LOG_TRACE.Levels)
+	logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{}}), LOG_TRACE.Levels)
+	logger.AddOutput("buf", NewStdany([]Prefixer{&DT_t{}}, &buf), LOG_TRACE.Levels)
 
 	DebugCtx(ctx, "test")
 
-	assert.Assert(t, buf.String() == "DEBUG b0dd37be-0f1e-421d-98c8-222cc57acae0 test\n", buf.String())
+	assert.Assert(t, buf.String() == " DEBUG b0dd37be-0f1e-421d-98c8-222cc57acae0 test\n", fmt.Sprintf("%q", buf.String()))
 }
 
 func Test3(t *testing.T) {

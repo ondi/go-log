@@ -6,6 +6,7 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -15,8 +16,8 @@ var FileBytesFormat = "20060102150405"
 
 type FileBytes_t struct {
 	mx           sync.Mutex
-	prefix       Prefixer
-	fp           *os.File
+	prefix       []Prefixer
+	out          *os.File
 	filename     string
 	files        []string
 	bytes_limit  int
@@ -25,7 +26,7 @@ type FileBytes_t struct {
 	cycle        int
 }
 
-func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
+func NewFileBytes(filename string, prefix []Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
 	self = &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
@@ -37,17 +38,26 @@ func NewFileBytes(filename string, prefix Prefixer, bytes_limit int, backup_coun
 }
 
 func (self *FileBytes_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	p := self.prefix.Prefix()
-	if len(p) > 0 {
-		p += " "
+	for i, v := range self.prefix {
+		if i > 0 {
+			io.WriteString(self.out, " ")
+		}
+		io.WriteString(self.out, v.Prefix())
 	}
-	return fmt.Fprintf(self, p+level+" "+format+"\n", args...)
+	if len(self.prefix) > 0 {
+		io.WriteString(self.out, " ")
+	}
+	io.WriteString(self.out, level)
+	io.WriteString(self.out, " ")
+	n, err = fmt.Fprintf(self, format+"\n", args...)
+	io.WriteString(self.out, "\n")
+	return
 }
 
 func (self *FileBytes_t) Write(p []byte) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	if n, err = self.fp.Write(p); err != nil {
+	if n, err = self.out.Write(p); err != nil {
 		return
 	}
 	self.bytes_count += n
@@ -59,10 +69,10 @@ func (self *FileBytes_t) Write(p []byte) (n int, err error) {
 }
 
 func (self *FileBytes_t) __cycle(ts time.Time) (err error) {
-	if self.fp != nil {
+	if self.out != nil {
 		self.cycle++
 		backlog_file := fmt.Sprintf("%s.%d.%s", self.filename, self.cycle, ts.Format(FileBytesFormat))
-		self.fp.Close()
+		self.out.Close()
 		os.Rename(self.filename, backlog_file)
 		self.files = append(self.files, backlog_file)
 	}
@@ -70,10 +80,13 @@ func (self *FileBytes_t) __cycle(ts time.Time) (err error) {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]
 	}
-	self.fp, err = os.OpenFile(self.filename, os.O_WRONLY|os.O_CREATE /*|os.O_APPEND*/, 0644)
+	self.out, err = os.OpenFile(self.filename, os.O_WRONLY|os.O_CREATE /*|os.O_APPEND*/, 0644)
 	return
 }
 
-func (self *FileBytes_t) Close() error {
-	return self.fp.Close()
+func (self *FileBytes_t) Close() (err error) {
+	if self.out != nil {
+		err = self.out.Close()
+	}
+	return
 }
