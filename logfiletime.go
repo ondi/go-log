@@ -39,14 +39,8 @@ func NewFileTime(filename string, prefix []Prefixer, truncate time.Duration, bac
 }
 
 func (self *FileTime_t) WriteLevel(level string, format string, args ...interface{}) (n int, err error) {
-	for i, v := range self.prefix {
-		if i > 0 {
-			io.WriteString(self.out, " ")
-		}
-		io.WriteString(self.out, v.Prefix())
-	}
-	if len(self.prefix) > 0 {
-		io.WriteString(self.out, " ")
+	for _, v := range self.prefix {
+		v.Prefix(self.out)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

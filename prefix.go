@@ -5,6 +5,7 @@
 package log
 
 import (
+	"io"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -12,21 +13,24 @@ import (
 )
 
 type Prefixer interface {
-	Prefix() string
+	Prefix(out io.Writer) (int, error)
 }
 
 type DT_t struct {
 	Format string
 }
 
-func (self *DT_t) Prefix() string {
+func (self *DT_t) Prefix(out io.Writer) (n int, err error) {
 	var b [64]byte
-	return string(time.Now().AppendFormat(b[:0], self.Format))
+	if n, err = out.Write(time.Now().AppendFormat(b[:0], self.Format)); n > 0 {
+		io.WriteString(out, " ")
+	}
+	return
 }
 
 type FL_t struct{}
 
-func (self *FL_t) Prefix() string {
+func (self *FL_t) Prefix(out io.Writer) (n int, err error) {
 	var ok bool
 	var prev_path, next_path string
 	var prev_line, next_line int
@@ -41,5 +45,10 @@ func (self *FL_t) Prefix() string {
 			break
 		}
 	}
-	return filepath.Base(prev_path) + ":" + strconv.FormatInt(int64(prev_line), 10)
+	if n, err = io.WriteString(out, filepath.Base(prev_path)); n > 0 {
+		io.WriteString(out, ":")
+		io.WriteString(out, strconv.FormatInt(int64(prev_line), 10))
+		io.WriteString(out, " ")
+	}
+	return
 }

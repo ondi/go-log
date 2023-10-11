@@ -37,7 +37,7 @@ func Test1(t *testing.T) {
 	Debug("lalala %s", ByteSize(1024))
 	Debug("bububu %s", ByteSize(2048))
 
-	assert.Assert(t, buf.String() == " DEBUG lalala 1.00 KB\n DEBUG bububu 2.00 KB\n", fmt.Sprintf("%q", buf.String()))
+	assert.Assert(t, buf.String() == "DEBUG lalala 1.00 KB\nDEBUG bububu 2.00 KB\n", fmt.Sprintf("%q", buf.String()))
 }
 
 func Test2(t *testing.T) {
@@ -53,7 +53,7 @@ func Test2(t *testing.T) {
 
 	DebugCtx(ctx, "test")
 
-	assert.Assert(t, buf.String() == " DEBUG b0dd37be-0f1e-421d-98c8-222cc57acae0 test\n", fmt.Sprintf("%q", buf.String()))
+	assert.Assert(t, buf.String() == "DEBUG b0dd37be-0f1e-421d-98c8-222cc57acae0 test\n", fmt.Sprintf("%q", buf.String()))
 }
 
 func Test3(t *testing.T) {
