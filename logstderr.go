@@ -26,7 +26,7 @@ func NewStdany(prefix []Prefixer, out io.Writer) Writer {
 
 func (self *Stdany_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	for _, v := range self.prefix {
-		v.Prefix(ctx, ts, level, format, self.out)
+		v.Prefix(ctx, self.out, ts, level, format)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

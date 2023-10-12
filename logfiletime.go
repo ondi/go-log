@@ -46,7 +46,7 @@ func (self *FileTime_t) WriteLevel(ctx context.Context, ts time.Time, level stri
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
-		v.Prefix(ctx, ts, level, format, self.out)
+		v.Prefix(ctx, self.out, ts, level, format)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

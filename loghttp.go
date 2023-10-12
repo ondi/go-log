@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -20,7 +21,7 @@ import (
 )
 
 type Converter interface {
-	Convert(ctx context.Context, ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error)
+	Convert(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...interface{}) (n int, err error)
 }
 
 type Client interface {
@@ -134,19 +135,17 @@ func (self *Http_t) WriteLevel(ctx context.Context, ts time.Time, level string, 
 		return 0, fmt.Errorf("RPS")
 	}
 	var buf bytes.Buffer
-	if n, err = self.convert.Convert(ctx, ts, &buf, level, format, args...); err != nil {
+	if n, err = self.convert.Convert(ctx, &buf, ts, level, format, args...); err != nil {
 		return
 	}
 
 	self.mx.Lock()
-	if self.q.Size() >= self.queue_size {
-		self.q.PopFront()
-	}
 	res := self.q.PushBackNoWait(buf)
 	self.mx.Unlock()
 
 	if res != 0 {
-		return 0, fmt.Errorf("LOG QUEUE OVERFLOW")
+		err = errors.New("QUEUE OVERFLOW")
+		fmt.Fprintf(os.Stderr, "%v LOG ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 	}
 	return
 }

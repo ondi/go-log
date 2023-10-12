@@ -162,7 +162,7 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) Convert(ctx context.Context, ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageKB_t) Convert(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
@@ -189,7 +189,7 @@ func (self MessageKB_t) Convert(ctx context.Context, ts time.Time, out io.Writer
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.Prefix(ctx, ts, level, format, &temp)
+		v.Prefix(ctx, &temp, ts, level, format)
 	}
 	self.Location = temp.String()
 
@@ -220,14 +220,14 @@ type MessageTG_t struct {
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) Convert(ctx context.Context, ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageTG_t) Convert(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.Prefix(ctx, ts, level, format, &temp)
+		v.Prefix(ctx, &temp, ts, level, format)
 	}
 	self.Text += temp.String()
 

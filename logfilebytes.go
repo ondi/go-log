@@ -41,7 +41,7 @@ func (self *FileBytes_t) WriteLevel(ctx context.Context, ts time.Time, level str
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		n, err = v.Prefix(ctx, ts, level, format, self.out)
+		n, err = v.Prefix(ctx, self.out, ts, level, format)
 		self.bytes_count += n
 	}
 	n, err = io.WriteString(self.out, level)
