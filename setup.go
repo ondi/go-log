@@ -28,7 +28,6 @@ Logs:
 			log.MessageKB_t{
 				ApplicationName: v.AppName,
 				Environment:     v.EnvName,
-				CallDepth:       4,
 				Index: log.MessageIndexKB_t{
 					Index: log.MessageIndexNameKB_t{
 						Format: v.IndexFormat,
@@ -72,13 +71,13 @@ import (
 	"unicode/utf8"
 )
 
-var std = NewLogger("stderr", NewStderr([]Prefixer{&DT_t{Format: "2006-01-02 15:04:05"}, &FL_t{}}), WhatLevel(0))
+var std = NewLogger("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05"}, &FL_t{}}), WhatLevel(0))
 
-var prefs = []Prefixer{&FL_t{}, &CX_t{}}
+var prefs = []Formatter{&FL_t{}, &CX_t{}}
 
 type NoWriter_t struct{}
 
-func (NoWriter_t) WriteLevel(context.Context, time.Time, string, string, ...interface{}) (int, error) {
+func (NoWriter_t) WriteLevel(context.Context, time.Time, string, string, ...any) (int, error) {
 	return 0, nil
 }
 
@@ -117,21 +116,21 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewFileTime(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(ts, v.LogFile, []Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdout([]Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", NewStderr([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStderr([]Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {
@@ -162,7 +161,7 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) Convert(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageKB_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
@@ -189,7 +188,7 @@ func (self MessageKB_t) Convert(ctx context.Context, out io.Writer, ts time.Time
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.Prefix(ctx, &temp, ts, level, format)
+		v.Format(ctx, &temp, ts, level, format)
 	}
 	self.Location = temp.String()
 
@@ -214,20 +213,20 @@ type MessageTG_t struct {
 	ReplyToMessageID int64 `json:"reply_to_message_id,omitempty"`
 	// Optional	Additional interface options. A JSON-serialized object for an inline keyboard,
 	// custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
-	ReplyMarkup interface{} `json:"reply_markup,omitempty"`
+	ReplyMarkup any `json:"reply_markup,omitempty"`
 
 	Hostname  string `json:"-"`
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) Convert(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageTG_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.Prefix(ctx, &temp, ts, level, format)
+		v.Format(ctx, &temp, ts, level, format)
 	}
 	self.Text += temp.String()
 

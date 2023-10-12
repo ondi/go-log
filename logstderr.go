@@ -13,20 +13,20 @@ import (
 )
 
 type Stdany_t struct {
-	prefix []Prefixer
+	prefix []Formatter
 	out    io.Writer
 }
 
-func NewStdany(prefix []Prefixer, out io.Writer) Writer {
+func NewStdany(prefix []Formatter, out io.Writer) Writer {
 	return &Stdany_t{
 		prefix: prefix,
 		out:    out,
 	}
 }
 
-func (self *Stdany_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self *Stdany_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	for _, v := range self.prefix {
-		v.Prefix(ctx, self.out, ts, level, format)
+		v.Format(ctx, self.out, ts, level, format)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")
@@ -39,10 +39,10 @@ func (self *Stdany_t) Close() error {
 	return nil
 }
 
-func NewStderr(prefix []Prefixer) Writer {
+func NewStderr(prefix []Formatter) Writer {
 	return NewStdany(prefix, os.Stderr)
 }
 
-func NewStdout(prefix []Prefixer) Writer {
+func NewStdout(prefix []Formatter) Writer {
 	return NewStdany(prefix, os.Stdout)
 }

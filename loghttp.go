@@ -10,7 +10,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -19,10 +18,6 @@ import (
 
 	"github.com/ondi/go-queue"
 )
-
-type Converter interface {
-	Convert(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...interface{}) (n int, err error)
-}
 
 type Client interface {
 	Do(*http.Request) (*http.Response, error)
@@ -62,7 +57,7 @@ type Http_t struct {
 	wg         sync.WaitGroup
 	q          queue.Queue[bytes.Buffer]
 	urls       Urls
-	convert    Converter
+	convert    Formatter
 	client     Client
 	rps_limit  Rps
 	header     http.Header
@@ -107,7 +102,7 @@ func RpsLimit(rps_limit Rps) HttpOption {
 	}
 }
 
-func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client Client, opts ...HttpOption) Writer {
+func NewHttp(queue_size int, writers int, urls Urls, convert Formatter, client Client, opts ...HttpOption) Writer {
 	self := &Http_t{
 		queue_size: queue_size,
 		urls:       urls,
@@ -130,12 +125,12 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 	return self
 }
 
-func (self *Http_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self *Http_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	if !self.rps_limit.Add(ts) {
 		return 0, fmt.Errorf("RPS")
 	}
 	var buf bytes.Buffer
-	if n, err = self.convert.Convert(ctx, &buf, ts, level, format, args...); err != nil {
+	if n, err = self.convert.Format(ctx, &buf, ts, level, format, args...); err != nil {
 		return
 	}
 

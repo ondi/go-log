@@ -13,17 +13,13 @@ import (
 	"time"
 )
 
-type Prefixer interface {
-	Prefix(ctx context.Context, out io.Writer, ts time.Time, level string, format string) (int, error)
-}
-
 type DT_t struct {
-	Format string
+	Layout string
 }
 
-func (self *DT_t) Prefix(ctx context.Context, out io.Writer, ts time.Time, level string, format string) (n int, err error) {
+func (self *DT_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	var b [64]byte
-	if n, err = out.Write(ts.AppendFormat(b[:0], self.Format)); n > 0 {
+	if n, err = out.Write(ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
 	}
 	return
@@ -31,7 +27,7 @@ func (self *DT_t) Prefix(ctx context.Context, out io.Writer, ts time.Time, level
 
 type FL_t struct{}
 
-func (self *FL_t) Prefix(ctx context.Context, out io.Writer, ts time.Time, level string, format string) (n int, err error) {
+func (self *FL_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	var next_line int
 	var next_path string
 	_, prev_path, prev_line, ok := runtime.Caller(1)
@@ -55,7 +51,7 @@ func (self *FL_t) Prefix(ctx context.Context, out io.Writer, ts time.Time, level
 
 type CX_t struct{}
 
-func (self *CX_t) Prefix(ctx context.Context, out io.Writer, ts time.Time, level string, format string) (n int, err error) {
+func (self *CX_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
 		v.Set(level, format)
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
