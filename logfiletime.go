@@ -38,7 +38,7 @@ func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate tim
 	return self, self.__cycle(self.last_date)
 }
 
-func (self *FileTime_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *FileTime_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if tr := ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
@@ -46,7 +46,7 @@ func (self *FileTime_t) WriteLevel(ctx context.Context, ts time.Time, level stri
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
-		v.Format(ctx, self.out, ts, level, format)
+		v.FormatLog(ctx, self.out, ts, level, format, args...)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

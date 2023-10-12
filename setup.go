@@ -71,7 +71,7 @@ import (
 	"unicode/utf8"
 )
 
-var std = NewLogger("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05"}, &FL_t{}}), WhatLevel(0))
+var std = NewLogger("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05"}, &FL_t{}, &CX_t{}}), LOG_TRACE.Levels)
 
 var prefs = []Formatter{&FL_t{}, &CX_t{}}
 
@@ -161,7 +161,7 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self MessageKB_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
@@ -188,7 +188,7 @@ func (self MessageKB_t) Format(ctx context.Context, out io.Writer, ts time.Time,
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.Format(ctx, &temp, ts, level, format)
+		v.FormatLog(ctx, &temp, ts, level, format, args...)
 	}
 	self.Location = temp.String()
 
@@ -219,14 +219,14 @@ type MessageTG_t struct {
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self MessageTG_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.Format(ctx, &temp, ts, level, format)
+		v.FormatLog(ctx, &temp, ts, level, format, args...)
 	}
 	self.Text += temp.String()
 

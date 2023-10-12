@@ -5,7 +5,7 @@
 	func (self *log_t) Debug(format string, args ...any) {
 		ts := time.Now()
 		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
-			v.WriteLevel(context.Background(), ts, LOG_DEBUG.Name, format, args...)
+			v.WriteLog(context.Background(), ts, LOG_DEBUG.Name, format, args...)
 		}
 	}
 */
@@ -54,12 +54,12 @@ type Logger interface {
 }
 
 type Writer interface {
-	WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (int, error)
+	WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (int, error)
 	Close() error
 }
 
 type Formatter interface {
-	Format(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (int, error)
+	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (int, error)
 }
 
 type writers_t map[string]Writer
@@ -136,70 +136,70 @@ func (self *log_t) Clear() {
 func (self *log_t) Error(format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Levels[0]])) {
-		v.WriteLevel(context.Background(), ts, LOG_ERROR.Name, format, args...)
+		v.WriteLog(context.Background(), ts, LOG_ERROR.Name, format, args...)
 	}
 }
 
 func (self *log_t) Warn(format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Levels[0]])) {
-		v.WriteLevel(context.Background(), ts, LOG_WARN.Name, format, args...)
+		v.WriteLog(context.Background(), ts, LOG_WARN.Name, format, args...)
 	}
 }
 
 func (self *log_t) Info(format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Levels[0]])) {
-		v.WriteLevel(context.Background(), ts, LOG_INFO.Name, format, args...)
+		v.WriteLog(context.Background(), ts, LOG_INFO.Name, format, args...)
 	}
 }
 
 func (self *log_t) Debug(format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
-		v.WriteLevel(context.Background(), ts, LOG_DEBUG.Name, format, args...)
+		v.WriteLog(context.Background(), ts, LOG_DEBUG.Name, format, args...)
 	}
 }
 
 func (self *log_t) Trace(format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Levels[0]])) {
-		v.WriteLevel(context.Background(), ts, LOG_TRACE.Name, format, args...)
+		v.WriteLog(context.Background(), ts, LOG_TRACE.Name, format, args...)
 	}
 }
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_ERROR.Levels[0]])) {
-		v.WriteLevel(ctx, ts, LOG_ERROR.Name, format, args...)
+		v.WriteLog(ctx, ts, LOG_ERROR.Name, format, args...)
 	}
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_WARN.Levels[0]])) {
-		v.WriteLevel(ctx, ts, LOG_WARN.Name, format, args...)
+		v.WriteLog(ctx, ts, LOG_WARN.Name, format, args...)
 	}
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_INFO.Levels[0]])) {
-		v.WriteLevel(ctx, ts, LOG_INFO.Name, format, args...)
+		v.WriteLog(ctx, ts, LOG_INFO.Name, format, args...)
 	}
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
-		v.WriteLevel(ctx, ts, LOG_DEBUG.Name, format, args...)
+		v.WriteLog(ctx, ts, LOG_DEBUG.Name, format, args...)
 	}
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...any) {
 	ts := time.Now()
 	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_TRACE.Levels[0]])) {
-		v.WriteLevel(ctx, ts, LOG_TRACE.Name, format, args...)
+		v.WriteLog(ctx, ts, LOG_TRACE.Name, format, args...)
 	}
 }
 

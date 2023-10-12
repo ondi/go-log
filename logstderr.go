@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 )
 
 type Stdany_t struct {
+	mx     sync.Mutex
 	prefix []Formatter
 	out    io.Writer
 }
@@ -24,9 +26,11 @@ func NewStdany(prefix []Formatter, out io.Writer) Writer {
 	}
 }
 
-func (self *Stdany_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *Stdany_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		v.Format(ctx, self.out, ts, level, format)
+		v.FormatLog(ctx, self.out, ts, level, format, args...)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

@@ -37,11 +37,11 @@ func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit
 	return self, self.__cycle(ts)
 }
 
-func (self *FileBytes_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *FileBytes_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		n, err = v.Format(ctx, self.out, ts, level, format)
+		n, err = v.FormatLog(ctx, self.out, ts, level, format, args...)
 		self.bytes_count += n
 	}
 	n, err = io.WriteString(self.out, level)

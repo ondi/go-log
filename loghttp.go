@@ -125,12 +125,12 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Formatter, client C
 	return self
 }
 
-func (self *Http_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *Http_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	if !self.rps_limit.Add(ts) {
 		return 0, fmt.Errorf("RPS")
 	}
 	var buf bytes.Buffer
-	if n, err = self.convert.Format(ctx, &buf, ts, level, format, args...); err != nil {
+	if n, err = self.convert.FormatLog(ctx, &buf, ts, level, format, args...); err != nil {
 		return
 	}
 
