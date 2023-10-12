@@ -49,12 +49,12 @@ func Test2(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{}}), LOG_TRACE.Levels)
-	logger.AddOutput("buf", NewStdany([]Prefixer{&DT_t{}}, &buf), LOG_TRACE.Levels)
+	logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{}, &CX_t{}}), LOG_TRACE.Levels)
+	logger.AddOutput("buf", NewStdany([]Prefixer{&DT_t{}, &CX_t{}}, &buf), LOG_TRACE.Levels)
 
 	DebugCtx(ctx, "test")
 
-	assert.Assert(t, buf.String() == "DEBUG b0dd37be-0f1e-421d-98c8-222cc57acae0 test\n", fmt.Sprintf("%q", buf.String()))
+	assert.Assert(t, buf.String() == "b0dd37be-0f1e-421d-98c8-222cc57acae0 DEBUG test\n", fmt.Sprintf("%q", buf.String()))
 }
 
 func Test3(t *testing.T) {

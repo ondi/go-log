@@ -3,8 +3,9 @@
 
 	// no allocation and locks
 	func (self *log_t) Debug(format string, args ...interface{}) {
-		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.level])) {
-			v.WriteLevel(LOG_DEBUG.Name, format, args...)
+		ts := time.Now()
+		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {
+			v.WriteLevel(context.Background(), ts, LOG_DEBUG.Name, format, args...)
 		}
 	}
 */
@@ -25,11 +26,13 @@ type level_name_t struct {
 	Levels []level_t
 }
 
-var LOG_TRACE = level_name_t{Name: "TRACE", Levels: []level_t{0, 1, 2, 3, 4}}
-var LOG_DEBUG = level_name_t{Name: "DEBUG", Levels: []level_t{1, 2, 3, 4}}
-var LOG_INFO = level_name_t{Name: "INFO", Levels: []level_t{2, 3, 4}}
-var LOG_WARN = level_name_t{Name: "WARN", Levels: []level_t{3, 4}}
-var LOG_ERROR = level_name_t{Name: "ERROR", Levels: []level_t{4}}
+var (
+	LOG_TRACE = level_name_t{Name: "TRACE", Levels: []level_t{0, 1, 2, 3, 4}}
+	LOG_DEBUG = level_name_t{Name: "DEBUG", Levels: []level_t{1, 2, 3, 4}}
+	LOG_INFO  = level_name_t{Name: "INFO", Levels: []level_t{2, 3, 4}}
+	LOG_WARN  = level_name_t{Name: "WARN", Levels: []level_t{3, 4}}
+	LOG_ERROR = level_name_t{Name: "ERROR", Levels: []level_t{4}}
+)
 
 type Logger interface {
 	Trace(format string, args ...interface{})

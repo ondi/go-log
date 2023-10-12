@@ -78,7 +78,7 @@ var prefs = []Prefixer{&FL_t{}, &CX_t{}}
 
 type NoWriter_t struct{}
 
-func (NoWriter_t) WriteLevel(level string, format string, args ...interface{}) (int, error) {
+func (NoWriter_t) WriteLevel(context.Context, time.Time, string, string, ...interface{}) (int, error) {
 	return 0, nil
 }
 
