@@ -5,6 +5,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -26,22 +27,21 @@ type FileBytes_t struct {
 	cycle        int
 }
 
-func NewFileBytes(ts time.Time, filename string, prefix []Prefixer, bytes_limit int, backup_count int) (self *FileBytes_t, err error) {
-	self = &FileBytes_t{
+func NewFileBytes(ts time.Time, filename string, prefix []Prefixer, bytes_limit int, backup_count int) (Writer, error) {
+	self := &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
 	}
-	err = self.__cycle(ts)
-	return
+	return self, self.__cycle(ts)
 }
 
-func (self *FileBytes_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self *FileBytes_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		n, err = v.Prefix(ts, self.out)
+		n, err = v.Prefix(ctx, ts, level, format, self.out)
 		self.bytes_count += n
 	}
 	n, err = io.WriteString(self.out, level)

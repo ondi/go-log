@@ -63,6 +63,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -73,7 +74,7 @@ import (
 
 var std = NewLogger("stderr", NewStderr([]Prefixer{&DT_t{Format: "2006-01-02 15:04:05"}, &FL_t{}}), WhatLevel(0))
 
-var fl = &FL_t{}
+var prefs = []Prefixer{&FL_t{}, &CX_t{}}
 
 type NoWriter_t struct{}
 
@@ -116,21 +117,21 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewFileTime(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(ts, v.LogFile, []Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdout([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", NewStderr([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStderr([]Prefixer{&DT_t{Format: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {
@@ -161,7 +162,7 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) Convert(ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageKB_t) Convert(ctx context.Context, ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
@@ -187,7 +188,9 @@ func (self MessageKB_t) Convert(ts time.Time, out io.Writer, level string, forma
 	self.Timestamp = string(ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp bytes.Buffer
-	fl.Prefix(ts, &temp)
+	for _, v := range prefs {
+		v.Prefix(ctx, ts, level, format, &temp)
+	}
 	self.Location = temp.String()
 
 	err = json.NewEncoder(out).Encode(self)
@@ -217,13 +220,15 @@ type MessageTG_t struct {
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) Convert(ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
+func (self MessageTG_t) Convert(ctx context.Context, ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
 
 	var temp bytes.Buffer
-	fl.Prefix(ts, &temp)
+	for _, v := range prefs {
+		v.Prefix(ctx, ts, level, format, &temp)
+	}
 	self.Text += temp.String()
 
 	self.Text += level + " " + fmt.Sprintf(format, args...)

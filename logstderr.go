@@ -5,6 +5,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -23,9 +24,9 @@ func NewStdany(prefix []Prefixer, out io.Writer) Writer {
 	}
 }
 
-func (self *Stdany_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self *Stdany_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	for _, v := range self.prefix {
-		v.Prefix(ts, self.out)
+		v.Prefix(ctx, ts, level, format, self.out)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")

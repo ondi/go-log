@@ -6,6 +6,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -19,7 +20,7 @@ import (
 )
 
 type Converter interface {
-	Convert(ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error)
+	Convert(ctx context.Context, ts time.Time, out io.Writer, level string, format string, args ...interface{}) (n int, err error)
 }
 
 type Client interface {
@@ -105,8 +106,8 @@ func RpsLimit(rps_limit Rps) HttpOption {
 	}
 }
 
-func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client Client, opts ...HttpOption) (self *Http_t) {
-	self = &Http_t{
+func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client Client, opts ...HttpOption) Writer {
+	self := &Http_t{
 		queue_size: queue_size,
 		urls:       urls,
 		convert:    convert,
@@ -124,15 +125,16 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Converter, client C
 		self.wg.Add(1)
 		go self.writer()
 	}
-	return
+
+	return self
 }
 
-func (self *Http_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self *Http_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	if !self.rps_limit.Add(ts) {
 		return 0, fmt.Errorf("RPS")
 	}
 	var buf bytes.Buffer
-	if n, err = self.convert.Convert(ts, &buf, level, format, args...); err != nil {
+	if n, err = self.convert.Convert(ctx, ts, &buf, level, format, args...); err != nil {
 		return
 	}
 

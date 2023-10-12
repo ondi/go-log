@@ -17,7 +17,7 @@ var errors_context errors_context_t = "log_ctx"
 
 type ErrorsContext interface {
 	Name() string
-	Set(level string, format string, args ...interface{})
+	Set(level string, format string)
 	Get(out io.Writer)
 	Reset()
 }
@@ -40,7 +40,7 @@ func (self *ErrorsContext_t) Name() string {
 	return self.name
 }
 
-func (self *ErrorsContext_t) Set(level string, format string, args ...interface{}) {
+func (self *ErrorsContext_t) Set(level string, format string) {
 	if strings.Contains(self.levels, level) {
 		self.mx.Lock()
 		if ix := strings.Index(format, " "); ix > 0 {

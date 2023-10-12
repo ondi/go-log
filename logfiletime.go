@@ -5,6 +5,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -26,19 +27,18 @@ type FileTime_t struct {
 	cycle        int
 }
 
-func NewFileTime(ts time.Time, filename string, prefix []Prefixer, truncate time.Duration, backup_count int) (self *FileTime_t, err error) {
-	self = &FileTime_t{
+func NewFileTime(ts time.Time, filename string, prefix []Prefixer, truncate time.Duration, backup_count int) (Writer, error) {
+	self := &FileTime_t{
 		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
 		backup_count: backup_count,
 		last_date:    ts,
 	}
-	err = self.__cycle(self.last_date)
-	return
+	return self, self.__cycle(self.last_date)
 }
 
-func (self *FileTime_t) WriteLevel(ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
+func (self *FileTime_t) WriteLevel(ctx context.Context, ts time.Time, level string, format string, args ...interface{}) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if tr := ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
@@ -46,7 +46,7 @@ func (self *FileTime_t) WriteLevel(ts time.Time, level string, format string, ar
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
-		v.Prefix(ts, self.out)
+		v.Prefix(ctx, ts, level, format, self.out)
 	}
 	io.WriteString(self.out, level)
 	io.WriteString(self.out, " ")
