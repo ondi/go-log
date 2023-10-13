@@ -1,7 +1,7 @@
 /*
 	Log with levels
 
-	// no allocation and locks
+	// no allocation and locks for WriteLog cycle
 	func (self *log_t) Debug(format string, args ...any) {
 		ts := time.Now()
 		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Levels[0]])) {

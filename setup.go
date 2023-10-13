@@ -71,18 +71,22 @@ import (
 	"unicode/utf8"
 )
 
-var std = NewLogger("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05"}, &FL_t{}, &CX_t{}}), LOG_TRACE.Levels)
+var std = NewLogger("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05.000"}, &FL_t{}, &CX_t{}}), LOG_TRACE.Levels)
 
 var prefs = []Formatter{&FL_t{}, &CX_t{}}
 
 type NoWriter_t struct{}
 
-func (NoWriter_t) WriteLevel(context.Context, time.Time, string, string, ...any) (int, error) {
+func (NoWriter_t) WriteLog(context.Context, time.Time, string, string, ...any) (int, error) {
 	return 0, nil
 }
 
 func (NoWriter_t) Close() error {
 	return nil
+}
+
+func NoWriter() Writer {
+	return NoWriter_t{}
 }
 
 type Args_t struct {
