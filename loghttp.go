@@ -62,7 +62,7 @@ type Http_t struct {
 	wg         sync.WaitGroup
 	q          queue.Queue[bytes.Buffer]
 	urls       Urls
-	convert    Formatter
+	message    Formatter
 	client     Client
 	rps_limit  Rps
 	header     http.Header
@@ -115,10 +115,10 @@ func BulkWrite(bulk_write int) HttpOption {
 	}
 }
 
-func NewHttp(queue_size int, writers int, urls Urls, convert Formatter, client Client, opts ...HttpOption) Writer {
+func NewHttp(queue_size int, writers int, urls Urls, message Formatter, client Client, opts ...HttpOption) Writer {
 	self := &Http_t{
 		urls:       urls,
-		convert:    convert,
+		message:    message,
 		client:     client,
 		rps_limit:  NoRps_t{},
 		bulk_write: 1,
@@ -146,7 +146,7 @@ func (self *Http_t) WriteLog(ctx context.Context, ts time.Time, level string, fo
 	}
 
 	var buf bytes.Buffer
-	if n, err = self.convert.FormatLog(ctx, &buf, ts, level, format, args...); err != nil {
+	if n, err = self.message.FormatLog(ctx, &buf, ts, level, format, args...); err != nil {
 		return
 	}
 
@@ -179,9 +179,9 @@ func (self *Http_t) writer() (err error) {
 		body.Reset()
 		self.mx.Lock()
 		for i := 0; i < self.bulk_write; i++ {
-			if buf, oki = self.q.PopFront(); oki == 0 {
-				body.ReadFrom(&buf)
-			} else {
+			buf, oki = self.q.PopFront()
+			body.ReadFrom(&buf)
+			if oki != 0 || self.q.Size() == 0 {
 				break
 			}
 		}
@@ -195,17 +195,15 @@ func (self *Http_t) writer() (err error) {
 			}
 			req.Header = self.header
 			if resp, err = self.client.Do(req); err != nil {
+				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 				continue
 			}
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
-				err = errors.New(resp.Status)
+				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, body.Bytes())
 				continue
 			}
 			break
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 		}
 		time.Sleep(self.post_delay)
 	}
