@@ -107,10 +107,10 @@ func RpsLimit(rps_limit Rps) HttpOption {
 	}
 }
 
-func BuldWrite(messages int) HttpOption {
+func BulkWrite(bulk_write int) HttpOption {
 	return func(self *Http_t) {
-		if messages > 0 {
-			self.bulk_write = messages
+		if bulk_write > 0 {
+			self.bulk_write = bulk_write
 		}
 	}
 }
