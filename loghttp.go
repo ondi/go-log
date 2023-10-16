@@ -19,6 +19,11 @@ import (
 	"github.com/ondi/go-queue"
 )
 
+var (
+	ERROR_RPS      = errors.New("RPS")
+	ERROR_OVERFLOW = errors.New("OVERFLOW")
+)
+
 type Client interface {
 	Do(*http.Request) (*http.Response, error)
 }
@@ -62,7 +67,7 @@ type Http_t struct {
 	rps_limit  Rps
 	header     http.Header
 	post_delay time.Duration
-	queue_size int
+	bulk_write int
 }
 
 // Default
@@ -102,13 +107,21 @@ func RpsLimit(rps_limit Rps) HttpOption {
 	}
 }
 
+func BuldWrite(messages int) HttpOption {
+	return func(self *Http_t) {
+		if messages > 0 {
+			self.bulk_write = messages
+		}
+	}
+}
+
 func NewHttp(queue_size int, writers int, urls Urls, convert Formatter, client Client, opts ...HttpOption) Writer {
 	self := &Http_t{
-		queue_size: queue_size,
 		urls:       urls,
 		convert:    convert,
 		client:     client,
 		rps_limit:  NoRps_t{},
+		bulk_write: 1,
 	}
 
 	self.q = queue.NewOpen[bytes.Buffer](&self.mx, queue_size)
@@ -127,8 +140,11 @@ func NewHttp(queue_size int, writers int, urls Urls, convert Formatter, client C
 
 func (self *Http_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
 	if !self.rps_limit.Add(ts) {
-		return 0, fmt.Errorf("RPS")
+		err = ERROR_RPS
+		fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-01 15:04:05"), err)
+		return
 	}
+
 	var buf bytes.Buffer
 	if n, err = self.convert.FormatLog(ctx, &buf, ts, level, format, args...); err != nil {
 		return
@@ -139,8 +155,8 @@ func (self *Http_t) WriteLog(ctx context.Context, ts time.Time, level string, fo
 	self.mx.Unlock()
 
 	if res != 0 {
-		err = errors.New("QUEUE OVERFLOW")
-		fmt.Fprintf(os.Stderr, "%v LOG ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
+		err = ERROR_OVERFLOW
+		fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-01 15:04:05"), err)
 	}
 	return
 }
@@ -155,17 +171,26 @@ func (self *Http_t) Size() (res int) {
 func (self *Http_t) writer() (err error) {
 	defer self.wg.Done()
 
+	var oki int
 	var req *http.Request
 	var resp *http.Response
+	var buf, body bytes.Buffer
 	for {
+		body.Reset()
 		self.mx.Lock()
-		buf, oki := self.q.PopFront()
+		for i := 0; i < self.bulk_write; i++ {
+			if buf, oki = self.q.PopFront(); oki == 0 {
+				body.ReadFrom(&buf)
+			} else {
+				break
+			}
+		}
 		self.mx.Unlock()
 		if oki == -1 {
 			return
 		}
 		for _, v := range self.urls.Range() {
-			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(buf.Bytes())); err != nil {
+			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
 				continue
 			}
 			req.Header = self.header
@@ -174,17 +199,13 @@ func (self *Http_t) writer() (err error) {
 			}
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
-				if buf.Len() > 1024 {
-					err = fmt.Errorf("%s: %s", resp.Status, buf.Bytes()[:1024])
-				} else {
-					err = fmt.Errorf("%s: %s", resp.Status, bytes.TrimRight(buf.Bytes(), "\r\n"))
-				}
+				err = errors.New(resp.Status)
 				continue
 			}
 			break
 		}
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v LOG ERROR: %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
+			fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 		}
 		time.Sleep(self.post_delay)
 	}
