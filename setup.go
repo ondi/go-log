@@ -71,7 +71,7 @@ import (
 	"unicode/utf8"
 )
 
-var std = NewLogger("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05.000"}, &FL_t{}, &CX_t{}}), LOG_TRACE.Levels)
+var std = New().AddOutput("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05.000"}, &FL_t{}, &CX_t{}}), LOG_TRACE.Levels)
 
 var prefs = []Formatter{&FL_t{}, &CX_t{}}
 
@@ -99,7 +99,7 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
-func WhatLevel(in int64) []level_t {
+func WhatLevel(in int64) []level_id_t {
 	switch in {
 	case 4:
 		return LOG_ERROR.Levels
@@ -115,7 +115,7 @@ func WhatLevel(in int64) []level_t {
 }
 
 func SetupLogger(ts time.Time, logs []Args_t) (err error) {
-	logger := NewEmpty()
+	logger := New()
 	SetLogger(logger)
 	for _, v := range logs {
 		switch v.LogType {

@@ -20,19 +20,19 @@ import (
 	"unsafe"
 )
 
-type level_t int
+type level_id_t int
 
 type level_name_t struct {
 	Name   string
-	Levels []level_t
+	Levels []level_id_t
 }
 
 var (
-	LOG_TRACE = level_name_t{Name: "TRACE", Levels: []level_t{0, 1, 2, 3, 4}}
-	LOG_DEBUG = level_name_t{Name: "DEBUG", Levels: []level_t{1, 2, 3, 4}}
-	LOG_INFO  = level_name_t{Name: "INFO", Levels: []level_t{2, 3, 4}}
-	LOG_WARN  = level_name_t{Name: "WARN", Levels: []level_t{3, 4}}
-	LOG_ERROR = level_name_t{Name: "ERROR", Levels: []level_t{4}}
+	LOG_TRACE = level_name_t{Name: "TRACE", Levels: []level_id_t{0, 1, 2, 3, 4}}
+	LOG_DEBUG = level_name_t{Name: "DEBUG", Levels: []level_id_t{1, 2, 3, 4}}
+	LOG_INFO  = level_name_t{Name: "INFO", Levels: []level_id_t{2, 3, 4}}
+	LOG_WARN  = level_name_t{Name: "WARN", Levels: []level_id_t{3, 4}}
+	LOG_ERROR = level_name_t{Name: "ERROR", Levels: []level_id_t{4}}
 )
 
 type Logger interface {
@@ -48,9 +48,9 @@ type Logger interface {
 	WarnCtx(ctx context.Context, format string, args ...any)
 	ErrorCtx(ctx context.Context, format string, args ...any)
 
-	AddOutput(name string, writer Writer, level []level_t)
-	DelOutput(name string)
-	Clear()
+	AddOutput(name string, writer Writer, levels []level_id_t) Logger
+	DelOutput(name string) Logger
+	Clear() Logger
 }
 
 type Writer interface {
@@ -103,34 +103,31 @@ type log_t struct {
 	out [5]unsafe.Pointer
 }
 
-func NewEmpty() (self Logger) {
+func New() (self Logger) {
 	self = &log_t{}
 	self.Clear()
 	return
 }
 
-func NewLogger(name string, writer Writer, level []level_t) (self Logger) {
-	self = NewEmpty()
-	self.AddOutput(name, writer, level)
-	return
-}
-
-func (self *log_t) AddOutput(name string, writer Writer, level []level_t) {
-	for _, v := range level {
+func (self *log_t) AddOutput(name string, writer Writer, levels []level_id_t) Logger {
+	for _, v := range levels {
 		add_output(&self.out[v], name, writer)
 	}
+	return self
 }
 
-func (self *log_t) DelOutput(name string) {
+func (self *log_t) DelOutput(name string) Logger {
 	for i := 0; i < len(self.out); i++ {
 		del_output(&self.out[i], name)
 	}
+	return self
 }
 
-func (self *log_t) Clear() {
+func (self *log_t) Clear() Logger {
 	for i := 0; i < len(self.out); i++ {
 		atomic.StorePointer(&self.out[i], unsafe.Pointer(&writers_t{}))
 	}
+	return self
 }
 
 func (self *log_t) Error(format string, args ...any) {

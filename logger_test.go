@@ -12,7 +12,7 @@ import (
 )
 
 func Test1(t *testing.T) {
-	logger := NewEmpty()
+	logger := New()
 	SetLogger(logger)
 
 	var buf bytes.Buffer
@@ -45,7 +45,7 @@ func Test2(t *testing.T) {
 	c := NewErrorsContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", "ERROR")
 	ctx := SetErrorsContext(context.Background(), c)
 
-	logger := NewEmpty()
+	logger := New()
 	SetLogger(logger)
 
 	var buf bytes.Buffer
