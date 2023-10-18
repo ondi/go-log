@@ -71,7 +71,7 @@ import (
 	"unicode/utf8"
 )
 
-var std = New().AddOutput("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05.000"}, &FL_t{}, &CX_t{}}), LOG_TRACE.Levels)
+var std = New().AddOutput("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05.000"}, &FL_t{}, &CX_t{}}), WhatLevel(0))
 
 var prefs = []Formatter{&FL_t{}, &CX_t{}}
 
@@ -99,18 +99,18 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
-func WhatLevel(in int64) []level_id_t {
+func WhatLevel(in int64) []Level_t {
 	switch in {
 	case 4:
-		return LOG_ERROR.Levels
+		return []Level_t{LOG_ERROR}
 	case 3:
-		return LOG_WARN.Levels
+		return []Level_t{LOG_ERROR, LOG_WARN}
 	case 2:
-		return LOG_INFO.Levels
+		return []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO}
 	case 1:
-		return LOG_DEBUG.Levels
+		return []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG}
 	default:
-		return LOG_TRACE.Levels
+		return []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
 	}
 }
 
