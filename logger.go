@@ -2,10 +2,10 @@
 	Log with levels
 
 	// no allocation and locks for WriteLog cycle
-	func (self *log_t) Debug(format string, args ...any) {
+	func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
 		ts := time.Now()
-		for _, v := range *(*writers_t)(atomic.LoadPointer(&self.out[LOG_DEBUG.Level])) {
-			v.WriteLog(context.Background(), ts, LOG_DEBUG.Name, format, args...)
+		for _, v := range *self.levels[level.Level].Load() {
+			v.WriteLog(ctx, ts, level.Name, format, args...)
 		}
 	}
 */
@@ -17,7 +17,6 @@ import (
 	"io"
 	"sync/atomic"
 	"time"
-	"unsafe"
 )
 
 type Level_t struct {
@@ -62,33 +61,33 @@ type Formatter interface {
 
 type writers_t map[string]Writer
 
-func add_output(value *unsafe.Pointer, name string, writer Writer) {
+func add_output(value *atomic.Pointer[writers_t], name string, writer Writer) {
 	for {
-		temp := writers_t{}
-		p := atomic.LoadPointer(value)
-		for k, v := range *(*writers_t)(p) {
-			temp[k] = v
+		old := value.Load()
+		new := writers_t{}
+		for k, v := range *old {
+			new[k] = v
 		}
-		temp[name] = writer
-		if atomic.CompareAndSwapPointer(value, p, unsafe.Pointer(&temp)) {
+		new[name] = writer
+		if value.CompareAndSwap(old, &new) {
 			return
 		}
 	}
 }
 
-func del_output(value *unsafe.Pointer, name string) {
+func del_output(value *atomic.Pointer[writers_t], name string) {
 	for {
+		old := value.Load()
+		new := writers_t{}
 		var writer Writer
-		temp := writers_t{}
-		p := atomic.LoadPointer(value)
-		for k, v := range *(*writers_t)(p) {
+		for k, v := range *old {
 			if k == name {
 				writer = v
 			} else {
-				temp[k] = v
+				new[k] = v
 			}
 		}
-		if atomic.CompareAndSwapPointer(value, p, unsafe.Pointer(&temp)) {
+		if value.CompareAndSwap(old, &new) {
 			if writer != nil {
 				writer.Close()
 			}
@@ -98,12 +97,12 @@ func del_output(value *unsafe.Pointer, name string) {
 }
 
 type log_t struct {
-	levels []unsafe.Pointer
+	levels []atomic.Pointer[writers_t]
 }
 
 func New() Logger {
 	self := &log_t{
-		levels: make([]unsafe.Pointer, LOG_ERROR.Level+1),
+		levels: make([]atomic.Pointer[writers_t], LOG_ERROR.Level+1),
 	}
 	self.Clear()
 	return self
@@ -111,7 +110,11 @@ func New() Logger {
 
 func (self *log_t) Clear() Logger {
 	for i := 0; i < len(self.levels); i++ {
-		atomic.StorePointer(&self.levels[i], unsafe.Pointer(&writers_t{}))
+		if v1 := self.levels[i].Swap(&writers_t{}); v1 != nil {
+			for _, v2 := range *v1 {
+				v2.Close()
+			}
+		}
 	}
 	return self
 }
@@ -132,7 +135,7 @@ func (self *log_t) DelOutput(name string) Logger {
 
 func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
 	ts := time.Now()
-	for _, v := range *(*writers_t)(atomic.LoadPointer(&self.levels[level.Level])) {
+	for _, v := range *self.levels[level.Level].Load() {
 		v.WriteLog(ctx, ts, level.Name, format, args...)
 	}
 }
