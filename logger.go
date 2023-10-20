@@ -64,7 +64,7 @@ type Logger interface {
 }
 
 type Queue interface {
-	WriteLog(msg Msg_t) (int, error)
+	WriteLog(m Msg_t) (int, error)
 	ReadLog(count int) (out []Msg_t, oki int)
 	Close() error
 }
@@ -84,20 +84,20 @@ func NewQueue(limit int) Queue {
 	return self
 }
 
-func (self *queue_t) WriteLog(msg Msg_t) (n int, err error) {
+func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
-	n = self.q.PushBackNoWait(msg)
+	n = self.q.PushBackNoWait(m)
 	self.mx.Unlock()
 	return
 }
 
 func (self *queue_t) ReadLog(count int) (out []Msg_t, oki int) {
 	self.mx.Lock()
-	var msg Msg_t
+	var m Msg_t
 	for i := 0; i < count; i++ {
-		msg, oki = self.q.PopFront()
+		m, oki = self.q.PopFront()
 		if oki == 0 {
-			out = append(out, msg)
+			out = append(out, m)
 		} else {
 			break
 		}
