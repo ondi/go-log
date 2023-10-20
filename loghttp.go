@@ -6,22 +6,13 @@ package log
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"sync"
 	"time"
-
-	"github.com/ondi/go-queue"
-)
-
-var (
-	ERROR_RPS      = errors.New("RPS")
-	ERROR_OVERFLOW = errors.New("OVERFLOW")
 )
 
 type Client interface {
@@ -58,9 +49,7 @@ func (self *Urls_t) Range() (res []string) {
 }
 
 type Http_t struct {
-	mx         sync.Mutex
 	wg         sync.WaitGroup
-	q          queue.Queue[bytes.Buffer]
 	urls       Urls
 	message    Formatter
 	client     Client
@@ -115,7 +104,7 @@ func BulkWrite(bulk_write int) HttpOption {
 	}
 }
 
-func NewHttp(queue_size int, writers int, urls Urls, message Formatter, client Client, opts ...HttpOption) Writer {
+func NewHttp(queue_size int, writers int, urls Urls, message Formatter, client Client, opts ...HttpOption) Queue {
 	self := &Http_t{
 		urls:       urls,
 		message:    message,
@@ -124,70 +113,44 @@ func NewHttp(queue_size int, writers int, urls Urls, message Formatter, client C
 		bulk_write: 1,
 	}
 
-	self.q = queue.NewOpen[bytes.Buffer](&self.mx, queue_size)
-
 	for _, opt := range opts {
 		opt(self)
 	}
 
+	q := NewQueue(queue_size)
 	for i := 0; i < writers; i++ {
 		self.wg.Add(1)
-		go self.writer()
+		go self.writer(q)
 	}
 
-	return self
+	return q
 }
 
-func (self *Http_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
-	if !self.rps_limit.Add(ts) {
-		err = ERROR_RPS
-		fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-01 15:04:05"), err)
-		return
-	}
-
-	var buf bytes.Buffer
-	if n, err = self.message.FormatLog(ctx, &buf, ts, level, format, args...); err != nil {
-		return
-	}
-
-	self.mx.Lock()
-	res := self.q.PushBackNoWait(buf)
-	self.mx.Unlock()
-
-	if res != 0 {
-		err = ERROR_OVERFLOW
-		fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-01 15:04:05"), err)
-	}
-	return
-}
-
-func (self *Http_t) Size() (res int) {
-	self.mx.Lock()
-	res = self.q.Size()
-	self.mx.Unlock()
-	return
-}
-
-func (self *Http_t) writer() (err error) {
+func (self *Http_t) writer(q Queue) (err error) {
 	defer self.wg.Done()
 
 	var oki int
 	var req *http.Request
 	var resp *http.Response
-	var buf, body bytes.Buffer
+	var body bytes.Buffer
+	var ms []Msg_t
 	for {
 		body.Reset()
-		self.mx.Lock()
-		for i := 0; i < self.bulk_write; i++ {
-			buf, oki = self.q.PopFront()
-			body.ReadFrom(&buf)
-			if oki != 0 || self.q.Size() == 0 {
-				break
-			}
-		}
-		self.mx.Unlock()
+		ms, oki = q.ReadLog(self.bulk_write)
 		if oki == -1 {
 			return
+		}
+		if len(ms) == 0 {
+			continue
+		}
+		if !self.rps_limit.Add(ms[0].ts) {
+			fmt.Fprintf(os.Stderr, "LOG ERROR: %v ERROR_RPS\n", ms[0].ts.Format("2006-01-01 15:04:05"))
+			continue
+		}
+		for _, m := range ms {
+			if _, err = self.message.FormatLog(m.ctx, &body, m.ts, m.level, m.format, m.args...); err != nil {
+				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ms[0].ts.Format("2006-01-01 15:04:05"), err)
+			}
 		}
 		for _, v := range self.urls.Range() {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
@@ -207,12 +170,4 @@ func (self *Http_t) writer() (err error) {
 		}
 		time.Sleep(self.post_delay)
 	}
-}
-
-func (self *Http_t) Close() error {
-	self.mx.Lock()
-	self.q.Close()
-	self.mx.Unlock()
-	self.wg.Wait()
-	return nil
 }

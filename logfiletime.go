@@ -5,7 +5,6 @@
 package log
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -27,7 +26,7 @@ type FileTime_t struct {
 	cycle        int
 }
 
-func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int) (Writer, error) {
+func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int) (Queue, error) {
 	self := &FileTime_t{
 		prefix:       prefix,
 		filename:     filename,
@@ -38,20 +37,24 @@ func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate tim
 	return self, self.__cycle(self.last_date)
 }
 
-func (self *FileTime_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	if tr := ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
-		self.__cycle(ts)
+	if tr := m.ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
+		self.__cycle(m.ts)
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
-		v.FormatLog(ctx, self.out, ts, level, format, args...)
+		v.FormatLog(m.ctx, self.out, m.ts, m.level, m.format, m.args...)
 	}
-	io.WriteString(self.out, level)
+	io.WriteString(self.out, m.level)
 	io.WriteString(self.out, " ")
-	n, err = fmt.Fprintf(self.out, format, args...)
+	n, err = fmt.Fprintf(self.out, m.format, m.args...)
 	io.WriteString(self.out, "\n")
+	return
+}
+
+func (self *FileTime_t) ReadLog(count int) (out []Msg_t, oki int) {
 	return
 }
 

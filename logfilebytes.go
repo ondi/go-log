@@ -5,7 +5,6 @@
 package log
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -27,7 +26,7 @@ type FileBytes_t struct {
 	cycle        int
 }
 
-func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int) (Writer, error) {
+func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int) (Queue, error) {
 	self := &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
@@ -37,25 +36,29 @@ func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit
 	return self, self.__cycle(ts)
 }
 
-func (self *FileBytes_t) WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		n, err = v.FormatLog(ctx, self.out, ts, level, format, args...)
+		n, err = v.FormatLog(m.ctx, self.out, m.ts, m.level, m.format, m.args...)
 		self.bytes_count += n
 	}
-	n, err = io.WriteString(self.out, level)
+	n, err = io.WriteString(self.out, m.level)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, " ")
 	self.bytes_count += n
-	n, err = fmt.Fprintf(self.out, format, args...)
+	n, err = fmt.Fprintf(self.out, m.format, m.args...)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, "\n")
 	self.bytes_count += n
 	if self.bytes_count >= self.bytes_limit {
-		self.__cycle(ts)
+		self.__cycle(m.ts)
 		self.bytes_count = 0
 	}
+	return
+}
+
+func (self *FileBytes_t) ReadLog(count int) (out []Msg_t, oki int) {
 	return
 }
 

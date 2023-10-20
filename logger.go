@@ -4,8 +4,10 @@
 	// no allocation and locks for WriteLog cycle
 	func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
 		ts := time.Now()
-		for _, v := range *self.levels[level.Level].Load() {
-			v.WriteLog(ctx, ts, level.Name, format, args...)
+		if v1 := self.levels[level.Level]; v1 != nil {
+			for _, v2 := range *v1.Load() {
+				v2.WriteLog(Msg_t{ctx: ctx, ts: ts, level: level.Name, format: format, args: args})
+			}
 		}
 	}
 */
@@ -15,8 +17,11 @@ package log
 import (
 	"context"
 	"io"
+	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/ondi/go-queue"
 )
 
 type Level_t struct {
@@ -46,12 +51,21 @@ type Logger interface {
 	ErrorCtx(ctx context.Context, format string, args ...any)
 
 	Clear() Logger
-	AddOutput(name string, writer Writer, levels []Level_t) Logger
+	AddOutput(name string, writer Queue, in []Level_t) Logger
 	DelOutput(name string) Logger
 }
 
-type Writer interface {
-	WriteLog(ctx context.Context, ts time.Time, level string, format string, args ...any) (int, error)
+type Msg_t struct {
+	ctx    context.Context
+	ts     time.Time
+	level  string
+	format string
+	args   []any
+}
+
+type Queue interface {
+	WriteLog(msg Msg_t) (int, error)
+	ReadLog(count int) (out []Msg_t, oki int)
 	Close() error
 }
 
@@ -59,9 +73,52 @@ type Formatter interface {
 	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (int, error)
 }
 
-type writers_t map[string]Writer
+type queue_t struct {
+	mx sync.Mutex
+	q  queue.Queue[Msg_t]
+}
 
-func add_output(value *atomic.Pointer[writers_t], name string, writer Writer) {
+func NewQueue(limit int) Queue {
+	self := &queue_t{}
+	self.q = queue.NewOpen[Msg_t](&self.mx, limit)
+	return self
+}
+
+func (self *queue_t) WriteLog(msg Msg_t) (n int, err error) {
+	self.mx.Lock()
+	n = self.q.PushBackNoWait(msg)
+	self.mx.Unlock()
+	return
+}
+
+func (self *queue_t) ReadLog(count int) (out []Msg_t, oki int) {
+	self.mx.Lock()
+	var msg Msg_t
+	for i := 0; i < count; i++ {
+		msg, oki = self.q.PopFront()
+		if oki == 0 {
+			out = append(out, msg)
+		} else {
+			break
+		}
+		if self.q.Size() == 0 {
+			break
+		}
+	}
+	self.mx.Unlock()
+	return
+}
+
+func (self *queue_t) Close() (err error) {
+	self.mx.Lock()
+	self.q.Close()
+	self.mx.Unlock()
+	return
+}
+
+type writers_t map[string]Queue
+
+func add_output(value *atomic.Pointer[writers_t], name string, writer Queue) {
 	for {
 		old := value.Load()
 		new := writers_t{}
@@ -79,7 +136,7 @@ func del_output(value *atomic.Pointer[writers_t], name string) {
 	for {
 		old := value.Load()
 		new := writers_t{}
-		var writer Writer
+		var writer Queue
 		for k, v := range *old {
 			if k == name {
 				writer = v
@@ -124,7 +181,7 @@ func (self *log_t) Clear() Logger {
 	return self
 }
 
-func (self *log_t) AddOutput(name string, writer Writer, in []Level_t) Logger {
+func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
 	for _, v1 := range in {
 		if v2 := self.levels[v1.Level]; v2 != nil {
 			add_output(v2, name, writer)
@@ -144,7 +201,7 @@ func (self *log_t) Log(ctx context.Context, level Level_t, format string, args .
 	ts := time.Now()
 	if v1 := self.levels[level.Level]; v1 != nil {
 		for _, v2 := range *v1.Load() {
-			v2.WriteLog(ctx, ts, level.Name, format, args...)
+			v2.WriteLog(Msg_t{ctx: ctx, ts: ts, level: level.Name, format: format, args: args})
 		}
 	}
 }
