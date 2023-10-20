@@ -97,46 +97,55 @@ func del_output(value *atomic.Pointer[writers_t], name string) {
 }
 
 type log_t struct {
-	levels []atomic.Pointer[writers_t]
+	levels map[int64]*atomic.Pointer[writers_t]
 }
 
 func New() Logger {
+	return NewLevels([]Level_t{LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR})
+}
+
+func NewLevels(in []Level_t) Logger {
 	self := &log_t{
-		levels: make([]atomic.Pointer[writers_t], LOG_ERROR.Level+1),
+		levels: map[int64]*atomic.Pointer[writers_t]{},
 	}
-	self.Clear()
+	for _, v := range in {
+		self.levels[v.Level] = &atomic.Pointer[writers_t]{}
+		self.levels[v.Level].Store(&writers_t{})
+	}
 	return self
 }
 
 func (self *log_t) Clear() Logger {
-	for i := 0; i < len(self.levels); i++ {
-		if v1 := self.levels[i].Swap(&writers_t{}); v1 != nil {
-			for _, v2 := range *v1 {
-				v2.Close()
-			}
+	for _, v1 := range self.levels {
+		for _, v2 := range *v1.Swap(&writers_t{}) {
+			v2.Close()
 		}
 	}
 	return self
 }
 
-func (self *log_t) AddOutput(name string, writer Writer, levels []Level_t) Logger {
-	for _, v := range levels {
-		add_output(&self.levels[v.Level], name, writer)
+func (self *log_t) AddOutput(name string, writer Writer, in []Level_t) Logger {
+	for _, v1 := range in {
+		if v2 := self.levels[v1.Level]; v2 != nil {
+			add_output(v2, name, writer)
+		}
 	}
 	return self
 }
 
 func (self *log_t) DelOutput(name string) Logger {
-	for i := range self.levels {
-		del_output(&self.levels[i], name)
+	for _, v := range self.levels {
+		del_output(v, name)
 	}
 	return self
 }
 
 func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
 	ts := time.Now()
-	for _, v := range *self.levels[level.Level].Load() {
-		v.WriteLog(ctx, ts, level.Name, format, args...)
+	if v1 := self.levels[level.Level]; v1 != nil {
+		for _, v2 := range *v1.Load() {
+			v2.WriteLog(ctx, ts, level.Name, format, args...)
+		}
 	}
 }
 
