@@ -17,7 +17,7 @@ type DT_t struct {
 	Layout string
 }
 
-func (self *DT_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *DT_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
 	var b [64]byte
 	if n, err = out.Write(ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
@@ -27,7 +27,7 @@ func (self *DT_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, le
 
 type FL_t struct{}
 
-func (self *FL_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self *FL_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
 	var next_line int
 	var next_path string
 	_, prev_path, prev_line, ok := runtime.Caller(1)
@@ -51,8 +51,8 @@ func (self *FL_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, le
 
 type CX_t struct{}
 
-func (self *CX_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
-	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
+func (self *CX_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
+	if v := GetErrorsContext(ctx); v != nil {
 		v.Set(level, format, args...)
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")

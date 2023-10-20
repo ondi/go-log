@@ -29,7 +29,7 @@ type Level_t struct {
 type Msg_t struct {
 	Ctx    context.Context
 	Ts     time.Time
-	Level  string
+	Level  Level_t
 	Format string
 	Args   []any
 }
@@ -69,7 +69,7 @@ type Queue interface {
 }
 
 type Formatter interface {
-	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (int, error)
+	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (int, error)
 }
 
 type writers_t map[string]Queue
@@ -157,7 +157,7 @@ func (self *log_t) Log(ctx context.Context, level Level_t, format string, args .
 	ts := time.Now()
 	if v1 := self.levels[level.Level]; v1 != nil {
 		for _, v2 := range *v1.Load() {
-			v2.WriteLog(Msg_t{Ctx: ctx, Ts: ts, Level: level.Name, Format: format, Args: args})
+			v2.WriteLog(Msg_t{Ctx: ctx, Ts: ts, Level: level, Format: format, Args: args})
 		}
 	}
 }

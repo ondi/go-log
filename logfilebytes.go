@@ -43,7 +43,7 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 		n, err = v.FormatLog(m.Ctx, self.out, m.Ts, m.Level, m.Format, m.Args...)
 		self.bytes_count += n
 	}
-	n, err = io.WriteString(self.out, m.Level)
+	n, err = io.WriteString(self.out, m.Level.Name)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, " ")
 	self.bytes_count += n

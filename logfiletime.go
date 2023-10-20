@@ -47,7 +47,7 @@ func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	for _, v := range self.prefix {
 		v.FormatLog(m.Ctx, self.out, m.Ts, m.Level, m.Format, m.Args...)
 	}
-	io.WriteString(self.out, m.Level)
+	io.WriteString(self.out, m.Level.Name)
 	io.WriteString(self.out, " ")
 	n, err = fmt.Fprintf(self.out, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")

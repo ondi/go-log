@@ -169,7 +169,7 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self MessageKB_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
@@ -177,7 +177,7 @@ func (self MessageKB_t) FormatLog(ctx context.Context, out io.Writer, ts time.Ti
 		json.NewEncoder(out).Encode(self.Index)
 	}
 
-	self.Level = level
+	self.Level = level.Name
 	if strings.HasPrefix(format, "json1") && len(args) > 0 {
 		if self.Data, err = json.Marshal(args[0]); err != nil {
 			return
@@ -187,7 +187,7 @@ func (self MessageKB_t) FormatLog(ctx context.Context, out io.Writer, ts time.Ti
 			return
 		}
 	} else {
-		if self.Message, err = json.Marshal(level + " " + fmt.Sprintf(format, args...)); err != nil {
+		if self.Message, err = json.Marshal(level.Name + " " + fmt.Sprintf(format, args...)); err != nil {
 			return
 		}
 	}
@@ -227,7 +227,7 @@ type MessageTG_t struct {
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level string, format string, args ...any) (n int, err error) {
+func (self MessageTG_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
@@ -238,7 +238,7 @@ func (self MessageTG_t) FormatLog(ctx context.Context, out io.Writer, ts time.Ti
 	}
 	self.Text += temp.String()
 
-	self.Text += level + " " + fmt.Sprintf(format, args...)
+	self.Text += level.Name + " " + fmt.Sprintf(format, args...)
 	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
 		n := self.TextLimit
 		for ; n > 0; n-- {

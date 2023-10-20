@@ -11,13 +11,13 @@ import (
 	"sync"
 )
 
-type errors_context_t string
+type context_key_t string
 
-var errors_context errors_context_t = "log_ctx"
+var context_key context_key_t = "log_ctx"
 
 type ErrorsContext interface {
 	Name() string
-	Set(level string, format string, args ...any)
+	Set(level Level_t, format string, args ...any)
 	Get(out io.Writer)
 	Reset()
 }
@@ -40,8 +40,8 @@ func (self *ErrorsContext_t) Name() string {
 	return self.name
 }
 
-func (self *ErrorsContext_t) Set(level string, format string, args ...any) {
-	if strings.Contains(self.levels, level) {
+func (self *ErrorsContext_t) Set(level Level_t, format string, args ...any) {
+	if strings.Contains(self.levels, level.Name) {
 		self.mx.Lock()
 		if ix := strings.Index(format, " "); ix > 0 {
 			self.errors = format[:ix]
@@ -64,20 +64,20 @@ func (self *ErrorsContext_t) Reset() {
 }
 
 func SetErrorsContextNew(ctx context.Context, id string, levels string) context.Context {
-	return context.WithValue(ctx, errors_context, NewErrorsContext(id, levels))
+	return context.WithValue(ctx, context_key, NewErrorsContext(id, levels))
 }
 
 func SetErrorsContext(ctx context.Context, value ErrorsContext) context.Context {
-	return context.WithValue(ctx, errors_context, value)
+	return context.WithValue(ctx, context_key, value)
 }
 
 func GetErrorsContext(ctx context.Context) (value ErrorsContext) {
-	value, _ = ctx.Value(errors_context).(ErrorsContext)
+	value, _ = ctx.Value(context_key).(ErrorsContext)
 	return
 }
 
 func GetErrors(ctx context.Context, out io.Writer) {
-	if v, _ := ctx.Value(errors_context).(ErrorsContext); v != nil {
+	if v, _ := ctx.Value(context_key).(ErrorsContext); v != nil {
 		v.Get(out)
 	}
 }
