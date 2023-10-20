@@ -40,19 +40,19 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		n, err = v.FormatLog(m.ctx, self.out, m.ts, m.level, m.format, m.args...)
+		n, err = v.FormatLog(m.Ctx, self.out, m.Ts, m.Level, m.Format, m.Args...)
 		self.bytes_count += n
 	}
-	n, err = io.WriteString(self.out, m.level)
+	n, err = io.WriteString(self.out, m.Level)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, " ")
 	self.bytes_count += n
-	n, err = fmt.Fprintf(self.out, m.format, m.args...)
+	n, err = fmt.Fprintf(self.out, m.Format, m.Args...)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, "\n")
 	self.bytes_count += n
 	if self.bytes_count >= self.bytes_limit {
-		self.__cycle(m.ts)
+		self.__cycle(m.Ts)
 		self.bytes_count = 0
 	}
 	return
