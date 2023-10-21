@@ -40,8 +40,8 @@ func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate tim
 func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	if tr := m.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
-		self.__cycle(m.Ts)
+	if tr := m.Level.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
+		self.__cycle(m.Level.Ts)
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {

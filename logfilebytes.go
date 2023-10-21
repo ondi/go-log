@@ -52,7 +52,7 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	n, err = io.WriteString(self.out, "\n")
 	self.bytes_count += n
 	if self.bytes_count >= self.bytes_limit {
-		self.__cycle(m.Ts)
+		self.__cycle(m.Level.Ts)
 		self.bytes_count = 0
 	}
 	return

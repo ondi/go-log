@@ -172,7 +172,7 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
-		self.Index.Index.Index = string(m.Ts.AppendFormat(b[:0], self.Index.Index.Format))
+		self.Index.Index.Index = string(m.Level.Ts.AppendFormat(b[:0], self.Index.Index.Format))
 		json.NewEncoder(out).Encode(self.Index)
 	}
 
@@ -191,7 +191,7 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 		}
 	}
 
-	self.Timestamp = string(m.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
+	self.Timestamp = string(m.Level.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp bytes.Buffer
 	for _, v := range prefs {

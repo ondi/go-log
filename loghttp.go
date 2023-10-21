@@ -143,13 +143,13 @@ func (self *Http_t) writer(q Queue) (err error) {
 		if len(ms) == 0 {
 			continue
 		}
-		if !self.rps_limit.Add(ms[0].Ts) {
-			fmt.Fprintf(os.Stderr, "LOG ERROR: %v ERROR_RPS\n", ms[0].Ts.Format("2006-01-01 15:04:05"))
+		if !self.rps_limit.Add(ms[0].Level.Ts) {
+			fmt.Fprintf(os.Stderr, "LOG ERROR: %v ERROR_RPS\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"))
 			continue
 		}
 		for _, m := range ms {
 			if _, err = self.message.FormatLog(&body, m); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ms[0].Ts.Format("2006-01-01 15:04:05"), err)
+				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"), err)
 			}
 		}
 		for _, v := range self.urls.Range() {

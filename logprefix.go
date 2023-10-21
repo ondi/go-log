@@ -36,7 +36,7 @@ func NewDt(layout string) Formatter {
 
 func (self *DT_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	var b [64]byte
-	if n, err = out.Write(m.Ts.AppendFormat(b[:0], self.Layout)); n > 0 {
+	if n, err = out.Write(m.Level.Ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
 	}
 	return

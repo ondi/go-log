@@ -26,9 +26,11 @@ type Level_t struct {
 	File  string
 	Line  int
 	Level int64
+	Ts    time.Time
 }
 
-func (self *Level_t) Set() {
+func (self *Level_t) Set(ts time.Time) {
+	self.Ts = ts
 	self.File, self.Line = FileLine(1, 32)
 }
 
@@ -42,7 +44,6 @@ var (
 
 type Msg_t struct {
 	Ctx    context.Context
-	Ts     time.Time
 	Level  Level_t
 	Format string
 	Args   []any
@@ -160,11 +161,10 @@ func (self *log_t) DelOutput(name string) Logger {
 }
 
 func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
-	level.Set()
-	ts := time.Now()
+	level.Set(time.Now())
 	if v1 := self.levels[level.Level]; v1 != nil {
 		for _, v2 := range *v1.Load() {
-			v2.WriteLog(Msg_t{Ctx: ctx, Ts: ts, Level: level, Format: format, Args: args})
+			v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args})
 		}
 	}
 }
