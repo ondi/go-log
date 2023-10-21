@@ -23,15 +23,13 @@ import (
 
 type Level_t struct {
 	Name  string
+	File  string
+	Line  int
 	Level int64
 }
 
-type Msg_t struct {
-	Ctx    context.Context
-	Ts     time.Time
-	Level  Level_t
-	Format string
-	Args   []any
+func (self *Level_t) Set() {
+	self.File, self.Line = FileLine(1, 100)
 }
 
 var (
@@ -41,6 +39,24 @@ var (
 	LOG_WARN  = Level_t{Name: "WARN", Level: 3}
 	LOG_ERROR = Level_t{Name: "ERROR", Level: 4}
 )
+
+type Msg_t struct {
+	Ctx    context.Context
+	Ts     time.Time
+	Level  Level_t
+	Format string
+	Args   []any
+}
+
+type Queue interface {
+	WriteLog(m Msg_t) (int, error)
+	ReadLog(count int) (out []Msg_t, oki int)
+	Close() error
+}
+
+type Formatter interface {
+	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (int, error)
+}
 
 type Logger interface {
 	Trace(format string, args ...any)
@@ -60,16 +76,6 @@ type Logger interface {
 	Clear() Logger
 	AddOutput(name string, writer Queue, in []Level_t) Logger
 	DelOutput(name string) Logger
-}
-
-type Queue interface {
-	WriteLog(m Msg_t) (int, error)
-	ReadLog(count int) (out []Msg_t, oki int)
-	Close() error
-}
-
-type Formatter interface {
-	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (int, error)
 }
 
 type writers_t map[string]Queue
@@ -154,6 +160,7 @@ func (self *log_t) DelOutput(name string) Logger {
 }
 
 func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
+	level.Set()
 	ts := time.Now()
 	if v1 := self.levels[level.Level]; v1 != nil {
 		for _, v2 := range *v1.Load() {

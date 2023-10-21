@@ -13,6 +13,20 @@ import (
 	"time"
 )
 
+func FileLine(start int, count int) (path string, line int) {
+	var next_line int
+	var next_path string
+	_, path, line, ok := runtime.Caller(start)
+	for i := start + 1; i < count; i++ {
+		if _, next_path, next_line, ok = runtime.Caller(i); ok && filepath.Dir(path) == filepath.Dir(next_path) {
+			continue
+		}
+		path, line = next_path, next_line
+		return
+	}
+	return
+}
+
 type DT_t struct {
 	Layout string
 }
@@ -28,22 +42,9 @@ func (self *DT_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, le
 type FL_t struct{}
 
 func (self *FL_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
-	var next_line int
-	var next_path string
-	_, prev_path, prev_line, ok := runtime.Caller(1)
-	for i := 2; i < 100; i++ {
-		if _, next_path, next_line, ok = runtime.Caller(i); ok {
-			if filepath.Dir(prev_path) != filepath.Dir(next_path) {
-				prev_path, prev_line = next_path, next_line
-				break
-			}
-		} else {
-			break
-		}
-	}
-	if n, err = io.WriteString(out, filepath.Base(prev_path)); n > 0 {
+	if n, err = io.WriteString(out, filepath.Base(level.File)); n > 0 {
 		io.WriteString(out, ":")
-		io.WriteString(out, strconv.FormatInt(int64(prev_line), 10))
+		io.WriteString(out, strconv.FormatInt(int64(level.Line), 10))
 		io.WriteString(out, " ")
 	}
 	return
