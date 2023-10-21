@@ -62,7 +62,6 @@ package log
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -71,9 +70,9 @@ import (
 	"unicode/utf8"
 )
 
-var std = New().AddOutput("stderr", NewStderr([]Formatter{&DT_t{Layout: "2006-01-02 15:04:05.000"}, &FL_t{}, &CX_t{}}), WhatLevel(0))
+var std = New().AddOutput("stderr", NewStderr([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}), WhatLevel(0))
 
-var prefs = []Formatter{&FL_t{}, &CX_t{}}
+var prefs = []Formatter{NewFl(), NewCx()}
 
 type NoWriter_t struct{}
 
@@ -124,21 +123,21 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
 				Error("LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewFileTime(ts, v.LogFile, []Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
 				Error("LOG FILETIME: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			logger.AddOutput("stdout", NewStdout([]Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdout([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", NewStderr([]Formatter{&DT_t{Layout: v.LogDate}, &FL_t{}, &CX_t{}}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStderr([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {
@@ -169,34 +168,34 @@ type MessageKB_t struct {
 	Message         json.RawMessage  `json:"Message,omitempty"`
 }
 
-func (self MessageKB_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
+func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
-		self.Index.Index.Index = string(ts.AppendFormat(b[:0], self.Index.Index.Format))
+		self.Index.Index.Index = string(m.Ts.AppendFormat(b[:0], self.Index.Index.Format))
 		json.NewEncoder(out).Encode(self.Index)
 	}
 
-	self.Level = level.Name
-	if strings.HasPrefix(format, "json1") && len(args) > 0 {
-		if self.Data, err = json.Marshal(args[0]); err != nil {
+	self.Level = m.Level.Name
+	if strings.HasPrefix(m.Format, "json1") && len(m.Args) > 0 {
+		if self.Data, err = json.Marshal(m.Args[0]); err != nil {
 			return
 		}
-	} else if strings.HasPrefix(format, "json") {
-		if self.Data, err = json.Marshal(args); err != nil {
+	} else if strings.HasPrefix(m.Format, "json") {
+		if self.Data, err = json.Marshal(m.Args); err != nil {
 			return
 		}
 	} else {
-		if self.Message, err = json.Marshal(level.Name + " " + fmt.Sprintf(format, args...)); err != nil {
+		if self.Message, err = json.Marshal(m.Level.Name + " " + fmt.Sprintf(m.Format, m.Args...)); err != nil {
 			return
 		}
 	}
 
-	self.Timestamp = string(ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
+	self.Timestamp = string(m.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.FormatLog(ctx, &temp, ts, level, format, args...)
+		v.FormatLog(&temp, m)
 	}
 	self.Location = temp.String()
 
@@ -227,18 +226,18 @@ type MessageTG_t struct {
 	TextLimit int    `json:"-"`
 }
 
-func (self MessageTG_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
+func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	if len(self.Hostname) > 0 {
 		self.Text += self.Hostname + " "
 	}
 
 	var temp bytes.Buffer
 	for _, v := range prefs {
-		v.FormatLog(ctx, &temp, ts, level, format, args...)
+		v.FormatLog(&temp, m)
 	}
 	self.Text += temp.String()
 
-	self.Text += level.Name + " " + fmt.Sprintf(format, args...)
+	self.Text += m.Level.Name + " " + fmt.Sprintf(m.Format, m.Args...)
 	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
 		n := self.TextLimit
 		for ; n > 0; n-- {

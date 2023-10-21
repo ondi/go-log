@@ -5,12 +5,10 @@
 package log
 
 import (
-	"context"
 	"io"
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"time"
 )
 
 func FileLine(start int, count int) (path string, line int) {
@@ -32,9 +30,13 @@ type DT_t struct {
 	Layout string
 }
 
-func (self *DT_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
+func NewDt(layout string) Formatter {
+	return &DT_t{Layout: layout}
+}
+
+func (self *DT_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	var b [64]byte
-	if n, err = out.Write(ts.AppendFormat(b[:0], self.Layout)); n > 0 {
+	if n, err = out.Write(m.Ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
 	}
 	return
@@ -42,10 +44,14 @@ func (self *DT_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, le
 
 type FL_t struct{}
 
-func (self *FL_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
-	if n, err = io.WriteString(out, filepath.Base(level.File)); n > 0 {
+func NewFl() Formatter {
+	return &FL_t{}
+}
+
+func (self *FL_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+	if n, err = io.WriteString(out, filepath.Base(m.Level.File)); n > 0 {
 		io.WriteString(out, ":")
-		io.WriteString(out, strconv.FormatInt(int64(level.Line), 10))
+		io.WriteString(out, strconv.FormatInt(int64(m.Level.Line), 10))
 		io.WriteString(out, " ")
 	}
 	return
@@ -53,9 +59,13 @@ func (self *FL_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, le
 
 type CX_t struct{}
 
-func (self *CX_t) FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (n int, err error) {
-	if v := GetErrorsContext(ctx); v != nil {
-		v.Set(level, format, args...)
+func NewCx() Formatter {
+	return &CX_t{}
+}
+
+func (self *CX_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+	if v := GetErrorsContext(m.Ctx); v != nil {
+		v.Set(m.Level, m.Format, m.Args...)
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")
 		}

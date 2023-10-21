@@ -55,7 +55,7 @@ type Queue interface {
 }
 
 type Formatter interface {
-	FormatLog(ctx context.Context, out io.Writer, ts time.Time, level Level_t, format string, args ...any) (int, error)
+	FormatLog(out io.Writer, m Msg_t) (int, error)
 }
 
 type Logger interface {

@@ -40,7 +40,7 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	for _, v := range self.prefix {
-		n, err = v.FormatLog(m.Ctx, self.out, m.Ts, m.Level, m.Format, m.Args...)
+		n, err = v.FormatLog(self.out, m)
 		self.bytes_count += n
 	}
 	n, err = io.WriteString(self.out, m.Level.Name)
