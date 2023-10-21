@@ -29,7 +29,7 @@ type Level_t struct {
 }
 
 func (self *Level_t) Set() {
-	self.File, self.Line = FileLine(1, 100)
+	self.File, self.Line = FileLine(1, 32)
 }
 
 var (

@@ -11,11 +11,11 @@ import (
 	"strconv"
 )
 
-func FileLine(start int, count int) (path string, line int) {
+func FileLine(skip int, count int) (path string, line int) {
 	var next_line int
 	var next_path string
-	_, path, line, ok := runtime.Caller(start)
-	for i := start + 1; i < count; i++ {
+	_, path, line, ok := runtime.Caller(skip)
+	for i := skip + 1; i < count; i++ {
 		if _, next_path, next_line, ok = runtime.Caller(i); !ok {
 			return
 		}
