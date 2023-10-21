@@ -18,11 +18,12 @@ func FileLine(start int, count int) (path string, line int) {
 	var next_path string
 	_, path, line, ok := runtime.Caller(start)
 	for i := start + 1; i < count; i++ {
-		if _, next_path, next_line, ok = runtime.Caller(i); ok && filepath.Dir(path) == filepath.Dir(next_path) {
-			continue
+		if _, next_path, next_line, ok = runtime.Caller(i); !ok {
+			return
 		}
-		path, line = next_path, next_line
-		return
+		if filepath.Dir(path) != filepath.Dir(next_path) {
+			return next_path, next_line
+		}
 	}
 	return
 }
