@@ -104,7 +104,7 @@ func BulkWrite(bulk_write int) HttpOption {
 	}
 }
 
-func NewHttp(queue_size int, writers int, urls Urls, message Formatter, client Client, opts ...HttpOption) Queue {
+func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, client Client, opts ...HttpOption) Queue {
 	self := &Http_t{
 		urls:       urls,
 		message:    message,

@@ -22,7 +22,7 @@ func Test1(t *testing.T) {
 	logger.AddOutput("buf", NewStdany([]Formatter{NewDt("")}, &buf), WhatLevel(LOG_TRACE.Level))
 	log_file, _ := NewFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10)
 	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.Level))
-	log_http := NewHttp(
+	log_http := NewHttpQueue(
 		10,
 		1,
 		NewUrls("http://localhost"),
