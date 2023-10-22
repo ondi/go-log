@@ -15,6 +15,7 @@ import (
 var FileTime = "20060102150405"
 
 type FileTime_t struct {
+	wg           sync.WaitGroup
 	mx           sync.Mutex
 	last_date    time.Time
 	prefix       []Formatter
@@ -35,6 +36,42 @@ func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate tim
 		last_date:    ts,
 	}
 	return self, self.__cycle(self.last_date)
+}
+
+func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int) (q Queue, err error) {
+	self := &FileTime_t{
+		prefix:       prefix,
+		filename:     filename,
+		truncate:     truncate,
+		backup_count: backup_count,
+		last_date:    ts,
+	}
+
+	if err = self.__cycle(self.last_date); err != nil {
+		return
+	}
+
+	q = NewQueue(queue_size)
+	for i := 0; i < writers; i++ {
+		self.wg.Add(1)
+		go self.writer(q)
+	}
+
+	return
+}
+
+func (self *FileTime_t) writer(q Queue) (err error) {
+	defer self.wg.Done()
+
+	for {
+		ms, oki := q.ReadLog(1)
+		if oki == -1 {
+			return
+		}
+		for _, v := range ms {
+			self.WriteLog(v)
+		}
+	}
 }
 
 func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {

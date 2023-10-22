@@ -249,8 +249,9 @@ func TraceCtx(ctx context.Context, format string, args ...any) {
 	std.TraceCtx(ctx, format, args...)
 }
 
-func SetLogger(logger Logger) {
+func SetLogger(logger Logger) Logger {
 	std = logger
+	return logger
 }
 
 func GetLogger() Logger {

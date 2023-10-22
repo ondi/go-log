@@ -65,6 +65,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -118,19 +119,18 @@ func WhatLevel(in int64) []Level_t {
 }
 
 func SetupLogger(ts time.Time, logs []Args_t) (err error) {
-	logger := New()
-	SetLogger(logger)
+	logger := SetLogger(New())
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
 			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
-				Error("LOG FILE: %v", err)
+				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
 			if output, err := NewFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
-				Error("LOG FILETIME: %v", err)
+				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
@@ -141,7 +141,7 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 		}
 	}
 	for _, v := range logs {
-		Debug("LOG OUTPUT: %v %v %v %v %v", v.LogLevel, v.LogType, v.LogFile, v.LogSize, v.LogBackup)
+		Debug("LOG OUTPUT: %v %v %v %v %v %v", v.LogLevel, v.LogType, v.LogFile, v.LogSize, v.LogDuration, v.LogBackup)
 	}
 	return
 }

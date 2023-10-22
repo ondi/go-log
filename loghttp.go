@@ -140,10 +140,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 		if oki == -1 {
 			return
 		}
-		if len(ms) == 0 {
-			continue
-		}
-		if !self.rps_limit.Add(ms[0].Level.Ts) {
+		if len(ms) > 0 && self.rps_limit.Add(ms[0].Level.Ts) == false {
 			fmt.Fprintf(os.Stderr, "LOG ERROR: %v ERROR_RPS\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"))
 			continue
 		}

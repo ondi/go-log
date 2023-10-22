@@ -15,6 +15,7 @@ import (
 var FileBytesFormat = "20060102150405"
 
 type FileBytes_t struct {
+	wg           sync.WaitGroup
 	mx           sync.Mutex
 	prefix       []Formatter
 	out          *os.File
@@ -34,6 +35,41 @@ func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit
 		backup_count: backup_count,
 	}
 	return self, self.__cycle(ts)
+}
+
+func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int) (q Queue, err error) {
+	self := &FileBytes_t{
+		prefix:       prefix,
+		filename:     filename,
+		bytes_limit:  bytes_limit,
+		backup_count: backup_count,
+	}
+
+	if err = self.__cycle(ts); err != nil {
+		return
+	}
+
+	q = NewQueue(queue_size)
+	for i := 0; i < writers; i++ {
+		self.wg.Add(1)
+		go self.writer(q)
+	}
+
+	return
+}
+
+func (self *FileBytes_t) writer(q Queue) (err error) {
+	defer self.wg.Done()
+
+	for {
+		ms, oki := q.ReadLog(1)
+		if oki == -1 {
+			return
+		}
+		for _, v := range ms {
+			self.WriteLog(v)
+		}
+	}
 }
 
 func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
