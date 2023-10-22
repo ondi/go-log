@@ -7,7 +7,6 @@ package log
 import (
 	"fmt"
 	"io"
-	"os"
 	"sync"
 )
 
@@ -74,12 +73,4 @@ func (self *Stdany_t) ReadLog(count int) (out []Msg_t, oki int) {
 
 func (self *Stdany_t) Close() error {
 	return nil
-}
-
-func NewStderr(prefix []Formatter) Queue {
-	return NewStdany(prefix, os.Stderr)
-}
-
-func NewStdout(prefix []Formatter) Queue {
-	return NewStdany(prefix, os.Stdout)
 }

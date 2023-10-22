@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	logger.AddOutput("stdout", NewStdout([]Formatter{NewDt("")}), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt("")}, os.Stdout), WhatLevel(LOG_TRACE.Level))
 	logger.AddOutput("buf", NewStdany([]Formatter{NewDt("")}, &buf), WhatLevel(LOG_TRACE.Level))
 	log_file, _ := NewFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10)
 	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.Level))
@@ -49,7 +50,7 @@ func Test2(t *testing.T) {
 	SetLogger(logger)
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdout([]Formatter{NewDt(""), NewCx()}), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewCx()}, os.Stdout), WhatLevel(LOG_TRACE.Level))
 	logger.AddOutput("buf", NewStdany([]Formatter{NewDt(""), NewCx()}, &buf), WhatLevel(LOG_TRACE.Level))
 
 	DebugCtx(ctx, "test")

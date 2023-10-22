@@ -71,7 +71,7 @@ import (
 	"unicode/utf8"
 )
 
-var std = New().AddOutput("stderr", NewStderr([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}), WhatLevel(0))
+var std = New().AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
 
 var prefs = []Formatter{NewFl(), NewCx()}
 
@@ -128,16 +128,32 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
+		case "filequeue":
+			if output, err := NewFileBytesQueue(1024, 1, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
+				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
+			} else {
+				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
+			}
 		case "filetime":
 			if output, err := NewFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
 				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
+		case "filetimequeue":
+			if output, err := NewFileTimeQueue(1024, 1, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
+				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
+			} else {
+				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
+			}
 		case "stdout":
-			logger.AddOutput("stdout", NewStdout([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
+		case "stdoutqueue":
+			logger.AddOutput("stdout", NewStdanyQueue(1024, 1, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", NewStderr([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
+		case "stderrqueue":
+			logger.AddOutput("stderr", NewStdanyQueue(1024, 1, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {
