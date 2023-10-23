@@ -71,7 +71,9 @@ import (
 	"unicode/utf8"
 )
 
-var std = New().AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
+var Stderr = os.Stderr
+
+var logger = New().AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
 
 var prefs = []Formatter{NewFl(), NewCx()}
 
@@ -124,25 +126,25 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 		switch v.LogType {
 		case "file":
 			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
 			if output, err := NewFileBytesQueue(1024, 1, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
 			if output, err := NewFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
 			if output, err := NewFileTimeQueue(1024, 1, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG FILE: %v", err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}

@@ -16,6 +16,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sync/atomic"
 	"time"
@@ -163,8 +164,10 @@ func (self *log_t) DelOutput(name string) Logger {
 func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
 	level.Set(time.Now())
 	if v1 := self.levels[level.Level]; v1 != nil {
-		for _, v2 := range *v1.Load() {
-			v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args})
+		for writer, v2 := range *v1.Load() {
+			if _, err := v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args}); err != nil {
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v %v\n", level.Ts.Format("2006-01-02 15:04:05"), writer, err)
+			}
 		}
 	}
 }
@@ -210,50 +213,50 @@ func (self *log_t) TraceCtx(ctx context.Context, format string, args ...any) {
 }
 
 func Error(format string, args ...any) {
-	std.Error(format, args...)
+	logger.Error(format, args...)
 }
 
 func Warn(format string, args ...any) {
-	std.Warn(format, args...)
+	logger.Warn(format, args...)
 }
 
 func Info(format string, args ...any) {
-	std.Info(format, args...)
+	logger.Info(format, args...)
 }
 
 func Debug(format string, args ...any) {
-	std.Debug(format, args...)
+	logger.Debug(format, args...)
 }
 
 func Trace(format string, args ...any) {
-	std.Trace(format, args...)
+	logger.Trace(format, args...)
 }
 
 func ErrorCtx(ctx context.Context, format string, args ...any) {
-	std.ErrorCtx(ctx, format, args...)
+	logger.ErrorCtx(ctx, format, args...)
 }
 
 func WarnCtx(ctx context.Context, format string, args ...any) {
-	std.WarnCtx(ctx, format, args...)
+	logger.WarnCtx(ctx, format, args...)
 }
 
 func InfoCtx(ctx context.Context, format string, args ...any) {
-	std.InfoCtx(ctx, format, args...)
+	logger.InfoCtx(ctx, format, args...)
 }
 
 func DebugCtx(ctx context.Context, format string, args ...any) {
-	std.DebugCtx(ctx, format, args...)
+	logger.DebugCtx(ctx, format, args...)
 }
 
 func TraceCtx(ctx context.Context, format string, args ...any) {
-	std.TraceCtx(ctx, format, args...)
+	logger.TraceCtx(ctx, format, args...)
 }
 
-func SetLogger(logger Logger) Logger {
-	std = logger
+func SetLogger(in Logger) Logger {
+	logger = in
 	return logger
 }
 
 func GetLogger() Logger {
-	return std
+	return logger
 }

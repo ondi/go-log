@@ -60,18 +60,27 @@ func Test2(t *testing.T) {
 
 func Test3(t *testing.T) {
 	rps := NewRps(100*time.Millisecond, 10, 100)
+
+	ts := time.Now()
 	for i := 0; i < 1000; i++ {
 		rps.Add(time.Now())
 		time.Sleep(1 * time.Millisecond)
 	}
+	t.Logf("CYCLE1: %v", time.Since(ts))
+
+	ts = time.Now()
 	for i := 0; i < 1000; i++ {
 		rps.Add(time.Now())
 		time.Sleep(1 * time.Millisecond)
 	}
+	t.Logf("CYCLE2: %v", time.Since(ts))
+
+	ts = time.Now()
 	for i := 0; i < 1000; i++ {
 		rps.Add(time.Now())
 		time.Sleep(1 * time.Millisecond)
 	}
+	t.Logf("CYCLE3: %v", time.Since(ts))
 
 	time.Sleep(100 * time.Millisecond)
 

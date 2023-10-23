@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 )
@@ -141,12 +140,12 @@ func (self *Http_t) writer(q Queue) (err error) {
 			return
 		}
 		if len(ms) > 0 && self.rps_limit.Add(ms[0].Level.Ts) == false {
-			fmt.Fprintf(os.Stderr, "LOG ERROR: %v ERROR_RPS\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"))
+			fmt.Fprintf(Stderr, "LOG ERROR: %v ERROR_RPS\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"))
 			continue
 		}
 		for _, m := range ms {
 			if _, err = self.message.FormatLog(&body, m); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"), err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"), err)
 			}
 		}
 		for _, v := range self.urls.Range() {
@@ -155,12 +154,12 @@ func (self *Http_t) writer(q Queue) (err error) {
 			}
 			req.Header = self.header
 			if resp, err = self.client.Do(req); err != nil {
-				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
 				continue
 			}
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
-				fmt.Fprintf(os.Stderr, "LOG ERROR: %v %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, body.Bytes())
+				fmt.Fprintf(Stderr, "LOG ERROR: %v %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, body.Bytes())
 				continue
 			}
 			break
