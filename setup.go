@@ -102,6 +102,8 @@ type Args_t struct {
 	LogLevel    int64         `yaml:"LogLevel"`
 	LogSize     int           `yaml:"LogSize"`
 	LogBackup   int           `yaml:"LogBackup"`
+	LogQueue    int           `yaml:"LogQueue"`
+	LogWriters  int           `yaml:"LogWriters"`
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
@@ -131,7 +133,7 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
-			if output, err := NewFileBytesQueue(1024, 1, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
 				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
@@ -143,7 +145,7 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
-			if output, err := NewFileTimeQueue(1024, 1, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
 				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
@@ -151,15 +153,16 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 		case "stdout":
 			logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
 		case "stdoutqueue":
-			logger.AddOutput("stdout", NewStdanyQueue(1024, 1, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
 		case "stderr":
 			logger.AddOutput("stderr", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
 		case "stderrqueue":
-			logger.AddOutput("stderr", NewStdanyQueue(1024, 1, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {
-		Debug("LOG OUTPUT: %v %v %v %v %v %v", v.LogLevel, v.LogType, v.LogFile, v.LogSize, v.LogDuration, v.LogBackup)
+		Debug("LOG OUTPUT: LogLevel=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
+			v.LogLevel, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
 	}
 	return
 }
