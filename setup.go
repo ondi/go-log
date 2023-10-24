@@ -73,7 +73,7 @@ import (
 
 var Stderr = os.Stderr
 
-var logger = New().AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
+var __std = New().AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
 
 var prefs = []Formatter{NewFl(), NewCx()}
 

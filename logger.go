@@ -213,50 +213,50 @@ func (self *log_t) TraceCtx(ctx context.Context, format string, args ...any) {
 }
 
 func Error(format string, args ...any) {
-	logger.Error(format, args...)
+	__std.Error(format, args...)
 }
 
 func Warn(format string, args ...any) {
-	logger.Warn(format, args...)
+	__std.Warn(format, args...)
 }
 
 func Info(format string, args ...any) {
-	logger.Info(format, args...)
+	__std.Info(format, args...)
 }
 
 func Debug(format string, args ...any) {
-	logger.Debug(format, args...)
+	__std.Debug(format, args...)
 }
 
 func Trace(format string, args ...any) {
-	logger.Trace(format, args...)
+	__std.Trace(format, args...)
 }
 
 func ErrorCtx(ctx context.Context, format string, args ...any) {
-	logger.ErrorCtx(ctx, format, args...)
+	__std.ErrorCtx(ctx, format, args...)
 }
 
 func WarnCtx(ctx context.Context, format string, args ...any) {
-	logger.WarnCtx(ctx, format, args...)
+	__std.WarnCtx(ctx, format, args...)
 }
 
 func InfoCtx(ctx context.Context, format string, args ...any) {
-	logger.InfoCtx(ctx, format, args...)
+	__std.InfoCtx(ctx, format, args...)
 }
 
 func DebugCtx(ctx context.Context, format string, args ...any) {
-	logger.DebugCtx(ctx, format, args...)
+	__std.DebugCtx(ctx, format, args...)
 }
 
 func TraceCtx(ctx context.Context, format string, args ...any) {
-	logger.TraceCtx(ctx, format, args...)
+	__std.TraceCtx(ctx, format, args...)
 }
 
 func SetLogger(in Logger) Logger {
-	logger = in
-	return logger
+	__std = in
+	return __std
 }
 
 func GetLogger() Logger {
-	return logger
+	return __std
 }

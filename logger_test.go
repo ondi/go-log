@@ -13,8 +13,7 @@ import (
 )
 
 func Test1(t *testing.T) {
-	logger := New()
-	SetLogger(logger)
+	logger := SetLogger(New())
 
 	var buf bytes.Buffer
 	ts := time.Now()
@@ -46,8 +45,7 @@ func Test2(t *testing.T) {
 	c := NewErrorsContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", "ERROR")
 	ctx := SetErrorsContext(context.Background(), c)
 
-	logger := New()
-	SetLogger(logger)
+	logger := SetLogger(New())
 
 	var buf bytes.Buffer
 	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewCx()}, os.Stdout), WhatLevel(LOG_TRACE.Level))
