@@ -26,7 +26,7 @@ func NewQueue(limit int) Queue {
 
 func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
-	if n = self.q.PushBackNoWait(m); n != 0 {
+	if n = self.q.PushBackNoLock(m); n != 0 {
 		err = ERROR_OVERFLOW
 	}
 	self.mx.Unlock()
