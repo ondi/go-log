@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/ondi/go-cache v0.0.0-20230425151132-e34113a7989a
-	github.com/ondi/go-queue v0.0.0-20231026102524-c04af1f1b22e
+	github.com/ondi/go-queue v0.0.0-20231026182937-22b2e7cbe204
 	gotest.tools v2.2.0+incompatible
 )
 
