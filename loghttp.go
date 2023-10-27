@@ -154,12 +154,12 @@ func (self *Http_t) writer(q Queue) (err error) {
 			}
 			req.Header = self.header
 			if resp, err = self.client.Do(req); err != nil {
-				fmt.Fprintf(Stderr, "LOG ERROR: %v %v\n", time.Now().Format("2006-01-02 15:04:05"), err)
+				fmt.Fprintf(Stderr, "LOG ERROR: %v count=%v, err=%v\n", time.Now().Format("2006-01-02 15:04:05"), len(ms), err)
 				continue
 			}
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
-				fmt.Fprintf(Stderr, "LOG ERROR: %v %v %s\n", time.Now().Format("2006-01-02 15:04:05"), resp.Status, body.Bytes())
+				fmt.Fprintf(Stderr, "LOG ERROR: %v count=%v, status=%v, body=%s\n", time.Now().Format("2006-01-02 15:04:05"), len(ms), resp.Status, body.Bytes())
 				continue
 			}
 			break
