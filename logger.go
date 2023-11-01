@@ -84,7 +84,7 @@ type Logger interface {
 
 	AddOutput(name string, writer Queue, in []Level_t) Logger
 	DelOutput(name string) Logger
-	Range(fn func(level int64, name string, queue Queue) bool)
+	RangeLevel(level Level_t, fn func(name string, queue Queue) bool)
 	Clear() Logger
 }
 
@@ -129,11 +129,7 @@ type log_t struct {
 	levels map[int64]*atomic.Pointer[writers_t]
 }
 
-func New() Logger {
-	return NewLevels([]Level_t{LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR})
-}
-
-func NewLevels(in []Level_t) Logger {
+func New(in []Level_t) Logger {
 	self := &log_t{
 		levels: map[int64]*atomic.Pointer[writers_t]{},
 	}
@@ -160,10 +156,10 @@ func (self *log_t) DelOutput(name string) Logger {
 	return self
 }
 
-func (self *log_t) Range(fn func(level int64, name string, queue Queue) bool) {
-	for k1, v1 := range self.levels {
+func (self *log_t) RangeLevel(level Level_t, fn func(name string, queue Queue) bool) {
+	if v1 := self.levels[level.Level]; v1 != nil {
 		for k2, v2 := range *v1.Load() {
-			if fn(k1, k2, v2) == false {
+			if fn(k2, v2) == false {
 				return
 			}
 		}
@@ -184,7 +180,7 @@ func (self *log_t) Log(ctx context.Context, level Level_t, format string, args .
 	if v1 := self.levels[level.Level]; v1 != nil {
 		for writer, v2 := range *v1.Load() {
 			if _, err := v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args}); err != nil {
-				fmt.Fprintf(Stderr, "LOG ERROR: %v %v %v\n", level.Ts.Format("2006-01-02 15:04:05"), writer, err)
+				fmt.Fprintf(STDERR, "LOG ERROR: %v %v %v\n", level.Ts.Format("2006-01-02 15:04:05"), writer, err)
 			}
 		}
 	}
