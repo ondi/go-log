@@ -50,10 +50,16 @@ type Msg_t struct {
 	Args   []any
 }
 
+type QueueSize_t struct {
+	Limit   int
+	Size    int
+	Readers int
+	Writers int
+}
 type Queue interface {
 	WriteLog(m Msg_t) (int, error)
 	ReadLog(count int) (out []Msg_t, oki int)
-	Size() (size int, writers int, readers int)
+	Size() QueueSize_t
 	Close() error
 }
 

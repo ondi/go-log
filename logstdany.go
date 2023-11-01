@@ -71,8 +71,8 @@ func (self *Stdany_t) ReadLog(count int) (out []Msg_t, oki int) {
 	return nil, -1
 }
 
-func (self *Stdany_t) Size() (size int, writers int, readers int) {
-	return -1, -1, -1
+func (self *Stdany_t) Size() (res QueueSize_t) {
+	return
 }
 
 func (self *Stdany_t) Close() error {

@@ -87,8 +87,8 @@ func (NoWriter_t) ReadLog(int) ([]Msg_t, int) {
 	return nil, -1
 }
 
-func (NoWriter_t) Size() (size int, writers int, readers int) {
-	return -1, -1, -1
+func (NoWriter_t) Size() (res QueueSize_t) {
+	return
 }
 
 func (NoWriter_t) Close() error {
