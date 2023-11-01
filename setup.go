@@ -211,7 +211,7 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 			return
 		}
 	} else {
-		if self.Message, err = json.Marshal(m.Level.Name + " " + fmt.Sprintf(m.Format, m.Args...)); err != nil {
+		if self.Message, err = json.Marshal(fmt.Sprintf(m.Format, m.Args...)); err != nil {
 			return
 		}
 	}
