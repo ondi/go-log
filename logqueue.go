@@ -51,7 +51,7 @@ func (self *queue_t) ReadLog(count int) (out []Msg_t, oki int) {
 
 func (self *queue_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
-	res.Limit, res.Size, res.Readers, res.Writers = self.q.Limit(), self.q.Size(), self.q.Writers(), self.q.Readers()
+	res.Limit, res.Size, res.Readers, res.Writers = self.q.Limit(), self.q.Size(), self.q.Readers(), self.q.Writers()
 	self.mx.Unlock()
 	return
 }
