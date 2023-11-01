@@ -49,6 +49,13 @@ func (self *queue_t) ReadLog(count int) (out []Msg_t, oki int) {
 	return
 }
 
+func (self *queue_t) Size() (size int, writers int, readers int) {
+	self.mx.Lock()
+	size, writers, readers = self.q.Size(), self.q.Writers(), self.q.Readers()
+	self.mx.Unlock()
+	return
+}
+
 func (self *queue_t) Close() (err error) {
 	self.mx.Lock()
 	self.q.Close()

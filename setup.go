@@ -84,7 +84,11 @@ func (NoWriter_t) WriteLog(Msg_t) (int, error) {
 }
 
 func (NoWriter_t) ReadLog(int) ([]Msg_t, int) {
-	return nil, 0
+	return nil, -1
+}
+
+func (NoWriter_t) Size() (size int, writers int, readers int) {
+	return -1, -1, -1
 }
 
 func (NoWriter_t) Close() error {

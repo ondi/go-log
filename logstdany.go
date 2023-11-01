@@ -68,7 +68,11 @@ func (self *Stdany_t) WriteLog(m Msg_t) (n int, err error) {
 }
 
 func (self *Stdany_t) ReadLog(count int) (out []Msg_t, oki int) {
-	return
+	return nil, -1
+}
+
+func (self *Stdany_t) Size() (size int, writers int, readers int) {
+	return -1, -1, -1
 }
 
 func (self *Stdany_t) Close() error {

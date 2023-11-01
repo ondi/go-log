@@ -53,6 +53,7 @@ type Msg_t struct {
 type Queue interface {
 	WriteLog(m Msg_t) (int, error)
 	ReadLog(count int) (out []Msg_t, oki int)
+	Size() (size int, writers int, readers int)
 	Close() error
 }
 
@@ -75,9 +76,10 @@ type Logger interface {
 
 	Log(ctx context.Context, level Level_t, format string, args ...any)
 
-	Clear() Logger
 	AddOutput(name string, writer Queue, in []Level_t) Logger
 	DelOutput(name string) Logger
+	Range(fn func(level int64, name string, queue Queue) bool)
+	Clear() Logger
 }
 
 type writers_t map[string]Queue
@@ -136,15 +138,6 @@ func NewLevels(in []Level_t) Logger {
 	return self
 }
 
-func (self *log_t) Clear() Logger {
-	for _, v1 := range self.levels {
-		for _, v2 := range *v1.Swap(&writers_t{}) {
-			v2.Close()
-		}
-	}
-	return self
-}
-
 func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
 	for _, v1 := range in {
 		if v2 := self.levels[v1.Level]; v2 != nil {
@@ -157,6 +150,25 @@ func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
 func (self *log_t) DelOutput(name string) Logger {
 	for _, v := range self.levels {
 		del_output(v, name)
+	}
+	return self
+}
+
+func (self *log_t) Range(fn func(level int64, name string, queue Queue) bool) {
+	for k1, v1 := range self.levels {
+		for k2, v2 := range *v1.Load() {
+			if fn(k1, k2, v2) == false {
+				return
+			}
+		}
+	}
+}
+
+func (self *log_t) Clear() Logger {
+	for _, v1 := range self.levels {
+		for _, v2 := range *v1.Swap(&writers_t{}) {
+			v2.Close()
+		}
 	}
 	return self
 }
