@@ -204,11 +204,7 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	}
 
 	self.Level = m.Level.Name
-	if strings.HasPrefix(m.Format, "json1") && len(m.Args) > 0 {
-		if self.Data, err = json.Marshal(m.Args[0]); err != nil {
-			return
-		}
-	} else if strings.HasPrefix(m.Format, "json") {
+	if strings.HasPrefix(m.Format, "json") {
 		if self.Data, err = json.Marshal(m.Args); err != nil {
 			return
 		}
