@@ -71,13 +71,20 @@ import (
 	"unicode/utf8"
 )
 
-var STDERR = os.Stderr
+var (
+	STDERR  = os.Stderr
+	LEVELS  = []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
+	__std   = New(LEVELS).AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
+	__prefs = []Formatter{NewFl(), NewCx()}
+)
 
-var LEVELS = []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
-
-var __std = New(LEVELS).AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
-
-var __prefs = []Formatter{NewFl(), NewCx()}
+var (
+	LOG_TRACE = Level_t{Name: "TRACE", Level: 0}
+	LOG_DEBUG = Level_t{Name: "DEBUG", Level: 1}
+	LOG_INFO  = Level_t{Name: "INFO", Level: 2}
+	LOG_WARN  = Level_t{Name: "WARN", Level: 3}
+	LOG_ERROR = Level_t{Name: "ERROR", Level: 4}
+)
 
 type NoWriter_t struct{}
 

@@ -35,14 +35,6 @@ func (self *Level_t) Set(ts time.Time) {
 	self.File, self.Line = FileLine(1, 32)
 }
 
-var (
-	LOG_TRACE = Level_t{Name: "TRACE", Level: 0}
-	LOG_DEBUG = Level_t{Name: "DEBUG", Level: 1}
-	LOG_INFO  = Level_t{Name: "INFO", Level: 2}
-	LOG_WARN  = Level_t{Name: "WARN", Level: 3}
-	LOG_ERROR = Level_t{Name: "ERROR", Level: 4}
-)
-
 type Msg_t struct {
 	Ctx    context.Context
 	Level  Level_t
@@ -56,6 +48,7 @@ type QueueSize_t struct {
 	Readers int
 	Writers int
 }
+
 type Queue interface {
 	WriteLog(m Msg_t) (int, error)
 	ReadLog(count int) (out []Msg_t, oki int)
