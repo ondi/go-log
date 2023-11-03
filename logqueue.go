@@ -37,8 +37,10 @@ func (self *queue_t) ReadLog(count int) (out []Msg_t, oki int) {
 	for i := 0; i < count; i++ {
 		if m, oki = self.q.PopFront(); oki == 0 {
 			out = append(out, m)
+		} else {
+			break
 		}
-		if oki != 0 || self.q.Size() == 0 {
+		if self.q.Size() == 0 {
 			break
 		}
 	}
