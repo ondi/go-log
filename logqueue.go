@@ -35,8 +35,8 @@ func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 }
 
 func (self *queue_t) ReadLog(count int) (out []Msg_t, oki int) {
-	self.mx.Lock()
 	var m Msg_t
+	self.mx.Lock()
 	for i := 0; i < count; i++ {
 		if m, oki = self.q.PopFront(); oki == 0 {
 			out = append(out, m)
