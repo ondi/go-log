@@ -147,7 +147,9 @@ func (self *Http_t) writer(q Queue) {
 		}
 		for _, m := range ms {
 			if _, err = self.message.FormatLog(&body, m); err != nil {
+				q.WriteError(len(ms))
 				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"), err)
+				return
 			}
 		}
 		for _, v := range self.urls.Range() {
