@@ -96,6 +96,9 @@ func (NoWriter_t) ReadLog(int) ([]Msg_t, int) {
 	return nil, -1
 }
 
+func (NoWriter_t) WriteError(int) {
+}
+
 func (NoWriter_t) Size() (res QueueSize_t) {
 	return
 }

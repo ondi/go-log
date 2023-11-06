@@ -98,6 +98,9 @@ func (self *FileBytes_t) ReadLog(count int) (out []Msg_t, oki int) {
 	return nil, -1
 }
 
+func (self *FileBytes_t) WriteError(count int) {
+}
+
 func (self *FileBytes_t) Size() (res QueueSize_t) {
 	return
 }

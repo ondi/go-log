@@ -125,10 +125,11 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 	return q
 }
 
-func (self *Http_t) writer(q Queue) (err error) {
+func (self *Http_t) writer(q Queue) {
 	defer self.wg.Done()
 
 	var oki int
+	var err error
 	var req *http.Request
 	var resp *http.Response
 	var body bytes.Buffer
@@ -140,6 +141,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 			return
 		}
 		if len(ms) > 0 && self.rps_limit.Add(ms[0].Level.Ts) == false {
+			q.WriteError(len(ms))
 			fmt.Fprintf(STDERR, "LOG ERROR: %v ERROR_RPS\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"))
 			continue
 		}
@@ -163,6 +165,9 @@ func (self *Http_t) writer(q Queue) (err error) {
 				continue
 			}
 			break
+		}
+		if err != nil || resp != nil && resp.StatusCode >= 400 {
+			q.WriteError(len(ms))
 		}
 		time.Sleep(self.post_delay)
 	}
