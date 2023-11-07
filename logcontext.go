@@ -7,8 +7,11 @@ package log
 import (
 	"context"
 	"io"
+	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type context_key_t string
@@ -24,16 +27,20 @@ type ErrorsContext interface {
 
 type ErrorsContext_t struct {
 	mx     sync.Mutex
+	levels map[int64]Level_t
 	name   string
-	levels string
 	errors string
 }
 
-func NewErrorsContext(name string, levels string) ErrorsContext {
-	return &ErrorsContext_t{
+func NewErrorsContext(name string, levels []Level_t) ErrorsContext {
+	self := &ErrorsContext_t{
 		name:   name,
-		levels: levels,
+		levels: map[int64]Level_t{},
 	}
+	for _, v := range levels {
+		self.levels[v.Level] = v
+	}
+	return self
 }
 
 func (self *ErrorsContext_t) Name() string {
@@ -41,7 +48,7 @@ func (self *ErrorsContext_t) Name() string {
 }
 
 func (self *ErrorsContext_t) Set(level Level_t, format string, args ...any) {
-	if strings.Contains(self.levels, level.Name) {
+	if _, ok := self.levels[level.Level]; ok {
 		self.mx.Lock()
 		if ix := strings.Index(format, " "); ix > 0 {
 			self.errors = format[:ix]
@@ -63,7 +70,7 @@ func (self *ErrorsContext_t) Reset() {
 	self.errors = ""
 }
 
-func SetErrorsContextNew(ctx context.Context, id string, levels string) context.Context {
+func SetErrorsContextNew(ctx context.Context, id string, levels []Level_t) context.Context {
 	return context.WithValue(ctx, context_key, NewErrorsContext(id, levels))
 }
 
@@ -80,4 +87,26 @@ func GetErrors(ctx context.Context, out io.Writer) {
 	if v, _ := ctx.Value(context_key).(ErrorsContext); v != nil {
 		v.Get(out)
 	}
+}
+
+type SetCtx func(ctx context.Context, name string, levels []Level_t) context.Context
+
+type errors_middleware_t struct {
+	Handler http.Handler
+	SetCtx  SetCtx
+	Levels  []Level_t
+}
+
+func NewErrorsMiddleware(next http.Handler, set SetCtx, levels []Level_t) http.Handler {
+	self := &errors_middleware_t{
+		Handler: next,
+		SetCtx:  set,
+		Levels:  levels,
+	}
+	return self
+}
+
+func (self *errors_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(self.SetCtx(r.Context(), uuid.New().String(), self.Levels))
+	self.Handler.ServeHTTP(w, r)
 }

@@ -3,6 +3,7 @@ module github.com/ondi/go-log
 go 1.20
 
 require (
+	github.com/google/uuid v1.4.0
 	github.com/ondi/go-cache v0.0.0-20230425151132-e34113a7989a
 	github.com/ondi/go-queue v0.0.0-20231101212134-e1877125cd86
 	gotest.tools v2.2.0+incompatible
