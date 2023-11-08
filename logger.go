@@ -137,9 +137,11 @@ func New(in []Level_t) Logger {
 }
 
 func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
-	for _, v1 := range in {
-		if v2 := self.levels[v1.Level]; v2 != nil {
-			add_output(v2, name, writer)
+	if writer != nil {
+		for _, v1 := range in {
+			if v2 := self.levels[v1.Level]; v2 != nil {
+				add_output(v2, name, writer)
+			}
 		}
 	}
 	return self
