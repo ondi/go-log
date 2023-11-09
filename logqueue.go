@@ -66,6 +66,7 @@ func (self *queue_t) __size() (res QueueSize_t) {
 	res.Writers = self.q.Writers()
 	res.QueueError = self.queue_error
 	res.WriteError = self.write_error
+	res.WriteTotal = self.write_total
 	return
 }
 
