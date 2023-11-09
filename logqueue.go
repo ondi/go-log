@@ -16,6 +16,7 @@ type queue_t struct {
 	q           queue.Queue[Msg_t]
 	queue_error int
 	write_error int
+	write_total int
 }
 
 func NewQueue(limit int) Queue {
@@ -26,6 +27,7 @@ func NewQueue(limit int) Queue {
 
 func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
+	self.write_total++
 	if n = self.q.PushBackNoLock(m); n != 0 {
 		self.queue_error++
 		err = fmt.Errorf("OVERFLOW: %+v", self.__size())

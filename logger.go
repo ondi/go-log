@@ -49,6 +49,7 @@ type QueueSize_t struct {
 	Writers    int
 	QueueError int
 	WriteError int
+	WriteTotal int
 }
 
 type Queue interface {
