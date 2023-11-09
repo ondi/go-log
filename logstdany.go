@@ -11,10 +11,12 @@ import (
 )
 
 type Stdany_t struct {
-	wg     sync.WaitGroup
-	mx     sync.Mutex
-	prefix []Formatter
-	out    io.Writer
+	wg          sync.WaitGroup
+	mx          sync.Mutex
+	prefix      []Formatter
+	out         io.Writer
+	write_error int
+	write_total int
 }
 
 func NewStdany(prefix []Formatter, out io.Writer) Queue {
@@ -49,7 +51,9 @@ func (self *Stdany_t) writer(q Queue) (err error) {
 			return
 		}
 		for _, v := range ms {
-			self.WriteLog(v)
+			if _, err = self.WriteLog(v); err != nil {
+				self.write_error++
+			}
 		}
 	}
 }
@@ -57,6 +61,7 @@ func (self *Stdany_t) writer(q Queue) (err error) {
 func (self *Stdany_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
+	self.write_total++
 	for _, v := range self.prefix {
 		v.FormatLog(self.out, m)
 	}
@@ -75,6 +80,9 @@ func (self *Stdany_t) WriteError(count int) {
 }
 
 func (self *Stdany_t) Size() (res QueueSize_t) {
+	self.mx.Lock()
+	res.WriteError, res.WriteTotal = self.write_error, self.write_total
+	self.mx.Unlock()
 	return
 }
 

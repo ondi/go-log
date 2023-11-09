@@ -25,6 +25,8 @@ type FileBytes_t struct {
 	bytes_count  int
 	backup_count int
 	cycle        int
+	write_error  int
+	write_total  int
 }
 
 func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int) (Queue, error) {
@@ -67,7 +69,9 @@ func (self *FileBytes_t) writer(q Queue) (err error) {
 			return
 		}
 		for _, v := range ms {
-			self.WriteLog(v)
+			if _, err = self.WriteLog(v); err != nil {
+				self.write_error++
+			}
 		}
 	}
 }
@@ -75,6 +79,7 @@ func (self *FileBytes_t) writer(q Queue) (err error) {
 func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
+	self.write_total++
 	for _, v := range self.prefix {
 		n, err = v.FormatLog(self.out, m)
 		self.bytes_count += n
@@ -102,6 +107,9 @@ func (self *FileBytes_t) WriteError(count int) {
 }
 
 func (self *FileBytes_t) Size() (res QueueSize_t) {
+	self.mx.Lock()
+	res.WriteError, res.WriteTotal = self.write_error, self.write_total
+	self.mx.Unlock()
 	return
 }
 

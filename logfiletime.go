@@ -25,6 +25,8 @@ type FileTime_t struct {
 	truncate     time.Duration
 	backup_count int
 	cycle        int
+	write_error  int
+	write_total  int
 }
 
 func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int) (Queue, error) {
@@ -69,7 +71,9 @@ func (self *FileTime_t) writer(q Queue) (err error) {
 			return
 		}
 		for _, v := range ms {
-			self.WriteLog(v)
+			if _, err = self.WriteLog(v); err != nil {
+				self.write_error++
+			}
 		}
 	}
 }
@@ -77,6 +81,7 @@ func (self *FileTime_t) writer(q Queue) (err error) {
 func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
+	self.write_total++
 	if tr := m.Level.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
 		self.__cycle(m.Level.Ts)
 		self.last_date = tr
@@ -99,6 +104,9 @@ func (self *FileTime_t) WriteError(count int) {
 }
 
 func (self *FileTime_t) Size() (res QueueSize_t) {
+	self.mx.Lock()
+	res.WriteError, res.WriteTotal = self.write_error, self.write_total
+	self.mx.Unlock()
 	return
 }
 
