@@ -238,25 +238,13 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 
 type MessageTG_t struct {
 	// Unique identifier for the target chat or username of the target channel (in the format @channelusername)
-	ChatID int64 `json:"chat_id,omitempty"`
+	ChatId int64 `json:"chat_id,omitempty"`
 	// Text of the message to be sent
 	Text string `json:"text,omitempty"`
-	// Optional	Send Markdown or HTML,
-	// if you want Telegram apps to show bold, italic,
-	// fixed-width text or inline URLs in your bot's message.
-	ParseMode string `json:"parse_mode,omitempty"`
-	// Optional	Disables link previews for links in this message
-	DisableWebPagePreview bool `json:"disable_web_page_preview,omitempty"`
-	// Optional	Sends the message silently. Users will receive a notification with no sound.
-	DisableNotification bool `json:"disable_notification,omitempty"`
-	// Optional	If the message is a reply, ID of the original message
-	ReplyToMessageID int64 `json:"reply_to_message_id,omitempty"`
-	// Optional	Additional interface options. A JSON-serialized object for an inline keyboard,
-	// custom reply keyboard, instructions to remove reply keyboard or to force a reply from the user.
-	ReplyMarkup any `json:"reply_markup,omitempty"`
 
-	Hostname  string `json:"-"`
-	TextLimit int    `json:"-"`
+	ApplicationName string `json:"-"`
+	Hostname        string `json:"-"`
+	TextLimit       int    `json:"-"`
 }
 
 func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
@@ -264,23 +252,53 @@ func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 		self.Text += self.Hostname + " "
 	}
 
-	var temp bytes.Buffer
-	for _, v := range __prefs {
-		v.FormatLog(&temp, m)
+	var w io.Writer
+	var buf strings.Builder
+	if self.TextLimit > 0 {
+		w = &LimitWriter_t{Out: &buf, Limit: self.TextLimit}
+	} else {
+		w = &buf
 	}
-	self.Text += temp.String()
+	for _, v := range __prefs {
+		v.FormatLog(w, m)
+	}
 
-	self.Text += m.Level.Name + " " + fmt.Sprintf(m.Format, m.Args...)
-	if self.TextLimit > 0 && len(self.Text) > self.TextLimit {
-		n := self.TextLimit
+	if len(m.Level.Name) > 0 {
+		io.WriteString(w, m.Level.Name)
+		io.WriteString(w, " ")
+	}
+
+	if len(self.ApplicationName) > 0 {
+		io.WriteString(w, self.ApplicationName)
+		io.WriteString(w, " ")
+	}
+
+	fmt.Fprintf(w, m.Format, m.Args...)
+
+	self.Text = buf.String()
+	err = json.NewEncoder(out).Encode(self)
+
+	return
+}
+
+type LimitWriter_t struct {
+	Out     io.Writer
+	Limit   int
+	written int
+}
+
+func (self *LimitWriter_t) Write(p []byte) (n int, err error) {
+	if n = self.Limit - self.written; n > len(p) {
+		n, err = self.Out.Write(p)
+	} else {
 		for ; n > 0; n-- {
-			if r, _ := utf8.DecodeLastRuneInString(self.Text[:n]); r != utf8.RuneError {
+			if r, _ := utf8.DecodeLastRune(p[:n]); r != utf8.RuneError {
 				break
 			}
 		}
-		self.Text = self.Text[:n]
+		n, err = self.Out.Write(p[:n])
 	}
-	err = json.NewEncoder(out).Encode(self)
+	self.written += n
 	return
 }
 
