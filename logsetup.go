@@ -248,10 +248,6 @@ type MessageTG_t struct {
 }
 
 func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
-	if len(self.Hostname) > 0 {
-		self.Text += self.Hostname + " "
-	}
-
 	var w io.Writer
 	var buf strings.Builder
 	if self.TextLimit > 0 {
@@ -259,17 +255,23 @@ func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	} else {
 		w = &buf
 	}
+
 	for _, v := range __fl_cx {
 		v.FormatLog(w, m)
 	}
 
-	if len(m.Level.Name) > 0 {
-		io.WriteString(w, m.Level.Name)
+	if len(self.Hostname) > 0 {
+		io.WriteString(w, self.Hostname)
 		io.WriteString(w, " ")
 	}
 
 	if len(self.ApplicationName) > 0 {
 		io.WriteString(w, self.ApplicationName)
+		io.WriteString(w, " ")
+	}
+
+	if len(m.Level.Name) > 0 {
+		io.WriteString(w, m.Level.Name)
 		io.WriteString(w, " ")
 	}
 
