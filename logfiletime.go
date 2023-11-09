@@ -72,7 +72,7 @@ func (self *FileTime_t) writer(q Queue) (err error) {
 		}
 		for _, v := range ms {
 			if _, err = self.WriteLog(v); err != nil {
-				self.write_error++
+				q.WriteError(1)
 			}
 		}
 	}
@@ -93,6 +93,9 @@ func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	io.WriteString(self.out, " ")
 	n, err = fmt.Fprintf(self.out, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")
+	if err != nil {
+		self.write_error++
+	}
 	return
 }
 
@@ -105,7 +108,8 @@ func (self *FileTime_t) WriteError(count int) {
 
 func (self *FileTime_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
-	res.WriteError, res.WriteTotal = self.write_error, self.write_total
+	res.WriteError = self.write_error
+	res.WriteTotal = self.write_total
 	self.mx.Unlock()
 	return
 }

@@ -70,7 +70,7 @@ func (self *FileBytes_t) writer(q Queue) (err error) {
 		}
 		for _, v := range ms {
 			if _, err = self.WriteLog(v); err != nil {
-				self.write_error++
+				q.WriteError(1)
 			}
 		}
 	}
@@ -96,6 +96,9 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 		self.__cycle(m.Level.Ts)
 		self.bytes_count = 0
 	}
+	if err != nil {
+		self.write_error++
+	}
 	return
 }
 
@@ -108,7 +111,8 @@ func (self *FileBytes_t) WriteError(count int) {
 
 func (self *FileBytes_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
-	res.WriteError, res.WriteTotal = self.write_error, self.write_total
+	res.WriteError = self.write_error
+	res.WriteTotal = self.write_total
 	self.mx.Unlock()
 	return
 }
