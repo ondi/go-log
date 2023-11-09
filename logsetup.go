@@ -256,10 +256,6 @@ func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 		w = &buf
 	}
 
-	for _, v := range __fl_cx {
-		v.FormatLog(w, m)
-	}
-
 	if len(self.Hostname) > 0 {
 		io.WriteString(w, self.Hostname)
 		io.WriteString(w, " ")
@@ -268,6 +264,10 @@ func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	if len(self.ApplicationName) > 0 {
 		io.WriteString(w, self.ApplicationName)
 		io.WriteString(w, " ")
+	}
+
+	for _, v := range __fl_cx {
+		v.FormatLog(w, m)
 	}
 
 	if len(m.Level.Name) > 0 {
