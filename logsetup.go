@@ -75,7 +75,7 @@ var (
 	STDERR  = os.Stderr
 	LEVELS  = []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
 	__std   = New(LEVELS).AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
-	__prefs = []Formatter{NewFl(), NewCx()}
+	__fl_cx = []Formatter{NewFl(), NewCx()}
 )
 
 var (
@@ -227,7 +227,7 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	self.Timestamp = string(m.Level.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp bytes.Buffer
-	for _, v := range __prefs {
+	for _, v := range __fl_cx {
 		v.FormatLog(&temp, m)
 	}
 	self.Location = temp.String()
@@ -259,7 +259,7 @@ func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	} else {
 		w = &buf
 	}
-	for _, v := range __prefs {
+	for _, v := range __fl_cx {
 		v.FormatLog(w, m)
 	}
 
