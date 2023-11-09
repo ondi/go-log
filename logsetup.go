@@ -61,7 +61,6 @@ Logs:
 package log
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -226,7 +225,7 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 
 	self.Timestamp = string(m.Level.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
-	var temp bytes.Buffer
+	var temp strings.Builder
 	for _, v := range __fl_cx {
 		v.FormatLog(&temp, m)
 	}
