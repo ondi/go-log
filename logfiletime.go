@@ -25,28 +25,31 @@ type FileTime_t struct {
 	truncate     time.Duration
 	backup_count int
 	cycle        int
+	log_limit    int
 	write_error  int
 	write_total  int
 }
 
-func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int) (Queue, error) {
+func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (Queue, error) {
 	self := &FileTime_t{
 		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
 		backup_count: backup_count,
 		last_date:    ts,
+		log_limit:    log_limit,
 	}
 	return self, self.__cycle(self.last_date)
 }
 
-func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int) (q Queue, err error) {
+func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (q Queue, err error) {
 	self := &FileTime_t{
 		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
 		backup_count: backup_count,
 		last_date:    ts,
+		log_limit:    log_limit,
 	}
 
 	if err = self.__cycle(self.last_date); err != nil {
@@ -82,16 +85,22 @@ func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
+	var w io.Writer
+	if self.log_limit > 0 {
+		w = &LimitWriter_t{Out: self.out, Limit: self.log_limit}
+	} else {
+		w = self.out
+	}
 	if tr := m.Level.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
 		self.__cycle(m.Level.Ts)
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
-		v.FormatLog(self.out, m)
+		v.FormatLog(w, m)
 	}
-	io.WriteString(self.out, m.Level.Name)
-	io.WriteString(self.out, " ")
-	n, err = fmt.Fprintf(self.out, m.Format, m.Args...)
+	io.WriteString(w, m.Level.Name)
+	io.WriteString(w, " ")
+	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")
 	if err != nil {
 		self.write_error++

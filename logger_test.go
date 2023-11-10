@@ -17,9 +17,9 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt("")}, os.Stdout), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewStdany([]Formatter{NewDt("")}, &buf), WhatLevel(LOG_TRACE.Level))
-	log_file, _ := NewFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10)
+	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt("")}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewStdany([]Formatter{NewDt("")}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	log_file, _ := NewFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10, 0)
 	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.Level))
 	log_http := NewHttpQueue(
 		10,
@@ -48,8 +48,8 @@ func Test2(t *testing.T) {
 	logger := SetLogger(New(LEVELS))
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewCx()}, os.Stdout), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewStdany([]Formatter{NewDt(""), NewCx()}, &buf), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewCx()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewStdany([]Formatter{NewDt(""), NewCx()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
 
 	DebugCtx(ctx, "test")
 

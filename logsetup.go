@@ -73,7 +73,7 @@ import (
 var (
 	STDERR  = os.Stderr
 	LEVELS  = []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
-	__std   = New(LEVELS).AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr), WhatLevel(0))
+	__std   = New(LEVELS).AddOutput("stderr", NewStdany([]Formatter{NewDt("2006-01-02 15:04:05.000"), NewFl(), NewCx()}, os.Stderr, 0), WhatLevel(0))
 	__fl_cx = []Formatter{NewFl(), NewCx()}
 )
 
@@ -115,6 +115,7 @@ type Args_t struct {
 	LogFile     string        `yaml:"LogFile"`
 	LogDate     string        `yaml:"LogDate"`
 	LogLevel    int64         `yaml:"LogLevel"`
+	LogLimit    int           `yaml:"LogLimit"`
 	LogSize     int           `yaml:"LogSize"`
 	LogBackup   int           `yaml:"LogBackup"`
 	LogQueue    int           `yaml:"LogQueue"`
@@ -142,42 +143,42 @@ func SetupLogger(ts time.Time, logs []Args_t) (err error) {
 	for _, v := range logs {
 		switch v.LogType {
 		case "file":
-			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
-			if output, err := NewFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup); err != nil {
+			if output, err := NewFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
 				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
-			if output, err := NewFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup); err != nil {
+			if output, err := NewFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
 				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				logger.AddOutput(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdoutqueue":
-			logger.AddOutput("stdout", NewStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout), WhatLevel(v.LogLevel))
+			logger.AddOutput("stdout", NewStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderr":
-			logger.AddOutput("stderr", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStdany([]Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderrqueue":
-			logger.AddOutput("stderr", NewStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr), WhatLevel(v.LogLevel))
+			logger.AddOutput("stderr", NewStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFl(), NewCx()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		}
 	}
 	for _, v := range logs {
-		Debug("LOG OUTPUT: LogLevel=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
-			v.LogLevel, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
+		Debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
+			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
 	}
 	return
 }
@@ -200,8 +201,9 @@ type MessageKB_t struct {
 	Level           string           `json:"Level"`
 	Timestamp       string           `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
 	Location        string           `json:"Location,omitempty"`
+	Message         string           `json:"Message,omitempty"`
 	Data            json.RawMessage  `json:"Data,omitempty"`
-	Message         json.RawMessage  `json:"Message,omitempty"`
+	TextLimit       int              `json:"-"`
 }
 
 func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
@@ -212,17 +214,23 @@ func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 		json.NewEncoder(out).Encode(self.Index)
 	}
 
-	self.Level = m.Level.Name
+	var w io.Writer
+	var buf strings.Builder
+	if self.TextLimit > 0 {
+		w = &LimitWriter_t{Out: &buf, Limit: self.TextLimit}
+	} else {
+		w = &buf
+	}
 	if strings.HasPrefix(m.Format, "json") {
 		if self.Data, err = json.Marshal(m.Args); err != nil {
 			return
 		}
 	} else {
-		if self.Message, err = json.Marshal(fmt.Sprintf(m.Format, m.Args...)); err != nil {
-			return
-		}
+		fmt.Fprintf(w, m.Format, m.Args...)
+		self.Message = buf.String()
 	}
 
+	self.Level = m.Level.Name
 	self.Timestamp = string(m.Level.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp strings.Builder

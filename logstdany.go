@@ -15,22 +15,25 @@ type Stdany_t struct {
 	mx          sync.Mutex
 	prefix      []Formatter
 	out         io.Writer
+	log_limit   int
 	write_error int
 	write_total int
 }
 
-func NewStdany(prefix []Formatter, out io.Writer) Queue {
+func NewStdany(prefix []Formatter, out io.Writer, log_limit int) Queue {
 	self := &Stdany_t{
-		prefix: prefix,
-		out:    out,
+		prefix:    prefix,
+		out:       out,
+		log_limit: log_limit,
 	}
 	return self
 }
 
-func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer) Queue {
+func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, log_limit int) Queue {
 	self := &Stdany_t{
-		prefix: prefix,
-		out:    out,
+		prefix:    prefix,
+		out:       out,
+		log_limit: log_limit,
 	}
 
 	q := NewQueue(queue_size)
@@ -62,12 +65,18 @@ func (self *Stdany_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
-	for _, v := range self.prefix {
-		v.FormatLog(self.out, m)
+	var w io.Writer
+	if self.log_limit > 0 {
+		w = &LimitWriter_t{Out: self.out, Limit: self.log_limit}
+	} else {
+		w = self.out
 	}
-	io.WriteString(self.out, m.Level.Name)
-	io.WriteString(self.out, " ")
-	n, err = fmt.Fprintf(self.out, m.Format, m.Args...)
+	for _, v := range self.prefix {
+		v.FormatLog(w, m)
+	}
+	io.WriteString(w, m.Level.Name)
+	io.WriteString(w, " ")
+	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")
 	if err != nil {
 		self.write_error++

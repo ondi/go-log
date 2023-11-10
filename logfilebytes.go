@@ -25,26 +25,29 @@ type FileBytes_t struct {
 	bytes_count  int
 	backup_count int
 	cycle        int
+	log_limit    int
 	write_error  int
 	write_total  int
 }
 
-func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int) (Queue, error) {
+func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (Queue, error) {
 	self := &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
+		log_limit:    log_limit,
 	}
 	return self, self.__cycle(ts)
 }
 
-func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int) (q Queue, err error) {
+func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (q Queue, err error) {
 	self := &FileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
+		log_limit:    log_limit,
 	}
 
 	if err = self.__cycle(ts); err != nil {
@@ -80,15 +83,21 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
+	var w io.Writer
+	if self.log_limit > 0 {
+		w = &LimitWriter_t{Out: self.out, Limit: self.log_limit}
+	} else {
+		w = self.out
+	}
 	for _, v := range self.prefix {
-		n, err = v.FormatLog(self.out, m)
+		n, err = v.FormatLog(w, m)
 		self.bytes_count += n
 	}
-	n, err = io.WriteString(self.out, m.Level.Name)
+	n, err = io.WriteString(w, m.Level.Name)
 	self.bytes_count += n
-	n, err = io.WriteString(self.out, " ")
+	n, err = io.WriteString(w, " ")
 	self.bytes_count += n
-	n, err = fmt.Fprintf(self.out, m.Format, m.Args...)
+	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, "\n")
 	self.bytes_count += n
