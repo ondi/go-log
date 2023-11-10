@@ -85,7 +85,7 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.write_total++
 	var w io.Writer
 	if self.log_limit > 0 {
-		w = &LimitWriter_t{Out: self.out, Limit: self.log_limit}
+		w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
 	} else {
 		w = self.out
 	}
