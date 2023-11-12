@@ -87,36 +87,21 @@ type Logger interface {
 
 type writers_t map[string]Queue
 
-func add_output(value *atomic.Pointer[writers_t], name string, writer Queue) {
+func set_output(value *atomic.Pointer[writers_t], name string, new_writer Queue) (old_writer Queue) {
 	for {
 		old := value.Load()
 		new := writers_t{}
-		for k, v := range *old {
-			new[k] = v
-		}
-		new[name] = writer
-		if value.CompareAndSwap(old, &new) {
-			return
-		}
-	}
-}
-
-func del_output(value *atomic.Pointer[writers_t], name string) {
-	for {
-		old := value.Load()
-		new := writers_t{}
-		var writer Queue
 		for k, v := range *old {
 			if k == name {
-				writer = v
+				old_writer = v
 			} else {
 				new[k] = v
 			}
 		}
+		if new_writer != nil {
+			new[name] = new_writer
+		}
 		if value.CompareAndSwap(old, &new) {
-			if writer != nil {
-				writer.Close()
-			}
 			return
 		}
 	}
@@ -138,11 +123,9 @@ func New(in []Level_t) Logger {
 }
 
 func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
-	if writer != nil {
-		for _, v1 := range in {
-			if v2 := self.levels[v1.Level]; v2 != nil {
-				add_output(v2, name, writer)
-			}
+	for _, v1 := range in {
+		if v2 := self.levels[v1.Level]; v2 != nil {
+			set_output(v2, name, writer)
 		}
 	}
 	return self
@@ -150,7 +133,9 @@ func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
 
 func (self *log_t) DelOutput(name string) Logger {
 	for _, v := range self.levels {
-		del_output(v, name)
+		if w := set_output(v, name, nil); w != nil {
+			w.Close()
+		}
 	}
 	return self
 }
