@@ -91,8 +91,8 @@ func (NoWriter_t) WriteLog(Msg_t) (int, error) {
 	return 0, nil
 }
 
-func (NoWriter_t) ReadLog(int) ([]Msg_t, int) {
-	return nil, -1
+func (NoWriter_t) ReadLog([]Msg_t) (int, int) {
+	return 0, -1
 }
 
 func (NoWriter_t) WriteError(int) {

@@ -65,14 +65,14 @@ func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename strin
 
 func (self *FileBytes_t) writer(q Queue) (err error) {
 	defer self.wg.Done()
-
+	var msg [10]Msg_t
 	for {
-		ms, oki := q.ReadLog(1)
+		n, oki := q.ReadLog(msg[:])
 		if oki == -1 {
 			return
 		}
-		for _, v := range ms {
-			if _, err = self.WriteLog(v); err != nil {
+		for i := 0; i < n; i++ {
+			if _, err = self.WriteLog(msg[i]); err != nil {
 				q.WriteError(1)
 			}
 		}
@@ -111,8 +111,8 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *FileBytes_t) ReadLog(count int) (out []Msg_t, oki int) {
-	return nil, -1
+func (self *FileBytes_t) ReadLog(p []Msg_t) (n int, oki int) {
+	return 0, -1
 }
 
 func (self *FileBytes_t) WriteError(count int) {

@@ -24,8 +24,8 @@ func (self *LogCounter_t) WriteLog(Msg_t) (n int, err error) {
 	return
 }
 
-func (self *LogCounter_t) ReadLog(count int) (out []Msg_t, oki int) {
-	return nil, -1
+func (self *LogCounter_t) ReadLog(p []Msg_t) (n int, oki int) {
+	return 0, -1
 }
 
 func (self *LogCounter_t) WriteError(count int) {

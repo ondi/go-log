@@ -125,30 +125,28 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 	return q
 }
 
-func (self *Http_t) writer(q Queue) {
+func (self *Http_t) writer(q Queue) (err error) {
 	defer self.wg.Done()
 
-	var oki int
-	var err error
 	var req *http.Request
 	var resp *http.Response
 	var body bytes.Buffer
-	var ms []Msg_t
+	msg := make([]Msg_t, self.bulk_write)
 	for {
 		body.Reset()
-		ms, oki = q.ReadLog(self.bulk_write)
+		n, oki := q.ReadLog(msg)
 		if oki == -1 {
 			return
 		}
-		if len(ms) > 0 && self.rps_limit.Add(ms[0].Level.Ts) == false {
-			q.WriteError(len(ms))
-			fmt.Fprintf(STDERR, "LOG ERROR: %v ERROR_RPS\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"))
+		if n > 0 && self.rps_limit.Add(msg[0].Level.Ts) == false {
+			q.WriteError(n)
+			fmt.Fprintf(STDERR, "LOG ERROR: %v ERROR_RPS\n", msg[0].Level.Ts.Format("2006-01-01 15:04:05"))
 			continue
 		}
-		for _, m := range ms {
-			if _, err = self.message.FormatLog(&body, m); err != nil {
-				q.WriteError(len(ms))
-				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", ms[0].Level.Ts.Format("2006-01-01 15:04:05"), err)
+		for i := 0; i < n; i++ {
+			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
+				q.WriteError(n)
+				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", msg[0].Level.Ts.Format("2006-01-01 15:04:05"), err)
 				return
 			}
 		}
@@ -158,18 +156,18 @@ func (self *Http_t) writer(q Queue) {
 			}
 			req.Header = self.header
 			if resp, err = self.client.Do(req); err != nil {
-				fmt.Fprintf(STDERR, "LOG ERROR: %v count=%v, err=%v\n", time.Now().Format("2006-01-02 15:04:05"), len(ms), err)
+				fmt.Fprintf(STDERR, "LOG ERROR: %v count=%v, err=%v\n", time.Now().Format("2006-01-02 15:04:05"), n, err)
 				continue
 			}
 			resp.Body.Close()
 			if resp.StatusCode >= 400 {
-				fmt.Fprintf(STDERR, "LOG ERROR: %v count=%v, status=%v, body=%s\n", time.Now().Format("2006-01-02 15:04:05"), len(ms), resp.Status, body.Bytes())
+				fmt.Fprintf(STDERR, "LOG ERROR: %v count=%v, status=%v, body=%s\n", time.Now().Format("2006-01-02 15:04:05"), n, resp.Status, body.Bytes())
 				continue
 			}
 			break
 		}
 		if err != nil || resp != nil && resp.StatusCode >= 400 {
-			q.WriteError(len(ms))
+			q.WriteError(n)
 		}
 		time.Sleep(self.post_delay)
 	}
