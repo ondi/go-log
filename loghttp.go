@@ -18,6 +18,23 @@ type Client interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// Default
+// MaxIdleConns:        100,
+// MaxIdleConnsPerHost: 2,
+func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
+	return &http.Transport{
+		DialContext:         (&net.Dialer{Timeout: timeout}).DialContext,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        MaxIdleConns,
+		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+		// TLSHandshakeTimeout:   timeout,
+		// IdleConnTimeout:       timeout,
+		// ResponseHeaderTimeout: timeout,
+		// ExpectContinueTimeout: timeout,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+}
+
 type Urls interface {
 	Range() []string
 }
@@ -56,23 +73,6 @@ type Http_t struct {
 	header     http.Header
 	post_delay time.Duration
 	bulk_write int
-}
-
-// Default
-// MaxIdleConns:        100,
-// MaxIdleConnsPerHost: 2,
-func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
-	return &http.Transport{
-		DialContext:         (&net.Dialer{Timeout: timeout}).DialContext,
-		ForceAttemptHTTP2:   true,
-		MaxIdleConns:        MaxIdleConns,
-		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
-		// TLSHandshakeTimeout:   timeout,
-		// IdleConnTimeout:       timeout,
-		// ResponseHeaderTimeout: timeout,
-		// ExpectContinueTimeout: timeout,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
 }
 
 type HttpOption func(self *Http_t)

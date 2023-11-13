@@ -28,6 +28,7 @@ type FileBytes_t struct {
 	log_limit    int
 	write_error  int
 	write_total  int
+	bulk_write   int
 }
 
 func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (Queue, error) {
@@ -48,6 +49,7 @@ func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename strin
 		bytes_limit:  bytes_limit,
 		backup_count: backup_count,
 		log_limit:    log_limit,
+		bulk_write:   16,
 	}
 
 	if err = self.__cycle(ts); err != nil {
@@ -65,9 +67,9 @@ func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename strin
 
 func (self *FileBytes_t) writer(q Queue) (err error) {
 	defer self.wg.Done()
-	var msg [10]Msg_t
+	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, oki := q.ReadLog(msg[:])
+		n, oki := q.ReadLog(msg)
 		if oki == -1 {
 			return
 		}

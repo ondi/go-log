@@ -18,6 +18,7 @@ type Stdany_t struct {
 	log_limit   int
 	write_error int
 	write_total int
+	bulk_write  int
 }
 
 func NewStdany(prefix []Formatter, out io.Writer, log_limit int) Queue {
@@ -31,9 +32,10 @@ func NewStdany(prefix []Formatter, out io.Writer, log_limit int) Queue {
 
 func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, log_limit int) Queue {
 	self := &Stdany_t{
-		prefix:    prefix,
-		out:       out,
-		log_limit: log_limit,
+		prefix:     prefix,
+		out:        out,
+		log_limit:  log_limit,
+		bulk_write: 16,
 	}
 
 	q := NewQueue(queue_size)
@@ -47,9 +49,9 @@ func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, 
 
 func (self *Stdany_t) writer(q Queue) (err error) {
 	defer self.wg.Done()
-	var msg [10]Msg_t
+	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, oki := q.ReadLog(msg[:])
+		n, oki := q.ReadLog(msg)
 		if oki == -1 {
 			return
 		}
