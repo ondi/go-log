@@ -11,7 +11,6 @@ import (
 )
 
 type Stdany_t struct {
-	wg          sync.WaitGroup
 	mx          sync.Mutex
 	prefix      []Formatter
 	out         io.Writer
@@ -40,7 +39,7 @@ func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, 
 
 	q := NewQueue(queue_size)
 	for i := 0; i < writers; i++ {
-		self.wg.Add(1)
+		q.WgAdd(1)
 		go self.writer(q)
 	}
 
@@ -48,7 +47,7 @@ func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, 
 }
 
 func (self *Stdany_t) writer(q Queue) (err error) {
-	defer self.wg.Done()
+	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
 		n, oki := q.ReadLog(msg)
@@ -99,6 +98,14 @@ func (self *Stdany_t) Size() (res QueueSize_t) {
 	res.WriteTotal = self.write_total
 	self.mx.Unlock()
 	return
+}
+
+func (self *Stdany_t) WgAdd(int) {
+
+}
+
+func (self *Stdany_t) WgDone() {
+
 }
 
 func (self *Stdany_t) Close() error {

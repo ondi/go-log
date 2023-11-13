@@ -15,7 +15,6 @@ import (
 var FileTime = "20060102150405"
 
 type FileTime_t struct {
-	wg           sync.WaitGroup
 	mx           sync.Mutex
 	last_date    time.Time
 	prefix       []Formatter
@@ -60,7 +59,7 @@ func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, pr
 
 	q = NewQueue(queue_size)
 	for i := 0; i < writers; i++ {
-		self.wg.Add(1)
+		q.WgAdd(1)
 		go self.writer(q)
 	}
 
@@ -68,7 +67,7 @@ func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, pr
 }
 
 func (self *FileTime_t) writer(q Queue) (err error) {
-	defer self.wg.Done()
+	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
 		n, oki := q.ReadLog(msg)
@@ -123,6 +122,14 @@ func (self *FileTime_t) Size() (res QueueSize_t) {
 	res.WriteTotal = self.write_total
 	self.mx.Unlock()
 	return
+}
+
+func (self *FileTime_t) WgAdd(int) {
+
+}
+
+func (self *FileTime_t) WgDone() {
+
 }
 
 func (self *FileTime_t) __cycle(ts time.Time) (err error) {

@@ -65,7 +65,6 @@ func (self *Urls_t) Range() (res []string) {
 }
 
 type Http_t struct {
-	wg         sync.WaitGroup
 	urls       Urls
 	message    Formatter
 	client     Client
@@ -118,7 +117,7 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 
 	q := NewQueue(queue_size)
 	for i := 0; i < writers; i++ {
-		self.wg.Add(1)
+		q.WgAdd(1)
 		go self.writer(q)
 	}
 
@@ -126,7 +125,7 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 }
 
 func (self *Http_t) writer(q Queue) (err error) {
-	defer self.wg.Done()
+	defer q.WgDone()
 
 	var req *http.Request
 	var resp *http.Response

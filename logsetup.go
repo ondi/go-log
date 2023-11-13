@@ -21,8 +21,8 @@ Logs:
     LogBackup: 15
 
 	for k, v := range cfg.Kibana {
-		log_http := log.NewHttp(
-			64,
+		log_http := log.NewHttpQueue(
+			4096,
 			v.Writers,
 			log.NewUrls(v.Host),
 			log.MessageKB_t{
@@ -41,20 +41,20 @@ Logs:
 		log.GetLogger().AddOutput(k, log_http, log.WhatLevel(v.Level))
 	}
 	for k, v := range cfg.Telegram {
-		log_tg := log.NewHttp(
-			64,
+		log_tg := log.NewHttpQueue(
+			128,
 			v.Writers,
 			log.NewUrls(v.Host),
 			log.MessageTG_t{
-				ChatID:    v.ChatID,
+				ChatId:    v.ChatID,
 				Hostname:  self.hostname,
-				TextLimit: 1024,
+				TextLimit: 4096,
 			},
 			self.client,
 			log.PostHeader(headers),
 			log.PostDelay(1500*time.Millisecond),
 		)
-		log.GetLogger().AddOutput(k, log_tg, log.WhatLevel(v.Level)[:1])
+		log.GetLogger().AddOutput(k, log_tg, log.WhatLevel(v.Level))
 	}
 */
 
@@ -84,31 +84,6 @@ var (
 	LOG_WARN  = Level_t{Name: "WARN", Level: 3}
 	LOG_ERROR = Level_t{Name: "ERROR", Level: 4}
 )
-
-type NoWriter_t struct{}
-
-func (NoWriter_t) WriteLog(Msg_t) (int, error) {
-	return 0, nil
-}
-
-func (NoWriter_t) ReadLog([]Msg_t) (int, int) {
-	return 0, -1
-}
-
-func (NoWriter_t) WriteError(int) {
-}
-
-func (NoWriter_t) Size() (res QueueSize_t) {
-	return
-}
-
-func (NoWriter_t) Close() error {
-	return nil
-}
-
-func NoWriter() Queue {
-	return NoWriter_t{}
-}
 
 type Args_t struct {
 	LogType     string        `yaml:"LogType"`

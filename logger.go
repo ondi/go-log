@@ -57,6 +57,8 @@ type Queue interface {
 	ReadLog(p []Msg_t) (n int, oki int)
 	WriteError(count int)
 	Size() QueueSize_t
+	WgAdd(int)
+	WgDone()
 	Close() error
 }
 

@@ -12,6 +12,7 @@ import (
 )
 
 type queue_t struct {
+	wg          sync.WaitGroup
 	mx          sync.Mutex
 	q           queue.Queue[Msg_t]
 	queue_error int
@@ -78,9 +79,18 @@ func (self *queue_t) Size() (res QueueSize_t) {
 	return
 }
 
+func (self *queue_t) WgAdd(n int) {
+	self.wg.Add(n)
+}
+
+func (self *queue_t) WgDone() {
+	self.wg.Done()
+}
+
 func (self *queue_t) Close() (err error) {
 	self.mx.Lock()
 	self.q.Close()
 	self.mx.Unlock()
+	self.wg.Wait()
 	return
 }

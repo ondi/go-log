@@ -38,6 +38,14 @@ func (self *LogCounter_t) Size() (res QueueSize_t) {
 	return
 }
 
+func (self *LogCounter_t) WgAdd(int) {
+
+}
+
+func (self *LogCounter_t) WgDone() {
+
+}
+
 func (self *LogCounter_t) Close() error {
 	return nil
 }
