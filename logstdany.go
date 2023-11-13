@@ -52,13 +52,13 @@ func (self *Stdany_t) writer(q Queue) (err error) {
 	msg := make([]Msg_t, self.bulk_write)
 	for {
 		n, oki := q.ReadLog(msg)
-		if oki == -1 {
-			return
-		}
 		for i := 0; i < n; i++ {
 			if _, err = self.WriteLog(msg[i]); err != nil {
 				q.WriteError(1)
 			}
+		}
+		if oki == -1 {
+			return
 		}
 	}
 }
