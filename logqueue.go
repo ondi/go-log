@@ -18,6 +18,7 @@ type queue_t struct {
 	queue_error int
 	write_error int
 	write_total int
+	read_total  int
 }
 
 func NewQueue(limit int) Queue {
@@ -31,7 +32,7 @@ func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	self.write_total++
 	if n = self.q.PushBackNoLock(m); n != 0 {
 		self.queue_error++
-		err = fmt.Errorf("QUEUE WRITE: %v %+v", n, self.__size())
+		err = fmt.Errorf("QUEUE WRITE: %v", n)
 	}
 	self.mx.Unlock()
 	return
@@ -51,6 +52,7 @@ func (self *queue_t) ReadLog(p []Msg_t) (n int, oki int) {
 			break
 		}
 	}
+	self.read_total += n
 	self.mx.Unlock()
 	return
 }
@@ -61,7 +63,8 @@ func (self *queue_t) WriteError(count int) {
 	self.mx.Unlock()
 }
 
-func (self *queue_t) __size() (res QueueSize_t) {
+func (self *queue_t) Size() (res QueueSize_t) {
+	self.mx.Lock()
 	res.Limit = self.q.Limit()
 	res.Size = self.q.Size()
 	res.Readers = self.q.Readers()
@@ -69,12 +72,7 @@ func (self *queue_t) __size() (res QueueSize_t) {
 	res.QueueError = self.queue_error
 	res.WriteError = self.write_error
 	res.WriteTotal = self.write_total
-	return
-}
-
-func (self *queue_t) Size() (res QueueSize_t) {
-	self.mx.Lock()
-	res = self.__size()
+	res.ReadTotal = self.read_total
 	self.mx.Unlock()
 	return
 }
