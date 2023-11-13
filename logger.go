@@ -84,7 +84,7 @@ type Logger interface {
 	AddOutput(name string, writer Queue, in []Level_t) Logger
 	DelOutput(name string) Logger
 	RangeLevel(level Level_t, fn func(name string, queue Queue) bool)
-	Clear() Logger
+	Close() Logger
 }
 
 type writers_t map[string]Queue
@@ -152,7 +152,7 @@ func (self *log_t) RangeLevel(level Level_t, fn func(name string, queue Queue) b
 	}
 }
 
-func (self *log_t) Clear() Logger {
+func (self *log_t) Close() Logger {
 	for _, v1 := range self.levels {
 		for _, v2 := range *v1.Swap(&writers_t{}) {
 			v2.Close()
