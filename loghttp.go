@@ -7,7 +7,6 @@ package log
 import (
 	"bytes"
 	"crypto/tls"
-	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -137,12 +136,10 @@ func (self *Http_t) writer(q Queue) (err error) {
 		for i := 0; i < n; i++ {
 			if self.rps_limit.Add(msg[i].Level.Ts) == false {
 				q.WriteError(1)
-				fmt.Fprintf(STDERR, "LOG ERROR: %v ERROR_RPS\n", msg[i].Level.Ts.Format("2006-01-01 15:04:05"))
 				continue
 			}
 			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
 				q.WriteError(1)
-				fmt.Fprintf(STDERR, "LOG ERROR: %v %v\n", msg[i].Level.Ts.Format("2006-01-01 15:04:05"), err)
 				continue
 			}
 		}
@@ -153,12 +150,10 @@ func (self *Http_t) writer(q Queue) (err error) {
 				}
 				req.Header = self.header
 				if resp, err = self.client.Do(req); err != nil {
-					fmt.Fprintf(STDERR, "LOG ERROR: %v count=%v, err=%v\n", time.Now().Format("2006-01-02 15:04:05"), n, err)
 					continue
 				}
 				resp.Body.Close()
 				if resp.StatusCode >= 400 {
-					fmt.Fprintf(STDERR, "LOG ERROR: %v count=%v, status=%v, body=%s\n", time.Now().Format("2006-01-02 15:04:05"), n, resp.Status, body.Bytes())
 					continue
 				}
 				break

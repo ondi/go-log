@@ -31,7 +31,7 @@ func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	self.write_total++
 	if n = self.q.PushBackNoLock(m); n != 0 {
 		self.queue_error++
-		err = fmt.Errorf("OVERFLOW: %+v", self.__size())
+		err = fmt.Errorf("QUEUE WRITE: %v %+v", n, self.__size())
 	}
 	self.mx.Unlock()
 	return

@@ -16,7 +16,6 @@ package log
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"sync/atomic"
 	"time"
@@ -164,10 +163,8 @@ func (self *log_t) Close() Logger {
 func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
 	level.Set(time.Now())
 	if v1 := self.levels[level.Level]; v1 != nil {
-		for writer, v2 := range *v1.Load() {
-			if _, err := v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args}); err != nil {
-				fmt.Fprintf(STDERR, "LOG ERROR: %v %v %v\n", level.Ts.Format("2006-01-02 15:04:05"), writer, err)
-			}
+		for _, v2 := range *v1.Load() {
+			v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args})
 		}
 	}
 }
