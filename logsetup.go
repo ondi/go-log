@@ -171,11 +171,12 @@ type MessageIndexKB_t struct {
 
 type MessageKB_t struct {
 	Index           MessageIndexKB_t `json:"-"`
+	Timestamp       string           `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
 	ApplicationName string           `json:"ApplicationName"`
 	Environment     string           `json:"Environment"`
 	Level           string           `json:"Level"`
-	Timestamp       string           `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
 	Location        string           `json:"Location,omitempty"`
+	Hostname        string           `json:"Hostname,omitempty"`
 	Message         string           `json:"Message,omitempty"`
 	Data            json.RawMessage  `json:"Data,omitempty"`
 	TextLimit       int              `json:"-"`
