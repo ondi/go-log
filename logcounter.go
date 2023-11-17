@@ -9,8 +9,8 @@ import (
 )
 
 type LogCounter_t struct {
-	mx    sync.Mutex
-	total int
+	mx          sync.Mutex
+	write_total int
 }
 
 func NewLogCounter() Queue {
@@ -19,21 +19,22 @@ func NewLogCounter() Queue {
 
 func (self *LogCounter_t) WriteLog(Msg_t) (n int, err error) {
 	self.mx.Lock()
-	self.total++
+	self.write_total++
 	self.mx.Unlock()
 	return
 }
 
-func (self *LogCounter_t) ReadLog(p []Msg_t) (n int, oki int) {
-	return 0, -1
+func (self *LogCounter_t) ReadLog(p []Msg_t) (n int, ok bool) {
+	return
 }
 
 func (self *LogCounter_t) WriteError(count int) {
+
 }
 
 func (self *LogCounter_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
-	res.WriteTotal = self.total
+	res.WriteTotal = self.write_total
 	self.mx.Unlock()
 	return
 }
@@ -48,4 +49,8 @@ func (self *LogCounter_t) WgDone() {
 
 func (self *LogCounter_t) Close() error {
 	return nil
+}
+
+func (self *LogCounter_t) Closed() bool {
+	return true
 }

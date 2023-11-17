@@ -30,7 +30,7 @@ func NewQueue(limit int) Queue {
 func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	self.write_total++
-	if n = self.q.PushBackNoLock(m); n != 0 {
+	if self.q.PushBackNoLock(m) == false {
 		self.queue_error++
 		err = fmt.Errorf("QUEUE WRITE: %v", n)
 	}
@@ -38,11 +38,11 @@ func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *queue_t) ReadLog(p []Msg_t) (n int, oki int) {
+func (self *queue_t) ReadLog(p []Msg_t) (n int, ok bool) {
 	var m Msg_t
 	self.mx.Lock()
 	for n < len(p) {
-		if m, oki = self.q.PopFront(); oki == 0 {
+		if m, ok = self.q.PopFront(); ok {
 			p[n] = m
 			n++
 		} else {
@@ -90,5 +90,12 @@ func (self *queue_t) Close() (err error) {
 	self.q.Close()
 	self.mx.Unlock()
 	self.wg.Wait()
+	return
+}
+
+func (self *queue_t) Closed() (res bool) {
+	self.mx.Lock()
+	res = self.q.Closed()
+	self.mx.Unlock()
 	return
 }

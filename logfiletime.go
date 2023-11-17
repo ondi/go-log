@@ -70,13 +70,13 @@ func (self *FileTime_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, oki := q.ReadLog(msg)
+		n, _ := q.ReadLog(msg)
 		for i := 0; i < n; i++ {
 			if _, err = self.WriteLog(msg[i]); err != nil {
 				q.WriteError(1)
 			}
 		}
-		if oki == -1 {
+		if q.Closed() {
 			return
 		}
 	}
@@ -109,11 +109,12 @@ func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *FileTime_t) ReadLog(p []Msg_t) (n int, oki int) {
-	return 0, -1
+func (self *FileTime_t) ReadLog(p []Msg_t) (n int, ok bool) {
+	return
 }
 
 func (self *FileTime_t) WriteError(count int) {
+
 }
 
 func (self *FileTime_t) Size() (res QueueSize_t) {
@@ -149,8 +150,19 @@ func (self *FileTime_t) __cycle(ts time.Time) (err error) {
 }
 
 func (self *FileTime_t) Close() (err error) {
+	self.mx.Lock()
 	if self.out != nil {
-		err = self.out.Close()
+		if err = self.out.Close(); err == nil {
+			self.out = nil
+		}
 	}
+	self.mx.Unlock()
+	return
+}
+
+func (self *FileTime_t) Closed() (res bool) {
+	self.mx.Lock()
+	res = self.out == nil
+	self.mx.Unlock()
 	return
 }

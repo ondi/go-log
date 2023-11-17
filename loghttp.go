@@ -132,7 +132,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 	msg := make([]Msg_t, self.bulk_write)
 	for {
 		body.Reset()
-		n, oki := q.ReadLog(msg)
+		n, _ := q.ReadLog(msg)
 		for i := 0; i < n; i++ {
 			if self.rps_limit.Add(msg[i].Level.Ts) == false {
 				q.WriteError(1)
@@ -162,7 +162,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 				q.WriteError(n)
 			}
 		}
-		if oki == -1 {
+		if q.Closed() {
 			return
 		}
 		time.Sleep(self.post_delay)

@@ -54,12 +54,13 @@ type QueueSize_t struct {
 
 type Queue interface {
 	WriteLog(m Msg_t) (int, error)
-	ReadLog(p []Msg_t) (n int, oki int)
+	ReadLog(p []Msg_t) (n int, ok bool)
 	WriteError(count int)
 	Size() QueueSize_t
 	WgAdd(int)
 	WgDone()
 	Close() error
+	Closed() bool
 }
 
 type Formatter interface {
