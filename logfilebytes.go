@@ -68,14 +68,14 @@ func (self *FileBytes_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, _ := q.ReadLog(msg)
+		n, ok := q.ReadLog(msg)
+		if !ok {
+			return
+		}
 		for i := 0; i < n; i++ {
 			if _, err = self.WriteLog(msg[i]); err != nil {
 				q.WriteError(1)
 			}
-		}
-		if q.Closed() {
-			return
 		}
 	}
 }
@@ -160,11 +160,4 @@ func (self *FileBytes_t) Close() (err error) {
 	}
 	self.mx.Unlock()
 	return
-}
-
-func (self *FileBytes_t) Closed() (res bool) {
-	self.mx.Lock()
-	res = self.out == nil
-	self.mx.Unlock()
-	return true
 }

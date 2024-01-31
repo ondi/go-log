@@ -126,20 +126,25 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 func (self *Http_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 
+	var n int
+	var ok bool
 	var req *http.Request
 	var resp *http.Response
 	var body bytes.Buffer
 	msg := make([]Msg_t, self.bulk_write)
 	for {
 		body.Reset()
-		n, _ := q.ReadLog(msg)
+		if n, ok = q.ReadLog(msg); !ok {
+			return
+		}
+		if n > 0 && self.rps_limit.Add(msg[0].Level.Ts) == false {
+			q.WriteError(1)
+			continue
+		}
 		for i := 0; i < n; i++ {
-			if self.rps_limit.Add(msg[i].Level.Ts) == false {
-				q.WriteError(1)
-				continue
-			}
 			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
 				q.WriteError(1)
+				body.Reset()
 				continue
 			}
 		}
@@ -161,9 +166,6 @@ func (self *Http_t) writer(q Queue) (err error) {
 			if err != nil || resp != nil && resp.StatusCode >= 400 {
 				q.WriteError(n)
 			}
-		}
-		if q.Closed() {
-			return
 		}
 		time.Sleep(self.post_delay)
 	}

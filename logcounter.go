@@ -50,7 +50,3 @@ func (self *LogCounter_t) WgDone() {
 func (self *LogCounter_t) Close() error {
 	return nil
 }
-
-func (self *LogCounter_t) Closed() bool {
-	return true
-}

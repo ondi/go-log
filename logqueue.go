@@ -92,10 +92,3 @@ func (self *queue_t) Close() (err error) {
 	self.wg.Wait()
 	return
 }
-
-func (self *queue_t) Closed() (res bool) {
-	self.mx.Lock()
-	res = self.q.Closed()
-	self.mx.Unlock()
-	return
-}

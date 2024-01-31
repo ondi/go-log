@@ -50,14 +50,14 @@ func (self *Stdany_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, _ := q.ReadLog(msg)
+		n, ok := q.ReadLog(msg)
+		if !ok {
+			return
+		}
 		for i := 0; i < n; i++ {
 			if _, err = self.WriteLog(msg[i]); err != nil {
 				q.WriteError(1)
 			}
-		}
-		if q.Closed() {
-			return
 		}
 	}
 }
@@ -111,8 +111,4 @@ func (self *Stdany_t) WgDone() {
 
 func (self *Stdany_t) Close() error {
 	return nil
-}
-
-func (self *Stdany_t) Closed() bool {
-	return true
 }

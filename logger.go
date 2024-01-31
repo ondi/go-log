@@ -60,7 +60,6 @@ type Queue interface {
 	WgAdd(int)
 	WgDone()
 	Close() error
-	Closed() bool
 }
 
 type Formatter interface {
