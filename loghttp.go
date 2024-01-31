@@ -148,25 +148,33 @@ func (self *Http_t) writer(q Queue) (err error) {
 				continue
 			}
 		}
-		if body.Len() > 0 {
-			for _, v := range self.urls.Range() {
-				if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
-					continue
-				}
-				req.Header = self.header
-				if resp, err = self.client.Do(req); err != nil {
-					continue
-				}
-				resp.Body.Close()
-				if resp.StatusCode >= 400 {
-					continue
-				}
-				break
+		if body.Len() == 0 {
+			continue
+		}
+		for _, v := range self.urls.Range() {
+			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
+				continue
 			}
-			if err != nil || resp != nil && resp.StatusCode >= 400 {
-				q.WriteError(n)
+			req.Header = self.header
+			if resp, err = self.client.Do(req); err != nil {
+				continue
 			}
+			resp.Body.Close()
+			if resp.StatusCode >= 400 {
+				continue
+			}
+			break
+		}
+		if err != nil || StatusCode(resp) >= 400 {
+			q.WriteError(n)
 		}
 		time.Sleep(self.post_delay)
 	}
+}
+
+func StatusCode(resp *http.Response) int {
+	if resp != nil {
+		return resp.StatusCode
+	}
+	return -1
 }
