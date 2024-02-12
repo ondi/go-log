@@ -6,22 +6,19 @@ package log
 
 import (
 	"context"
-	"io"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/google/uuid"
 )
 
-type context_key_t string
-
-var context_key context_key_t = "log_ctx"
+// &log_ctx used for ctx.Value
+var log_ctx = 1
 
 type ErrorsContext interface {
 	Name() string
 	Set(level Level_t, format string, args ...any)
-	Get(out io.Writer)
+	Get() []string
 	Reset()
 }
 
@@ -29,7 +26,7 @@ type ErrorsContext_t struct {
 	mx     sync.Mutex
 	levels map[int64]Level_t
 	name   string
-	errors string
+	errors []string
 }
 
 func NewErrorsContext(name string, levels []Level_t) ErrorsContext {
@@ -50,43 +47,40 @@ func (self *ErrorsContext_t) Name() string {
 func (self *ErrorsContext_t) Set(level Level_t, format string, args ...any) {
 	if _, ok := self.levels[level.Level]; ok {
 		self.mx.Lock()
-		if ix := strings.Index(format, " "); ix > 0 {
-			self.errors = format[:ix]
-		} else {
-			self.errors = format
-		}
+		self.errors = append(self.errors, format)
 		self.mx.Unlock()
 	}
 }
 
-func (self *ErrorsContext_t) Get(out io.Writer) {
+func (self *ErrorsContext_t) Get() (res []string) {
 	self.mx.Lock()
-	io.WriteString(out, self.errors)
+	res = self.errors
 	self.mx.Unlock()
 	return
 }
 
 func (self *ErrorsContext_t) Reset() {
-	self.errors = ""
+	self.errors = nil
 }
 
 func SetErrorsContextNew(ctx context.Context, id string, levels []Level_t) context.Context {
-	return context.WithValue(ctx, context_key, NewErrorsContext(id, levels))
+	return context.WithValue(ctx, &log_ctx, NewErrorsContext(id, levels))
 }
 
 func SetErrorsContext(ctx context.Context, value ErrorsContext) context.Context {
-	return context.WithValue(ctx, context_key, value)
+	return context.WithValue(ctx, &log_ctx, value)
 }
 
 func GetErrorsContext(ctx context.Context) (value ErrorsContext) {
-	value, _ = ctx.Value(context_key).(ErrorsContext)
+	value, _ = ctx.Value(&log_ctx).(ErrorsContext)
 	return
 }
 
-func GetErrors(ctx context.Context, out io.Writer) {
-	if v, _ := ctx.Value(context_key).(ErrorsContext); v != nil {
-		v.Get(out)
+func GetErrors(ctx context.Context) (res []string) {
+	if v, _ := ctx.Value(&log_ctx).(ErrorsContext); v != nil {
+		res = v.Get()
 	}
+	return
 }
 
 type SetCtx func(ctx context.Context, name string, levels []Level_t) context.Context
