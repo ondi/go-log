@@ -22,15 +22,15 @@ type Client interface {
 // MaxIdleConnsPerHost: 2,
 func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
 	return &http.Transport{
-		DialContext:         (&net.Dialer{Timeout: timeout}).DialContext,
-		ForceAttemptHTTP2:   true,
-		MaxIdleConns:        MaxIdleConns,
-		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
-		// TLSHandshakeTimeout:   timeout,
-		// IdleConnTimeout:       timeout,
-		// ResponseHeaderTimeout: timeout,
-		// ExpectContinueTimeout: timeout,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           (&net.Dialer{Timeout: timeout, KeepAlive: timeout}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          MaxIdleConns,
+		MaxIdleConnsPerHost:   MaxIdleConnsPerHost,
+		TLSHandshakeTimeout:   15 * time.Second,
+		IdleConnTimeout:       90 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 	}
 }
 
