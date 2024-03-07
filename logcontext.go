@@ -47,7 +47,9 @@ func (self *ErrorsContext_t) Name() string {
 func (self *ErrorsContext_t) Set(level Level_t, format string, args ...any) {
 	if _, ok := self.levels[level.Level]; ok {
 		self.mx.Lock()
-		self.errors = append(self.errors, format)
+		if len(self.errors) <= 10 {
+			self.errors = append(self.errors, format)
+		}
 		self.mx.Unlock()
 	}
 }

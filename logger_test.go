@@ -48,8 +48,8 @@ func Test2(t *testing.T) {
 	logger := SetLogger(New(LEVELS))
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewCx()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewStdany([]Formatter{NewDt(""), NewCx()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewSetContextError()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewStdany([]Formatter{NewDt(""), NewSetContextError()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
 
 	DebugCtx(ctx, "test")
 

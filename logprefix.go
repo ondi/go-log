@@ -42,13 +42,13 @@ func (self *DT_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	return
 }
 
-type FL_t struct{}
+type FileLine_t struct{}
 
-func NewFl() Formatter {
-	return &FL_t{}
+func NewFileLine() Formatter {
+	return &FileLine_t{}
 }
 
-func (self *FL_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self *FileLine_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	if n, err = io.WriteString(out, filepath.Base(m.Level.File)); n > 0 {
 		io.WriteString(out, ":")
 		io.WriteString(out, strconv.FormatInt(int64(m.Level.Line), 10))
@@ -57,15 +57,30 @@ func (self *FL_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	return
 }
 
-type CX_t struct{}
+type SetContextError_t struct{}
 
-func NewCx() Formatter {
-	return &CX_t{}
+func NewSetContextError() Formatter {
+	return &SetContextError_t{}
 }
 
-func (self *CX_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self *SetContextError_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	if v := GetErrorsContext(m.Ctx); v != nil {
 		v.Set(m.Level, m.Format, m.Args...)
+		if n, err = io.WriteString(out, v.Name()); n > 0 {
+			io.WriteString(out, " ")
+		}
+	}
+	return
+}
+
+type GetContextError_t struct{}
+
+func NewGetContextError() Formatter {
+	return &GetContextError_t{}
+}
+
+func (self *GetContextError_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+	if v := GetErrorsContext(m.Ctx); v != nil {
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")
 		}
