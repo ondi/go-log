@@ -155,7 +155,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
 				continue
 			}
-			req.Header = self.header
+			req.Header = self.header.Clone()
 			if resp, err = self.client.Do(req); err != nil {
 				continue
 			}
