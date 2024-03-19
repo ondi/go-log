@@ -17,6 +17,14 @@ type Client interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+type Urls interface {
+	Range() []string
+}
+
+type Headers interface {
+	Header() http.Header
+}
+
 // Default
 // MaxIdleConns:        100,
 // MaxIdleConnsPerHost: 2,
@@ -32,10 +40,6 @@ func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHo
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 	}
-}
-
-type Urls interface {
-	Range() []string
 }
 
 type Urls_t struct {
@@ -63,21 +67,27 @@ func (self *Urls_t) Range() (res []string) {
 	return
 }
 
+type NoHeader_t struct{}
+
+func (NoHeader_t) Header() http.Header {
+	return nil
+}
+
 type Http_t struct {
 	urls       Urls
 	message    Formatter
 	client     Client
-	rps_limit  Rps
-	header     http.Header
+	rps        Rps
+	header     Headers
 	post_delay time.Duration
 	bulk_write int
 }
 
 type HttpOption func(self *Http_t)
 
-func PostHeader(header http.Header) HttpOption {
+func PostHeader(header Headers) HttpOption {
 	return func(self *Http_t) {
-		self.header = header.Clone()
+		self.header = header
 	}
 }
 
@@ -89,7 +99,7 @@ func PostDelay(delay time.Duration) HttpOption {
 
 func RpsLimit(rps_limit Rps) HttpOption {
 	return func(self *Http_t) {
-		self.rps_limit = rps_limit
+		self.rps = rps_limit
 	}
 }
 
@@ -106,7 +116,8 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 		urls:       urls,
 		message:    message,
 		client:     client,
-		rps_limit:  NoRps_t{},
+		rps:        NoRps_t{},
+		header:     NoHeader_t{},
 		bulk_write: 1,
 	}
 
@@ -137,7 +148,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 		if n, ok = q.ReadLog(msg); !ok {
 			return
 		}
-		if n > 0 && self.rps_limit.Add(msg[0].Level.Ts) == false {
+		if n > 0 && self.rps.Add(msg[0].Level.Ts) == false {
 			q.WriteError(1)
 			continue
 		}
@@ -155,7 +166,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
 				continue
 			}
-			req.Header = self.header.Clone()
+			req.Header = self.header.Header()
 			if resp, err = self.client.Do(req); err != nil {
 				continue
 			}
