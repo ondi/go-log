@@ -67,25 +67,25 @@ func (self *Urls_t) Range() (res []string) {
 	return
 }
 
-type NoHeader_t struct{}
+type NoHeaders_t struct{}
 
-func (NoHeader_t) Header(*http.Request) {}
+func (NoHeaders_t) Header(*http.Request) {}
 
 type Http_t struct {
 	urls       Urls
 	message    Formatter
 	client     Client
 	rps        Rps
-	header     Headers
+	headers    Headers
 	post_delay time.Duration
 	bulk_write int
 }
 
 type HttpOption func(self *Http_t)
 
-func PostHeader(header Headers) HttpOption {
+func PostHeader(headers Headers) HttpOption {
 	return func(self *Http_t) {
-		self.header = header
+		self.headers = headers
 	}
 }
 
@@ -115,7 +115,7 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 		message:    message,
 		client:     client,
 		rps:        NoRps_t{},
-		header:     NoHeader_t{},
+		headers:    NoHeaders_t{},
 		bulk_write: 1,
 	}
 
@@ -164,7 +164,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
 				continue
 			}
-			self.header.Header(req)
+			self.headers.Header(req)
 			if resp, err = self.client.Do(req); err != nil {
 				continue
 			}
