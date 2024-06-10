@@ -28,16 +28,16 @@ type Headers interface {
 // Default
 // MaxIdleConns:        100,
 // MaxIdleConnsPerHost: 2,
-func DefaultTransport(timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
+func DefaultTransport(dial_timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
 	return &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           (&net.Dialer{Timeout: timeout, KeepAlive: timeout}).DialContext,
+		DialContext:           (&net.Dialer{Timeout: dial_timeout}).DialContext,
 		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          MaxIdleConns,
 		MaxIdleConnsPerHost:   MaxIdleConnsPerHost,
-		TLSHandshakeTimeout:   15 * time.Second,
+		TLSHandshakeTimeout:   30 * time.Second,
 		IdleConnTimeout:       90 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		ExpectContinueTimeout: 5 * time.Second,
 		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 	}
 }
