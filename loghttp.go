@@ -22,7 +22,7 @@ type Urls interface {
 }
 
 type Headers interface {
-	Header(*http.Request)
+	Header(*http.Request) error
 }
 
 // Default
@@ -69,7 +69,9 @@ func (self *Urls_t) Range() (res []string) {
 
 type NoHeaders_t struct{}
 
-func (NoHeaders_t) Header(*http.Request) {}
+func (NoHeaders_t) Header(*http.Request) error {
+	return nil
+}
 
 type Http_t struct {
 	urls       Urls
@@ -164,7 +166,9 @@ func (self *Http_t) writer(q Queue) (err error) {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
 				continue
 			}
-			self.headers.Header(req)
+			if err = self.headers.Header(req); err != nil {
+				return
+			}
 			if resp, err = self.client.Do(req); err != nil {
 				continue
 			}
