@@ -15,24 +15,10 @@ import (
 // &log_ctx used for ctx.Value
 var log_ctx = 1
 
-type LogMsgList_t []LogMsg_t
-
-func (self LogMsgList_t) Len() int {
-	return len(self)
-}
-
-func (self LogMsgList_t) Format(i int) string {
-	return self[i].Format
-}
-
-func (self LogMsgList_t) Args(i int) []any {
-	return self[i].Args
-}
-
 type LogContext interface {
 	Name() string
 	Set(m LogMsg_t)
-	Get() LogMsgList_t
+	Range(func(level string, format string, args ...any) bool)
 	Reset()
 }
 
@@ -40,7 +26,7 @@ type LogContext_t struct {
 	mx     sync.Mutex
 	levels map[int64]Level_t
 	name   string
-	data   LogMsgList_t
+	data   []LogMsg_t
 	limit  int
 }
 
@@ -70,11 +56,14 @@ func (self *LogContext_t) Set(m LogMsg_t) {
 	}
 }
 
-func (self *LogContext_t) Get() (res LogMsgList_t) {
+func (self *LogContext_t) Range(f func(level string, format string, args ...any) bool) {
 	self.mx.Lock()
-	res = self.data
-	self.mx.Unlock()
-	return
+	defer self.mx.Unlock()
+	for _, v := range self.data {
+		if f(v.Level.Name, v.Format, v.Args...) == false {
+			break
+		}
+	}
 }
 
 func (self *LogContext_t) Reset() {
@@ -94,9 +83,9 @@ func GetLogContextValue(ctx context.Context) (value LogContext) {
 	return
 }
 
-func GetLogContextPayload(ctx context.Context) (res LogMsgList_t) {
+func GetLogContextPayload(ctx context.Context, f func(level string, format string, args ...any) bool) {
 	if v, _ := ctx.Value(&log_ctx).(LogContext); v != nil {
-		res = v.Get()
+		v.Range(f)
 	}
 	return
 }
