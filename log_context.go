@@ -18,7 +18,7 @@ var log_ctx = 1
 type LogContext interface {
 	Name() string
 	Set(m LogMsg_t)
-	Get() []LogMsg_t
+	Get() LogMsgList_t
 	Reset()
 }
 
@@ -56,7 +56,7 @@ func (self *LogContext_t) Set(m LogMsg_t) {
 	}
 }
 
-func (self *LogContext_t) Get() (res []LogMsg_t) {
+func (self *LogContext_t) Get() (res LogMsgList_t) {
 	self.mx.Lock()
 	res = self.data
 	self.mx.Unlock()
@@ -87,26 +87,26 @@ func GetLogContextPayload(ctx context.Context) (res []LogMsg_t) {
 	return
 }
 
-type SetCtx func(ctx context.Context, name string, limit int, levels []Level_t) context.Context
+type SetLogCtx func(ctx context.Context, name string, limit int, levels []Level_t) context.Context
 
-type errors_middleware_t struct {
-	Handler http.Handler
-	SetCtx  SetCtx
-	Levels  []Level_t
-	Limit   int
+type log_ctx_middleware_t struct {
+	Handler   http.Handler
+	SetLogCtx SetLogCtx
+	Levels    []Level_t
+	Limit     int
 }
 
-func NewErrorsMiddleware(next http.Handler, set SetCtx, limit int, levels []Level_t) http.Handler {
-	self := &errors_middleware_t{
-		Handler: next,
-		SetCtx:  set,
-		Levels:  levels,
-		Limit:   limit,
+func NewLogCtxMiddleware(next http.Handler, set SetLogCtx, limit int, levels []Level_t) http.Handler {
+	self := &log_ctx_middleware_t{
+		Handler:   next,
+		SetLogCtx: set,
+		Levels:    levels,
+		Limit:     limit,
 	}
 	return self
 }
 
-func (self *errors_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(self.SetCtx(r.Context(), uuid.New().String(), self.Limit, self.Levels))
+func (self *log_ctx_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(self.SetLogCtx(r.Context(), uuid.New().String(), self.Limit, self.Levels))
 	self.Handler.ServeHTTP(w, r)
 }
