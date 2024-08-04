@@ -17,8 +17,8 @@ var log_ctx = 1
 
 type LogContext interface {
 	Name() string
-	Set(level Level_t, format string, args ...any)
-	Get() []string
+	Set(m LogMsg_t)
+	Get() []LogMsg_t
 	Reset()
 }
 
@@ -26,13 +26,15 @@ type LogContext_t struct {
 	mx     sync.Mutex
 	levels map[int64]Level_t
 	name   string
-	errors []string
+	data   []LogMsg_t
+	limit  int
 }
 
-func NewLogContext(name string, levels []Level_t) LogContext {
+func NewLogContext(name string, limit int, levels []Level_t) LogContext {
 	self := &LogContext_t{
 		name:   name,
 		levels: map[int64]Level_t{},
+		limit:  limit,
 	}
 	for _, v := range levels {
 		self.levels[v.Level] = v
@@ -44,29 +46,29 @@ func (self *LogContext_t) Name() string {
 	return self.name
 }
 
-func (self *LogContext_t) Set(level Level_t, format string, args ...any) {
-	if _, ok := self.levels[level.Level]; ok {
-		self.mx.Lock()
-		if len(self.errors) <= 10 {
-			self.errors = append(self.errors, format)
+func (self *LogContext_t) Set(m LogMsg_t) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	if _, ok := self.levels[m.Level.Level]; ok {
+		if len(self.data) < self.limit {
+			self.data = append(self.data, m)
 		}
-		self.mx.Unlock()
 	}
 }
 
-func (self *LogContext_t) Get() (res []string) {
+func (self *LogContext_t) Get() (res []LogMsg_t) {
 	self.mx.Lock()
-	res = self.errors
+	res = self.data
 	self.mx.Unlock()
 	return
 }
 
 func (self *LogContext_t) Reset() {
-	self.errors = nil
+	self.data = nil
 }
 
-func SetLogContextNew(ctx context.Context, id string, levels []Level_t) context.Context {
-	return context.WithValue(ctx, &log_ctx, NewLogContext(id, levels))
+func SetLogContextNew(ctx context.Context, name string, limit int, levels []Level_t) context.Context {
+	return context.WithValue(ctx, &log_ctx, NewLogContext(name, limit, levels))
 }
 
 func SetLogContextValue(ctx context.Context, value LogContext) context.Context {
@@ -78,7 +80,7 @@ func GetLogContextValue(ctx context.Context) (value LogContext) {
 	return
 }
 
-func GetLogContextPayload(ctx context.Context) (res []string) {
+func GetLogContextPayload(ctx context.Context) (res []LogMsg_t) {
 	if v, _ := ctx.Value(&log_ctx).(LogContext); v != nil {
 		res = v.Get()
 	}

@@ -42,7 +42,7 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", []Level_t{LOG_ERROR})
+	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10, []Level_t{LOG_ERROR})
 	ctx := SetLogContextValue(context.Background(), c)
 
 	logger := SetLogger(New(LEVELS))

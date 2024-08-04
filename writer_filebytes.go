@@ -66,7 +66,7 @@ func NewWriterFileBytesQueue(queue_size int, writers int, ts time.Time, filename
 
 func (self *WriterFileBytes_t) writer(q Queue) (err error) {
 	defer q.WgDone()
-	msg := make([]Msg_t, self.bulk_write)
+	msg := make([]LogMsg_t, self.bulk_write)
 	for {
 		n, ok := q.ReadLog(msg)
 		if !ok {
@@ -80,7 +80,7 @@ func (self *WriterFileBytes_t) writer(q Queue) (err error) {
 	}
 }
 
-func (self *WriterFileBytes_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *WriterFileBytes_t) WriteLog(m LogMsg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
@@ -112,7 +112,7 @@ func (self *WriterFileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterFileBytes_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterFileBytes_t) ReadLog(p []LogMsg_t) (n int, ok bool) {
 	return
 }
 

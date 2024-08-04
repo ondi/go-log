@@ -34,7 +34,7 @@ func (self *Level_t) Set(ts time.Time) {
 	self.File, self.Line = FileLine(1, 32)
 }
 
-type Msg_t struct {
+type LogMsg_t struct {
 	Ctx    context.Context
 	Level  Level_t
 	Format string
@@ -53,8 +53,8 @@ type QueueSize_t struct {
 }
 
 type Queue interface {
-	WriteLog(m Msg_t) (int, error)
-	ReadLog(p []Msg_t) (n int, ok bool)
+	WriteLog(m LogMsg_t) (int, error)
+	ReadLog(p []LogMsg_t) (n int, ok bool)
 	WriteError(count int)
 	Size() QueueSize_t
 	WgAdd(int)
@@ -63,7 +63,7 @@ type Queue interface {
 }
 
 type Formatter interface {
-	FormatLog(out io.Writer, m Msg_t) (int, error)
+	FormatLog(out io.Writer, m LogMsg_t) (int, error)
 }
 
 type Logger interface {
@@ -165,7 +165,7 @@ func (self *log_t) Log(ctx context.Context, level Level_t, format string, args .
 	level.Set(time.Now())
 	if v1 := self.levels[level.Level]; v1 != nil {
 		for _, v2 := range *v1.Load() {
-			v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args})
+			v2.WriteLog(LogMsg_t{Ctx: ctx, Level: level, Format: format, Args: args})
 		}
 	}
 }

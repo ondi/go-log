@@ -17,14 +17,14 @@ func NewWriterCounter() Queue {
 	return &WriterCounter_t{}
 }
 
-func (self *WriterCounter_t) WriteLog(Msg_t) (n int, err error) {
+func (self *WriterCounter_t) WriteLog(LogMsg_t) (n int, err error) {
 	self.mx.Lock()
 	self.write_total++
 	self.mx.Unlock()
 	return
 }
 
-func (self *WriterCounter_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterCounter_t) ReadLog(p []LogMsg_t) (n int, ok bool) {
 	return
 }
 

@@ -14,7 +14,7 @@ import (
 type queue_t struct {
 	wg          sync.WaitGroup
 	mx          sync.Mutex
-	q           queue.Queue[Msg_t]
+	q           queue.Queue[LogMsg_t]
 	queue_error int
 	write_error int
 	write_total int
@@ -23,11 +23,11 @@ type queue_t struct {
 
 func NewQueue(limit int) Queue {
 	self := &queue_t{}
-	self.q = queue.NewOpen[Msg_t](&self.mx, limit)
+	self.q = queue.NewOpen[LogMsg_t](&self.mx, limit)
 	return self
 }
 
-func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *queue_t) WriteLog(m LogMsg_t) (n int, err error) {
 	self.mx.Lock()
 	self.write_total++
 	if self.q.PushBackNoLock(m) == false {
@@ -38,8 +38,8 @@ func (self *queue_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *queue_t) ReadLog(p []Msg_t) (n int, ok bool) {
-	var m Msg_t
+func (self *queue_t) ReadLog(p []LogMsg_t) (n int, ok bool) {
+	var m LogMsg_t
 	self.mx.Lock()
 	for n < len(p) {
 		if m, ok = self.q.PopFront(); ok {

@@ -190,7 +190,7 @@ type MessageKB_t struct {
 	TextLimit       int              `json:"-"`
 }
 
-func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self MessageKB_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
@@ -238,7 +238,7 @@ type MessageTG_t struct {
 	TextLimit       int    `json:"-"`
 }
 
-func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self MessageTG_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
 	var w io.Writer
 	var buf strings.Builder
 	if self.TextLimit > 0 {

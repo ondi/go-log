@@ -34,7 +34,7 @@ func NewDt(layout string) Formatter {
 	return &DT_t{Layout: layout}
 }
 
-func (self *DT_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self *DT_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
 	var b [64]byte
 	if n, err = out.Write(m.Level.Ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
@@ -48,7 +48,7 @@ func NewFileLine() Formatter {
 	return &FileLine_t{}
 }
 
-func (self *FileLine_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self *FileLine_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
 	if n, err = io.WriteString(out, filepath.Base(m.Level.File)); n > 0 {
 		io.WriteString(out, ":")
 		io.WriteString(out, strconv.FormatInt(int64(m.Level.Line), 10))
@@ -63,9 +63,9 @@ func NewSetLogContext() Formatter {
 	return &SetLogContext_t{}
 }
 
-func (self *SetLogContext_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self *SetLogContext_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
 	if v := GetLogContextValue(m.Ctx); v != nil {
-		v.Set(m.Level, m.Format, m.Args...)
+		v.Set(m)
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")
 		}
@@ -79,7 +79,7 @@ func NewGetLogContext() Formatter {
 	return &GetLogContext_t{}
 }
 
-func (self *GetLogContext_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+func (self *GetLogContext_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
 	if v := GetLogContextValue(m.Ctx); v != nil {
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")
