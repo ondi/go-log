@@ -11,11 +11,11 @@ import (
 	"strconv"
 )
 
-func FileLine(skip int, count int) (path string, line int) {
+func FileLine(skip int, limit int) (path string, line int) {
 	var next_line int
 	var next_path string
 	_, path, line, ok := runtime.Caller(skip)
-	for i := skip + 1; i < count; i++ {
+	for i := skip + 1; i < limit; i++ {
 		if _, next_path, next_line, ok = runtime.Caller(i); !ok {
 			return
 		}
@@ -57,22 +57,6 @@ func (self *FileLine_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) 
 	return
 }
 
-type SetLogContext_t struct{}
-
-func NewSetLogContext() Formatter {
-	return &SetLogContext_t{}
-}
-
-func (self *SetLogContext_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
-	if v := GetLogContextValue(m.Ctx); v != nil {
-		v.Set(m)
-		if n, err = io.WriteString(out, v.Name()); n > 0 {
-			io.WriteString(out, " ")
-		}
-	}
-	return
-}
-
 type GetLogContext_t struct{}
 
 func NewGetLogContext() Formatter {
@@ -80,8 +64,8 @@ func NewGetLogContext() Formatter {
 }
 
 func (self *GetLogContext_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
-	if v := GetLogContextValue(m.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.Name()); n > 0 {
+	if v := GetLogContext(m.Ctx); v != nil {
+		if n, err = io.WriteString(out, v.ContextName()); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}

@@ -32,7 +32,7 @@ func (self *queue_t) WriteLog(m LogMsg_t) (n int, err error) {
 	self.write_total++
 	if self.q.PushBackNoLock(m) == false {
 		self.queue_error++
-		err = fmt.Errorf("QUEUE WRITE: %v", n)
+		err = fmt.Errorf("QUEUE WRITE")
 	}
 	self.mx.Unlock()
 	return

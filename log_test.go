@@ -42,14 +42,14 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10, []Level_t{LOG_ERROR})
-	ctx := SetLogContextValue(context.Background(), c)
+	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
+	ctx := SetLogContext(context.Background(), c)
 
 	logger := SetLogger(New(LEVELS))
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt(""), NewSetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt(""), NewSetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
 
 	DebugCtx(ctx, "test")
 
