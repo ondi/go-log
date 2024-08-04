@@ -41,20 +41,6 @@ type LogMsg_t struct {
 	Args   []any
 }
 
-type LogMsgList_t []LogMsg_t
-
-func (self LogMsgList_t) Len() int {
-	return len(self)
-}
-
-func (self LogMsgList_t) Format(i int) string {
-	return self[i].Format
-}
-
-func (self LogMsgList_t) Args(i int) []any {
-	return self[i].Args
-}
-
 type QueueSize_t struct {
 	Limit      int
 	Size       int

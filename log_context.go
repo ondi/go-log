@@ -15,6 +15,20 @@ import (
 // &log_ctx used for ctx.Value
 var log_ctx = 1
 
+type LogMsgList_t []LogMsg_t
+
+func (self LogMsgList_t) Len() int {
+	return len(self)
+}
+
+func (self LogMsgList_t) Format(i int) string {
+	return self[i].Format
+}
+
+func (self LogMsgList_t) Args(i int) []any {
+	return self[i].Args
+}
+
 type LogContext interface {
 	Name() string
 	Set(m LogMsg_t)
