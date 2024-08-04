@@ -26,7 +26,7 @@ type LogContext_t struct {
 	mx     sync.Mutex
 	levels map[int64]Level_t
 	name   string
-	data   []LogMsg_t
+	data   LogMsgList_t
 	limit  int
 }
 
@@ -80,7 +80,7 @@ func GetLogContextValue(ctx context.Context) (value LogContext) {
 	return
 }
 
-func GetLogContextPayload(ctx context.Context) (res []LogMsg_t) {
+func GetLogContextPayload(ctx context.Context) (res LogMsgList_t) {
 	if v, _ := ctx.Value(&log_ctx).(LogContext); v != nil {
 		res = v.Get()
 	}
