@@ -14,7 +14,7 @@ import (
 
 var FileTime = "20060102150405"
 
-type FileTime_t struct {
+type WriterFileTime_t struct {
 	mx           sync.Mutex
 	last_date    time.Time
 	prefix       []Formatter
@@ -30,8 +30,8 @@ type FileTime_t struct {
 	bulk_write   int
 }
 
-func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (Queue, error) {
-	self := &FileTime_t{
+func NewWriterFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (Queue, error) {
+	self := &WriterFileTime_t{
 		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
@@ -42,8 +42,8 @@ func NewFileTime(ts time.Time, filename string, prefix []Formatter, truncate tim
 	return self, self.__cycle(self.last_date)
 }
 
-func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (q Queue, err error) {
-	self := &FileTime_t{
+func NewWriterFileTimeQueue(queue_size, writers int, ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (q Queue, err error) {
+	self := &WriterFileTime_t{
 		prefix:       prefix,
 		filename:     filename,
 		truncate:     truncate,
@@ -66,7 +66,7 @@ func NewFileTimeQueue(queue_size, writers int, ts time.Time, filename string, pr
 	return
 }
 
-func (self *FileTime_t) writer(q Queue) (err error) {
+func (self *WriterFileTime_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
@@ -82,7 +82,7 @@ func (self *FileTime_t) writer(q Queue) (err error) {
 	}
 }
 
-func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *WriterFileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
@@ -109,15 +109,15 @@ func (self *FileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *FileTime_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterFileTime_t) ReadLog(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *FileTime_t) WriteError(count int) {
+func (self *WriterFileTime_t) WriteError(count int) {
 
 }
 
-func (self *FileTime_t) Size() (res QueueSize_t) {
+func (self *WriterFileTime_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.WriteError = self.write_error
 	res.WriteTotal = self.write_total
@@ -125,15 +125,15 @@ func (self *FileTime_t) Size() (res QueueSize_t) {
 	return
 }
 
-func (self *FileTime_t) WgAdd(int) {
+func (self *WriterFileTime_t) WgAdd(int) {
 
 }
 
-func (self *FileTime_t) WgDone() {
+func (self *WriterFileTime_t) WgDone() {
 
 }
 
-func (self *FileTime_t) __cycle(ts time.Time) (err error) {
+func (self *WriterFileTime_t) __cycle(ts time.Time) (err error) {
 	if self.out != nil {
 		self.cycle++
 		self.out.Close()
@@ -149,7 +149,7 @@ func (self *FileTime_t) __cycle(ts time.Time) (err error) {
 	return
 }
 
-func (self *FileTime_t) Close() (err error) {
+func (self *WriterFileTime_t) Close() (err error) {
 	self.mx.Lock()
 	if self.out != nil {
 		if err = self.out.Close(); err == nil {

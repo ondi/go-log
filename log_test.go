@@ -17,9 +17,9 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt("")}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewStdany([]Formatter{NewDt("")}, &buf, 0), WhatLevel(LOG_TRACE.Level))
-	log_file, _ := NewFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10, 0)
+	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt("")}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt("")}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10, 0)
 	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.Level))
 	log_http := NewHttpQueue(
 		10,
@@ -42,14 +42,14 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	c := NewErrorsContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", []Level_t{LOG_ERROR})
-	ctx := SetErrorsContext(context.Background(), c)
+	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", []Level_t{LOG_ERROR})
+	ctx := SetLogContextValue(context.Background(), c)
 
 	logger := SetLogger(New(LEVELS))
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewStdany([]Formatter{NewDt(""), NewSetContextError()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewStdany([]Formatter{NewDt(""), NewSetContextError()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt(""), NewSetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt(""), NewSetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
 
 	DebugCtx(ctx, "test")
 

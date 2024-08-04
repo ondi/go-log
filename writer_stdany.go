@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-type Stdany_t struct {
+type WriterStdany_t struct {
 	mx          sync.Mutex
 	prefix      []Formatter
 	out         io.Writer
@@ -20,8 +20,8 @@ type Stdany_t struct {
 	bulk_write  int
 }
 
-func NewStdany(prefix []Formatter, out io.Writer, log_limit int) Queue {
-	self := &Stdany_t{
+func NewWriterStdany(prefix []Formatter, out io.Writer, log_limit int) Queue {
+	self := &WriterStdany_t{
 		prefix:    prefix,
 		out:       out,
 		log_limit: log_limit,
@@ -29,8 +29,8 @@ func NewStdany(prefix []Formatter, out io.Writer, log_limit int) Queue {
 	return self
 }
 
-func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, log_limit int) Queue {
-	self := &Stdany_t{
+func NewWriterStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, log_limit int) Queue {
+	self := &WriterStdany_t{
 		prefix:     prefix,
 		out:        out,
 		log_limit:  log_limit,
@@ -46,7 +46,7 @@ func NewStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Writer, 
 	return q
 }
 
-func (self *Stdany_t) writer(q Queue) (err error) {
+func (self *WriterStdany_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
@@ -62,7 +62,7 @@ func (self *Stdany_t) writer(q Queue) (err error) {
 	}
 }
 
-func (self *Stdany_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *WriterStdany_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
@@ -85,15 +85,15 @@ func (self *Stdany_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *Stdany_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterStdany_t) ReadLog(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *Stdany_t) WriteError(count int) {
+func (self *WriterStdany_t) WriteError(count int) {
 
 }
 
-func (self *Stdany_t) Size() (res QueueSize_t) {
+func (self *WriterStdany_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.WriteError = self.write_error
 	res.WriteTotal = self.write_total
@@ -101,14 +101,14 @@ func (self *Stdany_t) Size() (res QueueSize_t) {
 	return
 }
 
-func (self *Stdany_t) WgAdd(int) {
+func (self *WriterStdany_t) WgAdd(int) {
 
 }
 
-func (self *Stdany_t) WgDone() {
+func (self *WriterStdany_t) WgDone() {
 
 }
 
-func (self *Stdany_t) Close() error {
+func (self *WriterStdany_t) Close() error {
 	return nil
 }

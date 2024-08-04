@@ -14,7 +14,7 @@ import (
 
 var FileBytesFormat = "20060102150405"
 
-type FileBytes_t struct {
+type WriterFileBytes_t struct {
 	mx           sync.Mutex
 	prefix       []Formatter
 	out          *os.File
@@ -30,8 +30,8 @@ type FileBytes_t struct {
 	bulk_write   int
 }
 
-func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (Queue, error) {
-	self := &FileBytes_t{
+func NewWriterFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (Queue, error) {
+	self := &WriterFileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
@@ -41,8 +41,8 @@ func NewFileBytes(ts time.Time, filename string, prefix []Formatter, bytes_limit
 	return self, self.__cycle(ts)
 }
 
-func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (q Queue, err error) {
-	self := &FileBytes_t{
+func NewWriterFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (q Queue, err error) {
+	self := &WriterFileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
 		bytes_limit:  bytes_limit,
@@ -64,7 +64,7 @@ func NewFileBytesQueue(queue_size int, writers int, ts time.Time, filename strin
 	return
 }
 
-func (self *FileBytes_t) writer(q Queue) (err error) {
+func (self *WriterFileBytes_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
@@ -80,7 +80,7 @@ func (self *FileBytes_t) writer(q Queue) (err error) {
 	}
 }
 
-func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *WriterFileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
@@ -112,14 +112,14 @@ func (self *FileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *FileBytes_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterFileBytes_t) ReadLog(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *FileBytes_t) WriteError(count int) {
+func (self *WriterFileBytes_t) WriteError(count int) {
 }
 
-func (self *FileBytes_t) Size() (res QueueSize_t) {
+func (self *WriterFileBytes_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.WriteError = self.write_error
 	res.WriteTotal = self.write_total
@@ -127,15 +127,15 @@ func (self *FileBytes_t) Size() (res QueueSize_t) {
 	return
 }
 
-func (self *FileBytes_t) WgAdd(int) {
+func (self *WriterFileBytes_t) WgAdd(int) {
 
 }
 
-func (self *FileBytes_t) WgDone() {
+func (self *WriterFileBytes_t) WgDone() {
 
 }
 
-func (self *FileBytes_t) __cycle(ts time.Time) (err error) {
+func (self *WriterFileBytes_t) __cycle(ts time.Time) (err error) {
 	if self.out != nil {
 		self.cycle++
 		backlog_file := fmt.Sprintf("%s.%d.%s", self.filename, self.cycle, ts.Format(FileBytesFormat))
@@ -151,7 +151,7 @@ func (self *FileBytes_t) __cycle(ts time.Time) (err error) {
 	return
 }
 
-func (self *FileBytes_t) Close() (err error) {
+func (self *WriterFileBytes_t) Close() (err error) {
 	self.mx.Lock()
 	if self.out != nil {
 		if err = self.out.Close(); err == nil {

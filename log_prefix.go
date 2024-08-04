@@ -57,14 +57,14 @@ func (self *FileLine_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	return
 }
 
-type SetContextError_t struct{}
+type SetLogContext_t struct{}
 
-func NewSetContextError() Formatter {
-	return &SetContextError_t{}
+func NewSetLogContext() Formatter {
+	return &SetLogContext_t{}
 }
 
-func (self *SetContextError_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
-	if v := GetErrorsContext(m.Ctx); v != nil {
+func (self *SetLogContext_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+	if v := GetLogContextValue(m.Ctx); v != nil {
 		v.Set(m.Level, m.Format, m.Args...)
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")
@@ -73,14 +73,14 @@ func (self *SetContextError_t) FormatLog(out io.Writer, m Msg_t) (n int, err err
 	return
 }
 
-type GetContextError_t struct{}
+type GetLogContext_t struct{}
 
-func NewGetContextError() Formatter {
-	return &GetContextError_t{}
+func NewGetLogContext() Formatter {
+	return &GetLogContext_t{}
 }
 
-func (self *GetContextError_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
-	if v := GetErrorsContext(m.Ctx); v != nil {
+func (self *GetLogContext_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
+	if v := GetLogContextValue(m.Ctx); v != nil {
 		if n, err = io.WriteString(out, v.Name()); n > 0 {
 			io.WriteString(out, " ")
 		}
