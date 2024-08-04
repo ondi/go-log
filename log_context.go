@@ -87,24 +87,26 @@ func GetLogContextPayload(ctx context.Context) (res []LogMsg_t) {
 	return
 }
 
-type SetCtx func(ctx context.Context, name string, levels []Level_t) context.Context
+type SetCtx func(ctx context.Context, name string, limit int, levels []Level_t) context.Context
 
 type errors_middleware_t struct {
 	Handler http.Handler
 	SetCtx  SetCtx
 	Levels  []Level_t
+	Limit   int
 }
 
-func NewErrorsMiddleware(next http.Handler, set SetCtx, levels []Level_t) http.Handler {
+func NewErrorsMiddleware(next http.Handler, set SetCtx, limit int, levels []Level_t) http.Handler {
 	self := &errors_middleware_t{
 		Handler: next,
 		SetCtx:  set,
 		Levels:  levels,
+		Limit:   limit,
 	}
 	return self
 }
 
 func (self *errors_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(self.SetCtx(r.Context(), uuid.New().String(), self.Levels))
+	r = r.WithContext(self.SetCtx(r.Context(), uuid.New().String(), self.Limit, self.Levels))
 	self.Handler.ServeHTTP(w, r)
 }
