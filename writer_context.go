@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/ondi/go-circular"
 )
 
 type WriterContext_t struct{}
@@ -62,7 +63,7 @@ type LogContext interface {
 type LogContext_t struct {
 	mx    sync.Mutex
 	name  string
-	data  []LogMsg_t
+	data  *circular.List_t[LogMsg_t]
 	limit int
 }
 
@@ -70,6 +71,7 @@ func NewLogContext(name string, limit int) LogContext {
 	self := &LogContext_t{
 		name:  name,
 		limit: limit,
+		data:  circular.New[LogMsg_t](limit),
 	}
 	return self
 }
@@ -81,25 +83,26 @@ func (self *LogContext_t) ContextName() string {
 func (self *LogContext_t) WriteLog(m LogMsg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	if len(self.data) < self.limit {
-		self.data = append(self.data, m)
-		n++
+	if self.data.Size() >= self.limit {
+		self.data.PopFront()
 	}
+	self.data.PushBack(m)
 	return
 }
 
 func (self *LogContext_t) ContextRange(f func(level string, format string, args ...any) bool) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	for _, v := range self.data {
-		if f(v.Level.Name, v.Format, v.Args...) == false {
-			break
-		}
-	}
+	self.data.RangeFront(func(m LogMsg_t) bool {
+		return f(m.Level.Name, m.Format, m.Args...)
+	})
+
 }
 
 func (self *LogContext_t) ContextReset() {
-	self.data = nil
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	self.data.Reset()
 }
 
 func SetLogContext(ctx context.Context, value LogContext) context.Context {
