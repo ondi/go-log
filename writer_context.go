@@ -56,7 +56,7 @@ var log_ctx = 1
 type LogContext interface {
 	ContextName() string
 	WriteLog(m LogMsg_t) (n int, err error)
-	ContextRange(func(level string, format string, args ...any) bool)
+	ContextRange(func(level int64, format string, args ...any) bool)
 	ContextReset()
 }
 
@@ -90,11 +90,11 @@ func (self *LogContext_t) WriteLog(m LogMsg_t) (n int, err error) {
 	return
 }
 
-func (self *LogContext_t) ContextRange(f func(level string, format string, args ...any) bool) {
+func (self *LogContext_t) ContextRange(f func(level int64, format string, args ...any) bool) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.data.RangeFront(func(m LogMsg_t) bool {
-		return f(m.Level.Name, m.Format, m.Args...)
+		return f(m.Level.Level, m.Format, m.Args...)
 	})
 
 }
@@ -114,7 +114,7 @@ func GetLogContext(ctx context.Context) (value LogContext) {
 	return
 }
 
-func GetLogContextPayload(ctx context.Context, f func(level string, format string, args ...any) bool) {
+func GetLogContextPayload(ctx context.Context, f func(level int64, format string, args ...any) bool) {
 	if v, _ := ctx.Value(&log_ctx).(LogContext); v != nil {
 		v.ContextRange(f)
 	}
