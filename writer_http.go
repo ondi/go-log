@@ -142,13 +142,13 @@ func (self *Http_t) writer(q Queue) (err error) {
 	var req *http.Request
 	var resp *http.Response
 	var body bytes.Buffer
-	msg := make([]LogMsg_t, self.bulk_write)
+	msg := make([]Msg_t, self.bulk_write)
 	for {
 		body.Reset()
 		if n, ok = q.ReadLog(msg); !ok {
 			return
 		}
-		if n > 0 && self.rps.Add(msg[0].Level.Ts) == false {
+		if n > 0 && self.rps.Add(msg[0].Info.Ts) == false {
 			q.WriteError(1)
 			continue
 		}

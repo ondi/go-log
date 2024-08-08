@@ -68,7 +68,7 @@ func NewWriterFileTimeQueue(queue_size, writers int, ts time.Time, filename stri
 
 func (self *WriterFileTime_t) writer(q Queue) (err error) {
 	defer q.WgDone()
-	msg := make([]LogMsg_t, self.bulk_write)
+	msg := make([]Msg_t, self.bulk_write)
 	for {
 		n, ok := q.ReadLog(msg)
 		if !ok {
@@ -82,7 +82,7 @@ func (self *WriterFileTime_t) writer(q Queue) (err error) {
 	}
 }
 
-func (self *WriterFileTime_t) WriteLog(m LogMsg_t) (n int, err error) {
+func (self *WriterFileTime_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.write_total++
@@ -92,14 +92,14 @@ func (self *WriterFileTime_t) WriteLog(m LogMsg_t) (n int, err error) {
 	} else {
 		w = self.out
 	}
-	if tr := m.Level.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
-		self.__cycle(m.Level.Ts)
+	if tr := m.Info.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
+		self.__cycle(m.Info.Ts)
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
 		v.FormatLog(w, m)
 	}
-	io.WriteString(w, m.Level.Name)
+	io.WriteString(w, m.Info.LevelName)
 	io.WriteString(w, " ")
 	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")
@@ -109,7 +109,7 @@ func (self *WriterFileTime_t) WriteLog(m LogMsg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterFileTime_t) ReadLog(p []LogMsg_t) (n int, ok bool) {
+func (self *WriterFileTime_t) ReadLog(p []Msg_t) (n int, ok bool) {
 	return
 }
 

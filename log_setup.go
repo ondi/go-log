@@ -72,7 +72,7 @@ import (
 
 var (
 	STDERR = os.Stderr
-	LEVELS = []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
+	LEVELS = []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
 	__std  = New(LEVELS).AddOutput(
 		"stderr",
 		NewWriterStdany(
@@ -90,11 +90,11 @@ var (
 )
 
 var (
-	LOG_TRACE = Level_t{Name: "TRACE", Level: 0}
-	LOG_DEBUG = Level_t{Name: "DEBUG", Level: 1}
-	LOG_INFO  = Level_t{Name: "INFO", Level: 2}
-	LOG_WARN  = Level_t{Name: "WARN", Level: 3}
-	LOG_ERROR = Level_t{Name: "ERROR", Level: 4}
+	LOG_TRACE = Info_t{LevelName: "TRACE", LevelId: 0}
+	LOG_DEBUG = Info_t{LevelName: "DEBUG", LevelId: 1}
+	LOG_INFO  = Info_t{LevelName: "INFO", LevelId: 2}
+	LOG_WARN  = Info_t{LevelName: "WARN", LevelId: 3}
+	LOG_ERROR = Info_t{LevelName: "ERROR", LevelId: 4}
 )
 
 type Args_t struct {
@@ -110,18 +110,18 @@ type Args_t struct {
 	LogDuration time.Duration `yaml:"LogDuration"`
 }
 
-func WhatLevel(in int64) []Level_t {
+func WhatLevel(in int64) []Info_t {
 	switch in {
 	case 4:
-		return []Level_t{LOG_ERROR}
+		return []Info_t{LOG_ERROR}
 	case 3:
-		return []Level_t{LOG_ERROR, LOG_WARN}
+		return []Info_t{LOG_ERROR, LOG_WARN}
 	case 2:
-		return []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO}
+		return []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO}
 	case 1:
-		return []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG}
+		return []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG}
 	default:
-		return []Level_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
+		return []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
 	}
 }
 
@@ -196,11 +196,11 @@ type MessageKB_t struct {
 	TextLimit       int              `json:"-"`
 }
 
-func (self MessageKB_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
+func (self MessageKB_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	var b [64]byte
 
 	if len(self.Index.Index.Format) > 0 {
-		self.Index.Index.Index = string(m.Level.Ts.AppendFormat(b[:0], self.Index.Index.Format))
+		self.Index.Index.Index = string(m.Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
 		json.NewEncoder(out).Encode(self.Index)
 	}
 
@@ -220,8 +220,8 @@ func (self MessageKB_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) 
 		self.Message = buf.String()
 	}
 
-	self.Level = m.Level.Name
-	self.Timestamp = string(m.Level.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
+	self.Level = m.Info.LevelName
+	self.Timestamp = string(m.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	var temp strings.Builder
 	for _, v := range __get_fl_cx {
@@ -244,7 +244,7 @@ type MessageTG_t struct {
 	TextLimit       int    `json:"-"`
 }
 
-func (self MessageTG_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) {
+func (self MessageTG_t) FormatLog(out io.Writer, m Msg_t) (n int, err error) {
 	var w io.Writer
 	var buf strings.Builder
 	if self.TextLimit > 0 {
@@ -267,8 +267,8 @@ func (self MessageTG_t) FormatLog(out io.Writer, m LogMsg_t) (n int, err error) 
 		v.FormatLog(w, m)
 	}
 
-	if len(m.Level.Name) > 0 {
-		io.WriteString(w, m.Level.Name)
+	if len(m.Info.LevelName) > 0 {
+		io.WriteString(w, m.Info.LevelName)
 		io.WriteString(w, " ")
 	}
 

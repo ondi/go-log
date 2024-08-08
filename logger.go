@@ -2,11 +2,11 @@
 	Log with levels
 
 	// no allocation and locks for WriteLog cycle
-	func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
-		level.Set(time.Now())
-		if v1 := self.levels[level.Level]; v1 != nil {
+	func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {
+		info.Set(time.Now())
+		if v1 := self.levels[level.LevelId]; v1 != nil {
 			for _, v2 := range *v1.Load() {
-				v2.WriteLog(Msg_t{Ctx: ctx, Level: level, Format: format, Args: args})
+				v2.WriteLog(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 			}
 		}
 	}
@@ -21,22 +21,22 @@ import (
 	"time"
 )
 
-type Level_t struct {
-	Name  string
-	File  string
-	Line  int
-	Level int64
-	Ts    time.Time
+type Info_t struct {
+	LevelName string
+	File      string
+	Line      int
+	LevelId   int64
+	Ts        time.Time
 }
 
-func (self *Level_t) Set(ts time.Time) {
+func (self *Info_t) Set(ts time.Time) {
 	self.Ts = ts
 	self.File, self.Line = FileLine(1, 32)
 }
 
-type LogMsg_t struct {
+type Msg_t struct {
 	Ctx    context.Context
-	Level  Level_t
+	Info   Info_t
 	Format string
 	Args   []any
 }
@@ -53,8 +53,8 @@ type QueueSize_t struct {
 }
 
 type Queue interface {
-	WriteLog(m LogMsg_t) (int, error)
-	ReadLog(p []LogMsg_t) (n int, ok bool)
+	WriteLog(m Msg_t) (int, error)
+	ReadLog(p []Msg_t) (n int, ok bool)
 	WriteError(count int)
 	Size() QueueSize_t
 	WgAdd(int)
@@ -63,7 +63,7 @@ type Queue interface {
 }
 
 type Formatter interface {
-	FormatLog(out io.Writer, m LogMsg_t) (int, error)
+	FormatLog(out io.Writer, m Msg_t) (int, error)
 }
 
 type Logger interface {
@@ -79,11 +79,11 @@ type Logger interface {
 	WarnCtx(ctx context.Context, format string, args ...any)
 	ErrorCtx(ctx context.Context, format string, args ...any)
 
-	Log(ctx context.Context, level Level_t, format string, args ...any)
+	Log(ctx context.Context, info Info_t, format string, args ...any)
 
-	AddOutput(name string, writer Queue, in []Level_t) Logger
+	AddOutput(name string, writer Queue, in []Info_t) Logger
 	DelOutput(name string) Logger
-	RangeLevel(level Level_t, fn func(name string, queue Queue) bool)
+	RangeLevel(info Info_t, fn func(name string, queue Queue) bool)
 	Close() Logger
 }
 
@@ -113,20 +113,20 @@ type log_t struct {
 	levels map[int64]*atomic.Pointer[writers_t]
 }
 
-func New(in []Level_t) Logger {
+func New(in []Info_t) Logger {
 	self := &log_t{
 		levels: map[int64]*atomic.Pointer[writers_t]{},
 	}
 	for _, v := range in {
-		self.levels[v.Level] = &atomic.Pointer[writers_t]{}
-		self.levels[v.Level].Store(&writers_t{})
+		self.levels[v.LevelId] = &atomic.Pointer[writers_t]{}
+		self.levels[v.LevelId].Store(&writers_t{})
 	}
 	return self
 }
 
-func (self *log_t) AddOutput(name string, writer Queue, in []Level_t) Logger {
+func (self *log_t) AddOutput(name string, writer Queue, in []Info_t) Logger {
 	for _, v1 := range in {
-		if v2 := self.levels[v1.Level]; v2 != nil {
+		if v2 := self.levels[v1.LevelId]; v2 != nil {
 			set_output(v2, name, writer)
 		}
 	}
@@ -142,8 +142,8 @@ func (self *log_t) DelOutput(name string) Logger {
 	return self
 }
 
-func (self *log_t) RangeLevel(level Level_t, fn func(name string, queue Queue) bool) {
-	if v1 := self.levels[level.Level]; v1 != nil {
+func (self *log_t) RangeLevel(info Info_t, fn func(name string, queue Queue) bool) {
+	if v1 := self.levels[info.LevelId]; v1 != nil {
 		for k2, v2 := range *v1.Load() {
 			if fn(k2, v2) == false {
 				return
@@ -161,11 +161,11 @@ func (self *log_t) Close() Logger {
 	return self
 }
 
-func (self *log_t) Log(ctx context.Context, level Level_t, format string, args ...any) {
-	level.Set(time.Now())
-	if v1 := self.levels[level.Level]; v1 != nil {
+func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {
+	info.Set(time.Now())
+	if v1 := self.levels[info.LevelId]; v1 != nil {
 		for _, v2 := range *v1.Load() {
-			v2.WriteLog(LogMsg_t{Ctx: ctx, Level: level, Format: format, Args: args})
+			v2.WriteLog(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 		}
 	}
 }

@@ -17,10 +17,10 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt("")}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt("")}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt("")}, os.Stdout, 0), WhatLevel(LOG_TRACE.LevelId))
+	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt("")}, &buf, 0), WhatLevel(LOG_TRACE.LevelId))
 	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10, 0)
-	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("file", log_file, WhatLevel(LOG_TRACE.LevelId))
 	log_http := NewHttpQueue(
 		10,
 		1,
@@ -33,7 +33,7 @@ func Test1(t *testing.T) {
 		RpsLimit(NewRps(time.Second, 100, 1000)),
 		PostDelay(time.Millisecond),
 	)
-	logger.AddOutput("http", log_http, WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("http", log_http, WhatLevel(LOG_TRACE.LevelId))
 
 	Debug("lalala %s", ByteSize(1024))
 	Debug("bububu %s", ByteSize(2048))
@@ -48,8 +48,8 @@ func Test2(t *testing.T) {
 	logger := SetLogger(New(LEVELS))
 
 	var buf bytes.Buffer
-	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.Level))
-	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.Level))
+	logger.AddOutput("stdout", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.LevelId))
+	logger.AddOutput("buf", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.LevelId))
 
 	DebugCtx(ctx, "test")
 
