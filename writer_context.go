@@ -17,7 +17,7 @@ import (
 // &log_ctx used for ctx.Value
 var log_ctx = 1
 
-type RangeFn_t func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool
+type RangeFn_t = func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool
 
 type LogContext interface {
 	ContextName() string
