@@ -167,7 +167,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 				continue
 			}
 			if err = self.headers.Header(req); err != nil {
-				return
+				continue
 			}
 			if resp, err = self.client.Do(req); err != nil {
 				continue
