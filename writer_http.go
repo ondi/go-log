@@ -186,8 +186,8 @@ func (self *Http_t) writer(q Queue) (err error) {
 }
 
 func StatusCode(resp *http.Response) int {
-	if resp != nil {
-		return resp.StatusCode
+	if resp == nil {
+		return 999
 	}
-	return -1
+	return resp.StatusCode
 }
