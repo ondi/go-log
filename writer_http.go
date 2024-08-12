@@ -178,16 +178,10 @@ func (self *Http_t) writer(q Queue) (err error) {
 			}
 			break
 		}
-		if err != nil || StatusCode(resp) >= 400 {
+		if err != nil || resp == nil || resp.StatusCode >= 400 {
 			q.WriteError(n)
+		} else {
+			time.Sleep(self.post_delay)
 		}
-		time.Sleep(self.post_delay)
 	}
-}
-
-func StatusCode(resp *http.Response) int {
-	if resp == nil {
-		return 999
-	}
-	return resp.StatusCode
 }
