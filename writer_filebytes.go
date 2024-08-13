@@ -25,8 +25,8 @@ type WriterFileBytes_t struct {
 	backup_count int
 	cycle        int
 	log_limit    int
+	write_count  int
 	write_error  int
-	write_total  int
 	bulk_write   int
 }
 
@@ -68,22 +68,24 @@ func (self *WriterFileBytes_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, ok := q.ReadLog(msg)
+		n, ok := q.LogRead(msg)
 		if !ok {
 			return
 		}
 		for i := 0; i < n; i++ {
-			if _, err = self.WriteLog(msg[i]); err != nil {
-				q.WriteError(1)
+			if _, err = self.LogWrite(msg[i]); err != nil {
+				q.WriteStat(n, n)
+			} else {
+				q.WriteStat(n, 0)
 			}
 		}
 	}
 }
 
-func (self *WriterFileBytes_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *WriterFileBytes_t) LogWrite(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	self.write_total++
+	self.write_count++
 	var w io.Writer
 	if self.log_limit > 0 {
 		w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
@@ -112,17 +114,17 @@ func (self *WriterFileBytes_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterFileBytes_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterFileBytes_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterFileBytes_t) WriteError(count int) {
+func (self *WriterFileBytes_t) WriteStat(count int, err int) {
 }
 
 func (self *WriterFileBytes_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
+	res.WriteCount = self.write_count
 	res.WriteError = self.write_error
-	res.WriteTotal = self.write_total
 	self.mx.Unlock()
 	return
 }

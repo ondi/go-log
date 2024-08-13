@@ -46,20 +46,21 @@ type QueueSize_t struct {
 	Size       int
 	Readers    int
 	Writers    int
+	QueueWrite int
 	QueueError int
+	QueueRead  int
+	WriteCount int
 	WriteError int
-	WriteTotal int
-	ReadTotal  int
 }
 
 type Queue interface {
-	WriteLog(m Msg_t) (int, error)
-	ReadLog(p []Msg_t) (n int, ok bool)
-	WriteError(count int)
+	LogWrite(m Msg_t) (int, error)
+	LogRead(p []Msg_t) (n int, ok bool)
 	Size() QueueSize_t
+	Close() error
 	WgAdd(int)
 	WgDone()
-	Close() error
+	WriteStat(count int, err int)
 }
 
 type Formatter interface {
@@ -165,7 +166,7 @@ func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...
 	info.Set(time.Now())
 	if v1 := self.levels[info.LevelId]; v1 != nil {
 		for _, v2 := range *v1.Load() {
-			v2.WriteLog(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
+			v2.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 		}
 	}
 }

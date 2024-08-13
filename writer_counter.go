@@ -5,37 +5,32 @@
 package log
 
 import (
-	"sync"
+	"sync/atomic"
 )
 
 type WriterCounter_t struct {
-	mx          sync.Mutex
-	write_total int
+	write_count atomic.Int64
 }
 
 func NewWriterCounter() Queue {
 	return &WriterCounter_t{}
 }
 
-func (self *WriterCounter_t) WriteLog(Msg_t) (n int, err error) {
-	self.mx.Lock()
-	self.write_total++
-	self.mx.Unlock()
+func (self *WriterCounter_t) LogWrite(Msg_t) (n int, err error) {
+	self.write_count.Add(1)
 	return
 }
 
-func (self *WriterCounter_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterCounter_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterCounter_t) WriteError(count int) {
+func (self *WriterCounter_t) WriteStat(count int, err int) {
 
 }
 
 func (self *WriterCounter_t) Size() (res QueueSize_t) {
-	self.mx.Lock()
-	res.WriteTotal = self.write_total
-	self.mx.Unlock()
+	res.WriteCount = int(self.write_count.Load())
 	return
 }
 

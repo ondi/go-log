@@ -143,20 +143,20 @@ func (self *Http_t) writer(q Queue) (err error) {
 	var resp *http.Response
 	var body bytes.Buffer
 	msg := make([]Msg_t, self.bulk_write)
+LOOP1:
 	for {
 		body.Reset()
-		if n, ok = q.ReadLog(msg); !ok {
+		if n, ok = q.LogRead(msg); !ok {
 			return
 		}
 		if n > 0 && self.rps.Add(msg[0].Info.Ts) == false {
-			q.WriteError(1)
+			q.WriteStat(n, n)
 			continue
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
-				q.WriteError(1)
-				body.Reset()
-				continue
+				q.WriteStat(n, n)
+				continue LOOP1
 			}
 		}
 		if body.Len() == 0 {
@@ -167,7 +167,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 				continue
 			}
 			if err = self.headers.Header(req); err != nil {
-				continue
+				continue LOOP1
 			}
 			if resp, err = self.client.Do(req); err != nil {
 				continue
@@ -179,9 +179,12 @@ func (self *Http_t) writer(q Queue) (err error) {
 			break
 		}
 		if err != nil || resp == nil || resp.StatusCode >= 400 {
-			q.WriteError(n)
+			q.WriteStat(n, n)
 		} else {
-			time.Sleep(self.post_delay)
+			q.WriteStat(n, 0)
+			if self.post_delay > 0 {
+				time.Sleep(self.post_delay)
+			}
 		}
 	}
 }

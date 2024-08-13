@@ -8,6 +8,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -104,28 +105,32 @@ func (self *ctx_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	self.Handler.ServeHTTP(w, r)
 }
 
-type WriterContext_t struct{}
+type WriterContext_t struct {
+	write_count atomic.Int64
+}
 
 func NewWriterContext() Queue {
 	return &WriterContext_t{}
 }
 
-func (self *WriterContext_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *WriterContext_t) LogWrite(m Msg_t) (n int, err error) {
 	if v := GetLogContext(m.Ctx); v != nil {
+		self.write_count.Add(1)
 		n, err = v.WriteLog(m)
 	}
 	return
 }
 
-func (self *WriterContext_t) ReadLog(p []Msg_t) (n int, ok bool) {
+func (self *WriterContext_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterContext_t) WriteError(count int) {
+func (self *WriterContext_t) WriteStat(count int, err int) {
 
 }
 
 func (self *WriterContext_t) Size() (res QueueSize_t) {
+	res.WriteCount = int(self.write_count.Load())
 	return
 }
 
