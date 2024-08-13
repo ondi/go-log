@@ -149,13 +149,14 @@ LOOP1:
 		if n, ok = q.LogRead(msg); !ok {
 			return
 		}
+		q.WriteStat(n, 0)
 		if n > 0 && self.rps.Add(msg[0].Info.Ts) == false {
-			q.WriteStat(n, n)
+			q.WriteStat(0, n)
 			continue
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
-				q.WriteStat(n, n)
+				q.WriteStat(0, n)
 				continue LOOP1
 			}
 		}
@@ -179,12 +180,9 @@ LOOP1:
 			break
 		}
 		if err != nil || resp == nil || resp.StatusCode >= 400 {
-			q.WriteStat(n, n)
-		} else {
-			q.WriteStat(n, 0)
-			if self.post_delay > 0 {
-				time.Sleep(self.post_delay)
-			}
+			q.WriteStat(0, n)
+		} else if self.post_delay > 0 {
+			time.Sleep(self.post_delay)
 		}
 	}
 }
