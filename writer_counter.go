@@ -25,7 +25,7 @@ func (self *WriterCounter_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterCounter_t) WriteStat(err int) {
+func (self *WriterCounter_t) WriteError(n int) {
 
 }
 

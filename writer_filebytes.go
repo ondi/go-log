@@ -74,7 +74,7 @@ func (self *WriterFileBytes_t) writer(q Queue) (err error) {
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteStat(1)
+				q.WriteError(1)
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func (self *WriterFileBytes_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterFileBytes_t) WriteStat(err int) {
+func (self *WriterFileBytes_t) WriteError(n int) {
 }
 
 func (self *WriterFileBytes_t) Size() (res QueueSize_t) {

@@ -76,7 +76,7 @@ func (self *WriterFileTime_t) writer(q Queue) (err error) {
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteStat(1)
+				q.WriteError(1)
 			}
 		}
 	}
@@ -113,7 +113,7 @@ func (self *WriterFileTime_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterFileTime_t) WriteStat(err int) {
+func (self *WriterFileTime_t) WriteError(n int) {
 
 }
 

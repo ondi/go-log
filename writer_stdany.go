@@ -56,7 +56,7 @@ func (self *WriterStdany_t) writer(q Queue) (err error) {
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteStat(1)
+				q.WriteError(1)
 			}
 		}
 	}
@@ -89,7 +89,7 @@ func (self *WriterStdany_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterStdany_t) WriteStat(err int) {
+func (self *WriterStdany_t) WriteError(n int) {
 
 }
 

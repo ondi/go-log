@@ -150,12 +150,12 @@ LOOP1:
 			return
 		}
 		if n > 0 && self.rps.Add(msg[0].Info.Ts) == false {
-			q.WriteStat(n)
+			q.WriteError(n)
 			continue
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
-				q.WriteStat(n)
+				q.WriteError(n)
 				continue LOOP1
 			}
 		}
@@ -179,7 +179,7 @@ LOOP1:
 			break
 		}
 		if err != nil || resp == nil || resp.StatusCode >= 400 {
-			q.WriteStat(n)
+			q.WriteError(n)
 		} else if self.post_delay > 0 {
 			time.Sleep(self.post_delay)
 		}

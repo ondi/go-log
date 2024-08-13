@@ -16,8 +16,8 @@ type queue_t struct {
 	mx          sync.Mutex
 	q           queue.Queue[Msg_t]
 	queue_write int
-	queue_error int
 	queue_read  int
+	queue_error int
 	write_error int
 }
 
@@ -57,9 +57,9 @@ func (self *queue_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *queue_t) WriteStat(err int) {
+func (self *queue_t) WriteError(n int) {
 	self.mx.Lock()
-	self.write_error += err
+	self.write_error += n
 	self.mx.Unlock()
 }
 

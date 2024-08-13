@@ -125,7 +125,7 @@ func (self *WriterContext_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterContext_t) WriteStat(err int) {
+func (self *WriterContext_t) WriteError(n int) {
 
 }
 
