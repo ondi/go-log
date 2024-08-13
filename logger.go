@@ -49,7 +49,6 @@ type QueueSize_t struct {
 	QueueWrite int
 	QueueError int
 	QueueRead  int
-	WriteCount int
 	WriteError int
 }
 
@@ -60,7 +59,7 @@ type Queue interface {
 	Close() error
 	WgAdd(int)
 	WgDone()
-	WriteStat(count int, err int)
+	WriteStat(err int)
 }
 
 type Formatter interface {

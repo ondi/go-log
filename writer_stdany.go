@@ -15,7 +15,7 @@ type WriterStdany_t struct {
 	prefix      []Formatter
 	out         io.Writer
 	log_limit   int
-	write_count int
+	queue_write int
 	write_error int
 	bulk_write  int
 }
@@ -56,9 +56,7 @@ func (self *WriterStdany_t) writer(q Queue) (err error) {
 		}
 		for i := 0; i < n; i++ {
 			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteStat(1, 1)
-			} else {
-				q.WriteStat(1, 0)
+				q.WriteStat(1)
 			}
 		}
 	}
@@ -67,7 +65,7 @@ func (self *WriterStdany_t) writer(q Queue) (err error) {
 func (self *WriterStdany_t) LogWrite(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	self.write_count++
+	self.queue_write++
 	var w io.Writer
 	if self.log_limit > 0 {
 		w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
@@ -91,13 +89,13 @@ func (self *WriterStdany_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterStdany_t) WriteStat(count int, err int) {
+func (self *WriterStdany_t) WriteStat(err int) {
 
 }
 
 func (self *WriterStdany_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
-	res.WriteCount = self.write_count
+	res.QueueWrite = self.queue_write
 	res.WriteError = self.write_error
 	self.mx.Unlock()
 	return

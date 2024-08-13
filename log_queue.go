@@ -18,7 +18,6 @@ type queue_t struct {
 	queue_write int
 	queue_error int
 	queue_read  int
-	write_count int
 	write_error int
 }
 
@@ -58,9 +57,8 @@ func (self *queue_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *queue_t) WriteStat(count int, err int) {
+func (self *queue_t) WriteStat(err int) {
 	self.mx.Lock()
-	self.write_count += count
 	self.write_error += err
 	self.mx.Unlock()
 }
@@ -74,7 +72,6 @@ func (self *queue_t) Size() (res QueueSize_t) {
 	res.QueueWrite = self.queue_write
 	res.QueueError = self.queue_error
 	res.QueueRead = self.queue_read
-	res.WriteCount = self.write_count
 	res.WriteError = self.write_error
 	self.mx.Unlock()
 	return

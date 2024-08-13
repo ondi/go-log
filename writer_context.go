@@ -106,7 +106,7 @@ func (self *ctx_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 }
 
 type WriterContext_t struct {
-	write_count atomic.Int64
+	queue_write atomic.Int64
 }
 
 func NewWriterContext() Queue {
@@ -115,7 +115,7 @@ func NewWriterContext() Queue {
 
 func (self *WriterContext_t) LogWrite(m Msg_t) (n int, err error) {
 	if v := GetLogContext(m.Ctx); v != nil {
-		self.write_count.Add(1)
+		self.queue_write.Add(1)
 		n, err = v.WriteLog(m)
 	}
 	return
@@ -125,12 +125,12 @@ func (self *WriterContext_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterContext_t) WriteStat(count int, err int) {
+func (self *WriterContext_t) WriteStat(err int) {
 
 }
 
 func (self *WriterContext_t) Size() (res QueueSize_t) {
-	res.WriteCount = int(self.write_count.Load())
+	res.QueueWrite = int(self.queue_write.Load())
 	return
 }
 

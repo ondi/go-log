@@ -9,7 +9,7 @@ import (
 )
 
 type WriterCounter_t struct {
-	write_count atomic.Int64
+	queue_write atomic.Int64
 }
 
 func NewWriterCounter() Queue {
@@ -17,7 +17,7 @@ func NewWriterCounter() Queue {
 }
 
 func (self *WriterCounter_t) LogWrite(Msg_t) (n int, err error) {
-	self.write_count.Add(1)
+	self.queue_write.Add(1)
 	return
 }
 
@@ -25,12 +25,12 @@ func (self *WriterCounter_t) LogRead(p []Msg_t) (n int, ok bool) {
 	return
 }
 
-func (self *WriterCounter_t) WriteStat(count int, err int) {
+func (self *WriterCounter_t) WriteStat(err int) {
 
 }
 
 func (self *WriterCounter_t) Size() (res QueueSize_t) {
-	res.WriteCount = int(self.write_count.Load())
+	res.QueueWrite = int(self.queue_write.Load())
 	return
 }
 
