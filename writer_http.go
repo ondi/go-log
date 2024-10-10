@@ -137,8 +137,8 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 func (self *Http_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 
-	var n int
 	var ok bool
+	var n, count int
 	var req *http.Request
 	var resp *http.Response
 	var body bytes.Buffer
@@ -153,14 +153,9 @@ LOOP1:
 			q.WriteError(n)
 			continue
 		}
-		for i := 0; i < n; i++ {
-			if _, err = self.message.FormatLog(&body, msg[i]); err != nil {
-				q.WriteError(n)
-				continue LOOP1
-			}
-		}
-		if body.Len() == 0 {
-			continue
+		if count, err = self.message.FormatMessage(&body, msg[:n]...); err != nil || count == 0 {
+			q.WriteError(n)
+			continue LOOP1
 		}
 		for _, v := range self.urls.Range() {
 			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {

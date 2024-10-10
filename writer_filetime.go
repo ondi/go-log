@@ -97,7 +97,7 @@ func (self *WriterFileTime_t) LogWrite(m Msg_t) (n int, err error) {
 		self.last_date = tr
 	}
 	for _, v := range self.prefix {
-		v.FormatLog(w, m)
+		v.FormatMessage(w, m)
 	}
 	io.WriteString(w, m.Info.LevelName)
 	io.WriteString(w, " ")
