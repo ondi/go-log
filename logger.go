@@ -22,11 +22,11 @@ import (
 )
 
 type Info_t struct {
-	LevelName string
-	File      string
-	Line      int
-	LevelId   int64
-	Ts        time.Time
+	Ts        time.Time `json:"ts"`
+	LevelName string    `json:"level_name"`
+	File      string    `json:"file"`
+	Line      int       `json:"line"`
+	LevelId   int64     `json:"level"`
 }
 
 func (self *Info_t) Set(ts time.Time) {
@@ -35,10 +35,10 @@ func (self *Info_t) Set(ts time.Time) {
 }
 
 type Msg_t struct {
-	Ctx    context.Context
-	Info   Info_t
-	Format string
-	Args   []any
+	Ctx    context.Context `json:"-"`
+	Info   Info_t          `json:"info"`
+	Format string          `json:"format"`
+	Args   []any           `json:"args"`
 }
 
 type QueueSize_t struct {
