@@ -228,11 +228,11 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 		self.Level = v.Info.LevelName
 		self.Timestamp = string(v.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
-		var temp strings.Builder
+		buf.Reset()
 		for _, fm := range __get_fl_cx {
-			fm.FormatMessage(&temp, in...)
+			fm.FormatMessage(&buf, in...)
 		}
-		self.Location = temp.String()
+		self.Location = buf.String()
 
 		if err = json.NewEncoder(out).Encode(self); err != nil {
 			return
