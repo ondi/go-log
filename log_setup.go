@@ -216,7 +216,7 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 	}
 
 	for _, v := range in {
-		var msg MessageKB_t
+		msg := self
 		if strings.HasPrefix(v.Format, "json") {
 			if msg.Data, err = json.Marshal(v.Args); err != nil {
 				return
@@ -285,6 +285,7 @@ func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 			io.WriteString(w, " ")
 		}
 		fmt.Fprintf(w, v.Format, v.Args...)
+		fmt.Fprintf(w, "\n")
 	}
 
 	self.Text = buf.String()
