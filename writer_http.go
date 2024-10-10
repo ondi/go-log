@@ -178,7 +178,7 @@ func (self *Http_t) writer(q Queue) (err error) {
 	var resp *http.Response
 	var body bytes.Buffer
 	msg := make([]Msg_t, self.bulk_write)
-LOOP1:
+
 	for {
 		body.Reset()
 		if n, ok = q.LogRead(msg); !ok {
@@ -190,7 +190,7 @@ LOOP1:
 		}
 		if _, err = self.message.FormatMessage(&body, msg[:n]...); err != nil {
 			q.WriteError(n)
-			continue LOOP1
+			continue
 		}
 		for _, v := range self.urls.Range() {
 			ctx, cancel := self.post_ctx.WithTimeout(context.Background())
@@ -199,7 +199,7 @@ LOOP1:
 				continue
 			}
 			if err = self.headers.Header(req); err != nil {
-				continue LOOP1
+				break
 			}
 			if resp, err = self.client.Do(req); err != nil {
 				continue
