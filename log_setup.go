@@ -201,7 +201,9 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 	var w io.Writer
 	var buf strings.Builder
 
-	if len(self.Index.Index.Format) > 0 && len(in) > 0 {
+	n = len(in)
+
+	if len(self.Index.Index.Format) > 0 && n > 0 {
 		var msg MessageIndexKB_t
 		msg.Index.Index = string(in[0].Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
 		err = json.NewEncoder(out).Encode(msg)
@@ -236,7 +238,6 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 		if err = json.NewEncoder(out).Encode(msg); err != nil {
 			return
 		}
-		n++
 	}
 	return
 }
@@ -255,6 +256,8 @@ type MessageTG_t struct {
 func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
 	var w io.Writer
 	var buf strings.Builder
+
+	n = len(in)
 
 	if self.TextLimit > 0 {
 		w = &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
@@ -282,8 +285,8 @@ func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 			io.WriteString(w, " ")
 		}
 		fmt.Fprintf(w, v.Format, v.Args...)
-		n++
 	}
+
 	self.Text = buf.String()
 	if err = json.NewEncoder(out).Encode(self); err != nil {
 		return
