@@ -64,6 +64,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strings"
 	"time"
@@ -198,16 +199,21 @@ type MessageKB_t struct {
 
 func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
 	var b [64]byte
-	var w io.Writer
 	var buf strings.Builder
+	var limit int
 
 	if self.TextLimit > 0 {
-		w = &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
+		limit = self.TextLimit
 	} else {
-		w = &buf
+		limit = math.MaxInt
 	}
 
+	w := &LimitWriter_t{Buf: &buf, Limit: limit}
+
 	for _, v := range in {
+		buf.Reset()
+		w.Limit = limit
+
 		if len(self.Index.Index.Format) > 0 {
 			self.Index.Index.Index = string(v.Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
 			json.NewEncoder(out).Encode(self.Index)
@@ -226,8 +232,8 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 		self.Timestamp = string(v.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 		var temp strings.Builder
-		for _, v := range __get_fl_cx {
-			v.FormatMessage(&temp, in...)
+		for _, fm := range __get_fl_cx {
+			fm.FormatMessage(&temp, in...)
 		}
 		self.Location = temp.String()
 
@@ -250,13 +256,13 @@ type MessageTG_t struct {
 }
 
 func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
-	var w io.Writer
+	var w *LimitWriter_t
 	var buf strings.Builder
 
 	if self.TextLimit > 0 {
 		w = &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
 	} else {
-		w = &buf
+		w = &LimitWriter_t{Buf: &buf, Limit: math.MaxInt}
 	}
 
 	if len(self.Hostname) > 0 {
@@ -269,11 +275,11 @@ func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 		io.WriteString(w, " ")
 	}
 
-	for _, v := range __get_fl_cx {
-		v.FormatMessage(w, in...)
-	}
-
 	for _, v := range in {
+		for _, fm := range __get_fl_cx {
+			fm.FormatMessage(w, v)
+		}
+
 		if len(v.Info.LevelName) > 0 {
 			io.WriteString(w, v.Info.LevelName)
 			io.WriteString(w, " ")
