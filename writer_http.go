@@ -211,6 +211,7 @@ LOOP1:
 			break
 		}
 		if err != nil || resp == nil || resp.StatusCode >= 400 {
+			// fmt.Fprintf(os.Stderr, "LOG_ERROR: %v %v\nLOG_BODY: %s", err, resp, body.Bytes())
 			q.WriteError(n)
 		}
 		self.post_delay.Delay()

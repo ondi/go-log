@@ -201,12 +201,6 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 	var w io.Writer
 	var buf strings.Builder
 
-	if len(self.Index.Index.Format) > 0 {
-		var msg MessageIndexKB_t
-		msg.Index.Index = string(in[0].Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
-		err = json.NewEncoder(out).Encode(msg)
-	}
-
 	if self.TextLimit > 0 {
 		w = &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
 	} else {
@@ -214,26 +208,30 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 	}
 
 	for _, v := range in {
-		msg := self
+		if len(self.Index.Index.Format) > 0 {
+			self.Index.Index.Index = string(v.Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
+			json.NewEncoder(out).Encode(self.Index)
+		}
+
 		if strings.HasPrefix(v.Format, "json") {
-			if msg.Data, err = json.Marshal(v.Args); err != nil {
+			if self.Data, err = json.Marshal(v.Args); err != nil {
 				return
 			}
 		} else {
 			fmt.Fprintf(w, v.Format, v.Args...)
-			msg.Message = buf.String()
+			self.Message = buf.String()
 		}
 
-		msg.Level = v.Info.LevelName
-		msg.Timestamp = string(v.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
+		self.Level = v.Info.LevelName
+		self.Timestamp = string(v.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 		var temp strings.Builder
 		for _, v := range __get_fl_cx {
 			v.FormatMessage(&temp, in...)
 		}
-		msg.Location = temp.String()
+		self.Location = temp.String()
 
-		if err = json.NewEncoder(out).Encode(msg); err != nil {
+		if err = json.NewEncoder(out).Encode(self); err != nil {
 			return
 		}
 	}
