@@ -203,7 +203,7 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 
 	n = len(in)
 
-	if len(self.Index.Index.Format) > 0 && n > 0 {
+	if len(self.Index.Index.Format) > 0 {
 		var msg MessageIndexKB_t
 		msg.Index.Index = string(in[0].Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
 		err = json.NewEncoder(out).Encode(msg)
