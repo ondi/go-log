@@ -200,19 +200,16 @@ type MessageKB_t struct {
 func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
 	var b [64]byte
 	var buf strings.Builder
-	var limit int
 
-	if self.TextLimit > 0 {
-		limit = self.TextLimit
-	} else {
-		limit = math.MaxInt
+	if self.TextLimit == 0 {
+		self.TextLimit = math.MaxInt
 	}
 
-	w := &LimitWriter_t{Buf: &buf, Limit: limit}
+	w := &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
 
 	for _, v := range in {
 		buf.Reset()
-		w.Limit = limit
+		w.Limit = self.TextLimit
 
 		if len(self.Index.Index.Format) > 0 {
 			self.Index.Index.Index = string(v.Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
@@ -256,14 +253,13 @@ type MessageTG_t struct {
 }
 
 func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
-	var w *LimitWriter_t
 	var buf strings.Builder
 
-	if self.TextLimit > 0 {
-		w = &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
-	} else {
-		w = &LimitWriter_t{Buf: &buf, Limit: math.MaxInt}
+	if self.TextLimit == 0 {
+		self.TextLimit = math.MaxInt
 	}
+
+	w := &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
 
 	if len(self.Hostname) > 0 {
 		io.WriteString(w, self.Hostname)
