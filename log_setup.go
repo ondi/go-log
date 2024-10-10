@@ -201,8 +201,6 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 	var w io.Writer
 	var buf strings.Builder
 
-	n = len(in)
-
 	if len(self.Index.Index.Format) > 0 {
 		var msg MessageIndexKB_t
 		msg.Index.Index = string(in[0].Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
@@ -256,8 +254,6 @@ type MessageTG_t struct {
 func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
 	var w io.Writer
 	var buf strings.Builder
-
-	n = len(in)
 
 	if self.TextLimit > 0 {
 		w = &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}

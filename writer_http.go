@@ -6,6 +6,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"net"
 	"net/http"
@@ -25,20 +26,25 @@ type Headers interface {
 	Header(*http.Request) error
 }
 
+type PostContext interface {
+	WithTimeout(context.Context) (context.Context, context.CancelFunc)
+}
+
+type PostDelayer interface {
+	Delay()
+}
+
 // Default
 // MaxIdleConns:        100,
 // MaxIdleConnsPerHost: 2,
 func DefaultTransport(dial_timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
 	return &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           (&net.Dialer{Timeout: dial_timeout}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          MaxIdleConns,
-		MaxIdleConnsPerHost:   MaxIdleConnsPerHost,
-		TLSHandshakeTimeout:   30 * time.Second,
-		IdleConnTimeout:       90 * time.Second,
-		ExpectContinueTimeout: 5 * time.Second,
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+		Proxy:               http.ProxyFromEnvironment,
+		DialContext:         (&net.Dialer{Timeout: dial_timeout}).DialContext,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        MaxIdleConns,
+		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 	}
 }
 
@@ -73,17 +79,44 @@ func (NoHeaders_t) Header(*http.Request) error {
 	return nil
 }
 
+type Timeout_t struct {
+	timeout time.Duration
+}
+
+func (self *Timeout_t) WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, self.timeout)
+}
+
+func (self *Timeout_t) Delay() {
+	time.Sleep(self.timeout)
+}
+
+type NoTimeout_t struct{}
+
+func (self NoTimeout_t) WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	return ctx, func() {}
+}
+
+func (self NoTimeout_t) Delay() {}
+
 type Http_t struct {
 	urls       Urls
-	message    Formatter
 	client     Client
 	rps        Rps
 	headers    Headers
-	post_delay time.Duration
+	post_ctx   PostContext
+	post_delay PostDelayer
+	message    Formatter
 	bulk_write int
 }
 
 type HttpOption func(self *Http_t)
+
+func RpsLimit(rps_limit Rps) HttpOption {
+	return func(self *Http_t) {
+		self.rps = rps_limit
+	}
+}
 
 func PostHeader(headers Headers) HttpOption {
 	return func(self *Http_t) {
@@ -93,13 +126,13 @@ func PostHeader(headers Headers) HttpOption {
 
 func PostDelay(delay time.Duration) HttpOption {
 	return func(self *Http_t) {
-		self.post_delay = delay
+		self.post_delay = &Timeout_t{timeout: delay}
 	}
 }
 
-func RpsLimit(rps_limit Rps) HttpOption {
+func PostTimeout(timeout time.Duration) HttpOption {
 	return func(self *Http_t) {
-		self.rps = rps_limit
+		self.post_ctx = &Timeout_t{timeout: timeout}
 	}
 }
 
@@ -118,6 +151,8 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 		client:     client,
 		rps:        NoRps_t{},
 		headers:    NoHeaders_t{},
+		post_ctx:   NoTimeout_t{},
+		post_delay: NoTimeout_t{},
 		bulk_write: 1,
 	}
 
@@ -137,8 +172,8 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 func (self *Http_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 
+	var n int
 	var ok bool
-	var n, count int
 	var req *http.Request
 	var resp *http.Response
 	var body bytes.Buffer
@@ -153,12 +188,14 @@ LOOP1:
 			q.WriteError(n)
 			continue
 		}
-		if count, err = self.message.FormatMessage(&body, msg[:n]...); err != nil || count == 0 {
+		if _, err = self.message.FormatMessage(&body, msg[:n]...); err != nil {
 			q.WriteError(n)
 			continue LOOP1
 		}
 		for _, v := range self.urls.Range() {
-			if req, err = http.NewRequest(http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
+			ctx, cancel := self.post_ctx.WithTimeout(context.Background())
+			defer cancel()
+			if req, err = http.NewRequestWithContext(ctx, http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
 				continue
 			}
 			if err = self.headers.Header(req); err != nil {
@@ -175,8 +212,7 @@ LOOP1:
 		}
 		if err != nil || resp == nil || resp.StatusCode >= 400 {
 			q.WriteError(n)
-		} else if self.post_delay > 0 {
-			time.Sleep(self.post_delay)
 		}
+		self.post_delay.Delay()
 	}
 }
