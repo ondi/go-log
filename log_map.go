@@ -58,3 +58,19 @@ func (self Level_map_t) DelOutputs(writer_name string, levels []Info_t) (ok bool
 	}
 	return
 }
+
+func CopyLevelMap(in Level_map_t) (out Level_map_t) {
+	var ok bool
+	var temp Queue_map_t
+	out = Level_map_t{}
+	for k1, v1 := range in {
+		for k2, v2 := range v1 {
+			if temp, ok = out[k1]; !ok {
+				temp = Queue_map_t{}
+				out[k1] = temp
+			}
+			temp[k2] = v2
+		}
+	}
+	return
+}

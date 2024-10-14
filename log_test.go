@@ -35,7 +35,7 @@ func Test1(t *testing.T) {
 	)
 	m.AddOutputs("http", log_http, WhatLevel(LOG_TRACE.LevelId))
 
-	SetLogger(New(&m))
+	SetLogger(New(m))
 
 	Debug("lalala %s", ByteSize(1024))
 	Debug("bububu %s", ByteSize(2048))
@@ -53,7 +53,7 @@ func Test2(t *testing.T) {
 	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.LevelId))
 	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.LevelId))
 
-	SetLogger(New(&m))
+	SetLogger(New(m))
 
 	DebugCtx(ctx, "test")
 

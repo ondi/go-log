@@ -113,7 +113,7 @@ func NewLogger() (out Logger) {
 		m.AddOutput(v.LevelId, "stderr", w1)
 		m.AddOutput(v.LevelId, "ctx", w2)
 	}
-	out = New(&m)
+	out = New(m)
 	return
 }
 
@@ -172,7 +172,7 @@ func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (err error) {
 			m.AddOutputs("stderr", NewWriterStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		}
 	}
-	SetLogger(New(&m))
+	SetLogger(New(m))
 	for _, v := range logs {
 		Debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
 			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)

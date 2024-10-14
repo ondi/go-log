@@ -71,8 +71,8 @@ type Logger interface {
 
 	Log(ctx context.Context, level Info_t, format string, args ...any)
 
-	SwapLevelMap(*Level_map_t) *Level_map_t
-	CopyLevelMap() (out Level_map_t)
+	SetLevelMap(Level_map_t)
+	CopyLevelMap() Level_map_t
 	Close() Logger
 }
 
@@ -81,29 +81,20 @@ type log_t struct {
 }
 
 // use NewLogMap()
-func New(in *Level_map_t) Logger {
+func New(in Level_map_t) Logger {
 	self := &log_t{}
-	self.level_map.Store(in)
+	temp := CopyLevelMap(in)
+	self.level_map.Store(&temp)
 	return self
 }
 
-func (self *log_t) SwapLevelMap(in *Level_map_t) *Level_map_t {
-	return self.level_map.Swap(in)
+func (self *log_t) SetLevelMap(in Level_map_t) {
+	temp := CopyLevelMap(in)
+	self.level_map.Store(&temp)
 }
 
 func (self *log_t) CopyLevelMap() (out Level_map_t) {
-	out = Level_map_t{}
-	for k1, v1 := range *self.level_map.Load() {
-		for k2, v2 := range v1 {
-			temp, ok := out[k1]
-			if !ok {
-				temp = Queue_map_t{}
-				out[k1] = temp
-			}
-			temp[k2] = v2
-		}
-	}
-	return
+	return CopyLevelMap(*self.level_map.Load())
 }
 
 func (self *log_t) Close() Logger {
