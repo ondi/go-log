@@ -74,7 +74,7 @@ import (
 var (
 	STDERR = os.Stderr
 	LEVELS = []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
-	__std  = New(LEVELS).AddOutput(
+	__std  = New().AddOutput(
 		"stderr",
 		NewWriterStdany(
 			[]Formatter{
@@ -127,7 +127,7 @@ func WhatLevel(in int64) []Info_t {
 }
 
 func SetupLogger(ts time.Time, logs []Args_t) (err error) {
-	logger := SetLogger(New(LEVELS))
+	logger := SetLogger(New())
 	for _, v := range logs {
 		switch v.LogType {
 		case "ctx":

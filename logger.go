@@ -1,15 +1,5 @@
 /*
-	Log with levels
-
-	// no allocation and locks for WriteLog cycle
-	func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {
-		info.Set(time.Now())
-		if v1 := self.levels[level.LevelId]; v1 != nil {
-			for _, v2 := range *v1.Load() {
-				v2.WriteLog(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
-			}
-		}
-	}
+	Log(levels) with no allocation and locks
 */
 
 package log
@@ -79,73 +69,98 @@ type Logger interface {
 	WarnCtx(ctx context.Context, format string, args ...any)
 	ErrorCtx(ctx context.Context, format string, args ...any)
 
-	Log(ctx context.Context, info Info_t, format string, args ...any)
+	Log(ctx context.Context, level Info_t, format string, args ...any)
 
-	AddOutput(name string, writer Queue, in []Info_t) Logger
-	DelOutput(name string) Logger
-	RangeLevel(info Info_t, fn func(name string, queue Queue) bool)
+	AddOutput(writer_name string, writer Queue, levels []Info_t) Logger
+	DelOutput(writer_name string) Logger
+	Range(fn func(level_id int64, writer_name string, writer Queue) bool)
 	Close() Logger
 }
 
-type writers_t map[string]Queue
+type queue_map_t map[string]Queue
 
-func set_output(value *atomic.Pointer[writers_t], name string, new_writer Queue) (old_writer Queue) {
+type queue_ptr_t struct {
+	ptr atomic.Pointer[queue_map_t]
+}
+
+func (self *queue_ptr_t) create(writer_name string, new_writer Queue) (old_writer Queue) {
 	for {
-		old := value.Load()
-		new := writers_t{}
+		old := self.ptr.Load()
+		new := queue_map_t{}
 		for k, v := range *old {
-			if k == name {
+			if k == writer_name {
 				old_writer = v
 			} else {
 				new[k] = v
 			}
 		}
 		if new_writer != nil {
-			new[name] = new_writer
+			new[writer_name] = new_writer
 		}
-		if value.CompareAndSwap(old, &new) {
+		if self.ptr.CompareAndSwap(old, &new) {
+			return
+		}
+	}
+}
+
+type level_map_t map[int64]*queue_ptr_t
+
+type level_ptr_t struct {
+	ptr atomic.Pointer[level_map_t]
+}
+
+func (self *level_ptr_t) create(level_id int64, writer_name string, writer Queue) {
+	for {
+		old := self.ptr.Load()
+		level, ok := (*old)[level_id]
+		if ok {
+			level.create(writer_name, writer)
+			return
+		}
+		new := level_map_t{}
+		for k, v := range *old {
+			new[k] = v
+		}
+		level = &queue_ptr_t{}
+		level.ptr.Store(&queue_map_t{})
+		level.create(writer_name, writer)
+		new[level_id] = level
+		if self.ptr.CompareAndSwap(old, &new) {
 			return
 		}
 	}
 }
 
 type log_t struct {
-	levels map[int64]*atomic.Pointer[writers_t]
+	level_map level_ptr_t
 }
 
-func New(in []Info_t) Logger {
-	self := &log_t{
-		levels: map[int64]*atomic.Pointer[writers_t]{},
-	}
-	for _, v := range in {
-		self.levels[v.LevelId] = &atomic.Pointer[writers_t]{}
-		self.levels[v.LevelId].Store(&writers_t{})
+func New() Logger {
+	self := &log_t{}
+	self.level_map.ptr.Store(&level_map_t{})
+	return self
+}
+
+func (self *log_t) AddOutput(writer_name string, writer Queue, levels []Info_t) Logger {
+	for _, level := range levels {
+		self.level_map.create(level.LevelId, writer_name, writer)
 	}
 	return self
 }
 
-func (self *log_t) AddOutput(name string, writer Queue, in []Info_t) Logger {
-	for _, v1 := range in {
-		if v2 := self.levels[v1.LevelId]; v2 != nil {
-			set_output(v2, name, writer)
-		}
-	}
-	return self
-}
-
-func (self *log_t) DelOutput(name string) Logger {
-	for _, v := range self.levels {
-		if w := set_output(v, name, nil); w != nil {
+func (self *log_t) DelOutput(writer_name string) Logger {
+	for _, level := range *self.level_map.ptr.Load() {
+		if w := level.create(writer_name, nil); w != nil {
 			w.Close()
 		}
 	}
 	return self
 }
 
-func (self *log_t) RangeLevel(info Info_t, fn func(name string, queue Queue) bool) {
-	if v1 := self.levels[info.LevelId]; v1 != nil {
-		for k2, v2 := range *v1.Load() {
-			if fn(k2, v2) == false {
+func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queue) bool) {
+	for level_id, level := range *self.level_map.ptr.Load() {
+		for writer_name, writer := range *level.ptr.Load() {
+			if fn(level_id, writer_name, writer) == false {
 				return
 			}
 		}
@@ -153,9 +168,9 @@ func (self *log_t) RangeLevel(info Info_t, fn func(name string, queue Queue) boo
 }
 
 func (self *log_t) Close() Logger {
-	for _, v1 := range self.levels {
-		for _, v2 := range *v1.Swap(&writers_t{}) {
-			v2.Close()
+	for _, level := range *self.level_map.ptr.Load() {
+		for _, writer := range *level.ptr.Swap(&queue_map_t{}) {
+			writer.Close()
 		}
 	}
 	return self
@@ -163,9 +178,9 @@ func (self *log_t) Close() Logger {
 
 func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {
 	info.Set(time.Now())
-	if v1 := self.levels[info.LevelId]; v1 != nil {
-		for _, v2 := range *v1.Load() {
-			v2.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
+	if level := (*self.level_map.ptr.Load())[info.LevelId]; level != nil {
+		for _, writer := range *level.ptr.Load() {
+			writer.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 		}
 	}
 }
