@@ -72,7 +72,7 @@ type Logger interface {
 	Log(ctx context.Context, level Info_t, format string, args ...any)
 
 	AddOutput(writer_name string, writer Queue, levels []Info_t) Logger
-	DelOutput(writer_name string) Logger
+	DelOutput(writer_name string, levels []Info_t) Logger
 	Range(fn func(level_id int64, writer_name string, writer Queue) bool)
 	Close() Logger
 }
@@ -148,10 +148,12 @@ func (self *log_t) AddOutput(writer_name string, writer Queue, levels []Info_t) 
 	return self
 }
 
-func (self *log_t) DelOutput(writer_name string) Logger {
-	for _, level := range *self.level_map.ptr.Load() {
-		if w := level.create(writer_name, nil); w != nil {
-			w.Close()
+func (self *log_t) DelOutput(writer_name string, levels []Info_t) Logger {
+	for _, v := range levels {
+		if level := (*self.level_map.ptr.Load())[v.LevelId]; level != nil {
+			if writer := level.create(writer_name, nil); writer != nil {
+				writer.Close()
+			}
 		}
 	}
 	return self
