@@ -71,107 +71,44 @@ type Logger interface {
 
 	Log(ctx context.Context, level Info_t, format string, args ...any)
 
-	AddOutput(writer_name string, writer Queue, levels []Info_t) Logger
-	DelOutput(writer_name string, levels []Info_t) Logger
-	Range(fn func(level_id int64, writer_name string, writer Queue) bool)
+	SwapLevelMap(*Level_map_t) *Level_map_t
+	CopyLevelMap() (out Level_map_t)
 	Close() Logger
 }
 
-type queue_map_t map[string]Queue
-
-type queue_ptr_t struct {
-	ptr atomic.Pointer[queue_map_t]
-}
-
-func (self *queue_ptr_t) create(writer_name string, new_writer Queue) (old_writer Queue) {
-	for {
-		old := self.ptr.Load()
-		new := queue_map_t{}
-		for k, v := range *old {
-			if k == writer_name {
-				old_writer = v
-			} else {
-				new[k] = v
-			}
-		}
-		if new_writer != nil {
-			new[writer_name] = new_writer
-		}
-		if self.ptr.CompareAndSwap(old, &new) {
-			return
-		}
-	}
-}
-
-type level_map_t map[int64]*queue_ptr_t
-
-type level_ptr_t struct {
-	ptr atomic.Pointer[level_map_t]
-}
-
-func (self *level_ptr_t) create(level_id int64, writer_name string, writer Queue) {
-	for {
-		old := self.ptr.Load()
-		level, ok := (*old)[level_id]
-		if ok {
-			level.create(writer_name, writer)
-			return
-		}
-		new := level_map_t{}
-		for k, v := range *old {
-			new[k] = v
-		}
-		level = &queue_ptr_t{}
-		level.ptr.Store(&queue_map_t{})
-		level.create(writer_name, writer)
-		new[level_id] = level
-		if self.ptr.CompareAndSwap(old, &new) {
-			return
-		}
-	}
-}
-
 type log_t struct {
-	level_map level_ptr_t
+	level_map atomic.Pointer[Level_map_t]
 }
 
-func New() Logger {
+// use NewLogMap()
+func New(in *Level_map_t) Logger {
 	self := &log_t{}
-	self.level_map.ptr.Store(&level_map_t{})
+	self.level_map.Store(in)
 	return self
 }
 
-func (self *log_t) AddOutput(writer_name string, writer Queue, levels []Info_t) Logger {
-	for _, level := range levels {
-		self.level_map.create(level.LevelId, writer_name, writer)
-	}
-	return self
+func (self *log_t) SwapLevelMap(in *Level_map_t) *Level_map_t {
+	return self.level_map.Swap(in)
 }
 
-func (self *log_t) DelOutput(writer_name string, levels []Info_t) Logger {
-	for _, v := range levels {
-		if level := (*self.level_map.ptr.Load())[v.LevelId]; level != nil {
-			if writer := level.create(writer_name, nil); writer != nil {
-				writer.Close()
+func (self *log_t) CopyLevelMap() (out Level_map_t) {
+	out = Level_map_t{}
+	for k1, v1 := range *self.level_map.Load() {
+		for k2, v2 := range v1 {
+			temp, ok := out[k1]
+			if !ok {
+				temp = Queue_map_t{}
+				out[k1] = temp
 			}
+			temp[k2] = v2
 		}
 	}
-	return self
-}
-
-func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queue) bool) {
-	for level_id, level := range *self.level_map.ptr.Load() {
-		for writer_name, writer := range *level.ptr.Load() {
-			if fn(level_id, writer_name, writer) == false {
-				return
-			}
-		}
-	}
+	return
 }
 
 func (self *log_t) Close() Logger {
-	for _, level := range *self.level_map.ptr.Load() {
-		for _, writer := range *level.ptr.Swap(&queue_map_t{}) {
+	for _, level := range *self.level_map.Swap(&Level_map_t{}) {
+		for _, writer := range level {
 			writer.Close()
 		}
 	}
@@ -180,8 +117,8 @@ func (self *log_t) Close() Logger {
 
 func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {
 	info.Set(time.Now())
-	if level := (*self.level_map.ptr.Load())[info.LevelId]; level != nil {
-		for _, writer := range *level.ptr.Load() {
+	if level := (*self.level_map.Load())[info.LevelId]; level != nil {
+		for _, writer := range level {
 			writer.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 		}
 	}
