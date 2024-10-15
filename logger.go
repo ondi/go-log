@@ -71,39 +71,50 @@ type Logger interface {
 
 	Log(ctx context.Context, level Info_t, format string, args ...any)
 
-	SetLevelMap(Level_map_t)
+	Range(fn func(level_id int64, writer_name string, writer Queue) bool)
+	SwapLevelMap(Level_map_t) Level_map_t
 	CopyLevelMap() Level_map_t
-	Close() Logger
+	Close()
 }
 
 type log_t struct {
 	level_map atomic.Pointer[Level_map_t]
 }
 
-// use NewLogMap()
+// use NewLevelMap()
 func New(in Level_map_t) Logger {
 	self := &log_t{}
-	temp := CopyLevelMap(in)
+	temp := in.Copy(Level_map_t{})
 	self.level_map.Store(&temp)
 	return self
 }
 
-func (self *log_t) SetLevelMap(in Level_map_t) {
-	temp := CopyLevelMap(in)
-	self.level_map.Store(&temp)
+func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queue) bool) {
+	for level_id, level := range *self.level_map.Load() {
+		for writer_name, writer := range level {
+			if fn(level_id, writer_name, writer) == false {
+				return
+			}
+		}
+	}
+}
+
+func (self *log_t) SwapLevelMap(in Level_map_t) Level_map_t {
+	temp := in.Copy(Level_map_t{})
+	return *self.level_map.Swap(&temp)
 }
 
 func (self *log_t) CopyLevelMap() (out Level_map_t) {
-	return CopyLevelMap(*self.level_map.Load())
+	return (*self.level_map.Load()).Copy(Level_map_t{})
 }
 
-func (self *log_t) Close() Logger {
+// may close same writer several times
+func (self *log_t) Close() {
 	for _, level := range *self.level_map.Swap(&Level_map_t{}) {
 		for _, writer := range level {
 			writer.Close()
 		}
 	}
-	return self
 }
 
 func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {

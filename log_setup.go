@@ -98,7 +98,7 @@ type Args_t struct {
 }
 
 func NewLogger() (out Logger) {
-	m := NewLogMap()
+	m := NewLevelMap()
 	w1 := NewWriterStdany(
 		[]Formatter{
 			NewDt("2006-01-02 15:04:05.000"),
@@ -133,7 +133,7 @@ func WhatLevel(in int64) []Info_t {
 }
 
 func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (err error) {
-	m := NewLogMap()
+	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
 		case "ctx":

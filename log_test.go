@@ -13,7 +13,7 @@ import (
 )
 
 func Test1(t *testing.T) {
-	m := NewLogMap()
+	m := NewLevelMap()
 
 	var buf bytes.Buffer
 	ts := time.Now()
@@ -47,7 +47,7 @@ func Test2(t *testing.T) {
 	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
 	ctx := SetLogContext(context.Background(), c)
 
-	m := NewLogMap()
+	m := NewLevelMap()
 
 	var buf bytes.Buffer
 	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.LevelId))
