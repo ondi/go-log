@@ -67,3 +67,15 @@ func (self Level_map_t) Copy(out Level_map_t) Level_map_t {
 	}
 	return out
 }
+
+func (self Level_map_t) Close() {
+	writers := Queue_map_t{}
+	for _, level := range self {
+		for writer_name, writer := range level {
+			writers[writer_name] = writer
+		}
+	}
+	for _, v := range writers {
+		v.Close()
+	}
+}

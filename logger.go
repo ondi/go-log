@@ -57,6 +57,8 @@ type Formatter interface {
 }
 
 type Logger interface {
+	Log(ctx context.Context, level Info_t, format string, args ...any)
+
 	Trace(format string, args ...any)
 	Debug(format string, args ...any)
 	Info(format string, args ...any)
@@ -69,12 +71,10 @@ type Logger interface {
 	WarnCtx(ctx context.Context, format string, args ...any)
 	ErrorCtx(ctx context.Context, format string, args ...any)
 
-	Log(ctx context.Context, level Info_t, format string, args ...any)
-
-	Range(fn func(level_id int64, writer_name string, writer Queue) bool)
 	SwapLevelMap(Level_map_t) Level_map_t
 	CopyLevelMap() Level_map_t
-	Close()
+
+	Range(fn func(level_id int64, writer_name string, writer Queue) bool)
 }
 
 type log_t struct {
@@ -89,16 +89,6 @@ func New(in Level_map_t) Logger {
 	return self
 }
 
-func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queue) bool) {
-	for level_id, level := range *self.level_map.Load() {
-		for writer_name, writer := range level {
-			if fn(level_id, writer_name, writer) == false {
-				return
-			}
-		}
-	}
-}
-
 func (self *log_t) SwapLevelMap(in Level_map_t) Level_map_t {
 	temp := in.Copy(Level_map_t{})
 	return *self.level_map.Swap(&temp)
@@ -108,15 +98,13 @@ func (self *log_t) CopyLevelMap() (out Level_map_t) {
 	return (*self.level_map.Load()).Copy(Level_map_t{})
 }
 
-func (self *log_t) Close() {
-	writers := Queue_map_t{}
-	for _, level := range *self.level_map.Swap(&Level_map_t{}) {
+func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queue) bool) {
+	for level_id, level := range *self.level_map.Load() {
 		for writer_name, writer := range level {
-			writers[writer_name] = writer
+			if fn(level_id, writer_name, writer) == false {
+				return
+			}
 		}
-	}
-	for _, v := range writers {
-		v.Close()
 	}
 }
 
