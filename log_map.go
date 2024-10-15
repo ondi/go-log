@@ -8,9 +8,8 @@ type Queue_map_t map[string]Queue
 
 type Level_map_t map[int64]Queue_map_t
 
-func NewLevelMap() (self Level_map_t) {
-	self = Level_map_t{}
-	return
+func NewLevelMap() Level_map_t {
+	return Level_map_t{}
 }
 
 func (self Level_map_t) AddOutput(level_id int64, writer_name string, queue Queue) (ok bool) {

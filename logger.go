@@ -108,12 +108,15 @@ func (self *log_t) CopyLevelMap() (out Level_map_t) {
 	return (*self.level_map.Load()).Copy(Level_map_t{})
 }
 
-// may close same writer several times
 func (self *log_t) Close() {
+	writers := Queue_map_t{}
 	for _, level := range *self.level_map.Swap(&Level_map_t{}) {
-		for _, writer := range level {
-			writer.Close()
+		for writer_name, writer := range level {
+			writers[writer_name] = writer
 		}
+	}
+	for _, v := range writers {
+		v.Close()
 	}
 }
 
