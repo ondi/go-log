@@ -108,12 +108,10 @@ func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queu
 	}
 }
 
-func (self *log_t) Log(ctx context.Context, info Info_t, format string, args ...any) {
-	info.Set(time.Now())
-	if level := (*self.level_map.Load())[info.LevelId]; level != nil {
-		for _, writer := range level {
-			writer.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
-		}
+func (self *log_t) Log(ctx context.Context, level Info_t, format string, args ...any) {
+	level.Set(time.Now())
+	for _, writer := range (*self.level_map.Load())[level.LevelId] {
+		writer.LogWrite(Msg_t{Ctx: ctx, Info: level, Format: format, Args: args})
 	}
 }
 
