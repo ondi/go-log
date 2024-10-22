@@ -176,11 +176,10 @@ func (self *Http_t) writer(q Queue) (err error) {
 	var ok bool
 	var req *http.Request
 	var resp *http.Response
-	var body bytes.Buffer
-	msg := make([]Msg_t, self.bulk_write)
 
 	for {
-		body.Reset()
+		var body bytes.Buffer
+		msg := make([]Msg_t, self.bulk_write)
 		if n, ok = q.LogRead(msg); !ok {
 			return
 		}
