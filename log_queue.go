@@ -38,13 +38,14 @@ func (self *queue_t) LogWrite(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *queue_t) LogRead(p []Msg_t) (n int, ok bool) {
+// bad design: messages stay in buffer forever and not garbage-collected
+// LogRead(p []Msg_t) (n int, ok bool)
+func (self *queue_t) LogRead(limit int) (res []Msg_t, ok bool) {
 	var m Msg_t
 	self.mx.Lock()
-	for n < len(p) {
+	for len(res) < limit {
 		if m, ok = self.q.PopFront(); ok {
-			p[n] = m
-			n++
+			res = append(res, m)
 		} else {
 			break
 		}
@@ -52,7 +53,7 @@ func (self *queue_t) LogRead(p []Msg_t) (n int, ok bool) {
 			break
 		}
 	}
-	self.queue_read += n
+	self.queue_read += len(res)
 	self.mx.Unlock()
 	return
 }

@@ -48,13 +48,12 @@ func NewWriterStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Wr
 
 func (self *WriterStdany_t) writer(q Queue) (err error) {
 	defer q.WgDone()
-	msg := make([]Msg_t, self.bulk_write)
 	for {
-		n, ok := q.LogRead(msg)
+		msg, ok := q.LogRead(self.bulk_write)
 		if !ok {
 			return
 		}
-		for i := 0; i < n; i++ {
+		for i := 0; i < len(msg); i++ {
 			if _, err = self.LogWrite(msg[i]); err != nil {
 				q.WriteError(1)
 			}
@@ -85,7 +84,7 @@ func (self *WriterStdany_t) LogWrite(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterStdany_t) LogRead(p []Msg_t) (n int, ok bool) {
+func (self *WriterStdany_t) LogRead(limit int) (out []Msg_t, ok bool) {
 	return
 }
 
