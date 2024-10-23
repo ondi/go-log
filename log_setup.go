@@ -132,7 +132,7 @@ func WhatLevel(in int64) []Info_t {
 	}
 }
 
-func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (err error) {
+func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (out Logger, err error) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
@@ -172,7 +172,8 @@ func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (err error) {
 			m.AddOutputs("stderr", NewWriterStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		}
 	}
-	SetLogger(New(m))
+	out = New(m)
+	SetLogger(out)
 	for _, v := range logs {
 		Debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
 			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)

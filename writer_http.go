@@ -44,6 +44,7 @@ func DefaultTransport(dial_timeout time.Duration, MaxIdleConns int, MaxIdleConns
 		ForceAttemptHTTP2:   true,
 		MaxIdleConns:        MaxIdleConns,
 		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+		IdleConnTimeout:     90 * time.Second,
 		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
 	}
 }
