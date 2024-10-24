@@ -173,9 +173,6 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 func (self *Http_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 
-	var req *http.Request
-	var resp *http.Response
-
 	for {
 		var body bytes.Buffer
 		msg, ok := q.LogRead(self.bulk_write)
@@ -190,27 +187,32 @@ func (self *Http_t) writer(q Queue) (err error) {
 			q.WriteError(len(msg))
 			continue
 		}
+		var status int
 		for _, v := range self.urls.Range() {
-			ctx, cancel := self.post_ctx.WithTimeout(context.Background())
-			defer cancel()
-			if req, err = http.NewRequestWithContext(ctx, http.MethodPost, v, bytes.NewReader(body.Bytes())); err != nil {
-				continue
-			}
-			if err = self.headers.Header(req); err != nil {
-				break
-			}
-			if resp, err = self.client.Do(req); err != nil {
-				continue
-			}
-			resp.Body.Close()
-			if resp.StatusCode >= 400 {
-				continue
-			}
-			break
+			status, err = self.request(v, body.Bytes())
 		}
-		if err != nil || resp == nil || resp.StatusCode >= 400 {
+		if err != nil || status >= 400 {
 			q.WriteError(len(msg))
 		}
 		self.post_delay.Delay()
 	}
+}
+
+func (self *Http_t) request(URL string, body []byte) (status int, err error) {
+	ctx, cancel := self.post_ctx.WithTimeout(context.Background())
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, URL, bytes.NewReader(body))
+	if err != nil {
+		return
+	}
+	if err = self.headers.Header(req); err != nil {
+		return
+	}
+	resp, err := self.client.Do(req)
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
+	status = resp.StatusCode
+	return
 }
