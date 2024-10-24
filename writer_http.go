@@ -189,9 +189,11 @@ func (self *Http_t) writer(q Queue) (err error) {
 		}
 		var status int
 		for _, v := range self.urls.Range() {
-			status, err = self.request(v, body.Bytes())
+			if status, _ = self.request(v, body.Bytes()); status >= 200 && status < 300 {
+				break
+			}
 		}
-		if err != nil || status >= 400 {
+		if status == 0 || status >= 400 {
 			q.WriteError(len(msg))
 		}
 		self.post_delay.Delay()
