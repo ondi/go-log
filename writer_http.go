@@ -44,8 +44,15 @@ func DefaultTransport(dial_timeout time.Duration, MaxIdleConns int, MaxIdleConns
 		ForceAttemptHTTP2:   true,
 		MaxIdleConns:        MaxIdleConns,
 		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
-		IdleConnTimeout:     90 * time.Second,
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		// do not set IdleConnTimeout to zero
+		// (pprof) top 30
+		// Showing nodes accounting for 988.20MB, 93.70% of 1054.61MB total
+		// Dropped 253 nodes (cum <= 5.27MB)
+		// Showing top 30 nodes out of 55
+		//       flat  flat%   sum%        cum   cum%
+		//   850.04MB 80.60% 80.60%   853.54MB 80.93%  net.(*Resolver).exchange
+		IdleConnTimeout: 90 * time.Second,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 }
 
@@ -173,8 +180,9 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 func (self *Http_t) writer(q Queue) (err error) {
 	defer q.WgDone()
 
+	var body bytes.Buffer
 	for {
-		var body bytes.Buffer
+		body.Reset()
 		msg, ok := q.LogRead(self.bulk_write)
 		if !ok {
 			return
@@ -187,20 +195,19 @@ func (self *Http_t) writer(q Queue) (err error) {
 			q.WriteError(len(msg))
 			continue
 		}
-		var status int
 		for _, v := range self.urls.Range() {
-			if status, _ = self.request(v, body.Bytes()); status >= 200 && status < 300 {
+			if ok, _ = self.request(v, body.Bytes()); ok {
 				break
 			}
 		}
-		if status == 0 || status >= 400 {
+		if !ok {
 			q.WriteError(len(msg))
 		}
 		self.post_delay.Delay()
 	}
 }
 
-func (self *Http_t) request(URL string, body []byte) (status int, err error) {
+func (self *Http_t) request(URL string, body []byte) (ok bool, err error) {
 	ctx, cancel := self.post_ctx.WithTimeout(context.Background())
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, URL, bytes.NewReader(body))
@@ -215,6 +222,6 @@ func (self *Http_t) request(URL string, body []byte) (status int, err error) {
 		return
 	}
 	resp.Body.Close()
-	status = resp.StatusCode
+	ok = resp.StatusCode >= 200 && resp.StatusCode < 300
 	return
 }
