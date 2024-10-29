@@ -6,10 +6,12 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/ondi/go-circular"
@@ -80,11 +82,47 @@ func GetLogContext(ctx context.Context) (value LogContext) {
 	return
 }
 
-func GetLogContextPayload(ctx context.Context, f RangeFn_t) {
-	if v, _ := ctx.Value(&log_ctx).(LogContext); v != nil {
-		v.ContextRange(f)
+type LogContextTrim_t struct {
+	level int64
+	words int
+	limit int
+}
+
+func NewLogContextTrim(level int64, words int, limit int) (self *LogContextTrim_t) {
+	self = &LogContextTrim_t{
+		level: level,
+		words: words,
+		limit: limit,
 	}
 	return
+}
+
+func (self *LogContextTrim_t) GetPayload(ctx context.Context) (res []string) {
+	if v := GetLogContext(ctx); v != nil {
+		v.ContextRange(func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool {
+			if level_id < self.level {
+				return true
+			}
+			if len(res) >= self.limit {
+				return false
+			}
+			res = append(res, FirstWords(fmt.Sprintf(format, args...), self.words))
+			return true
+		})
+	}
+	return
+}
+
+func FirstWords(in string, count int) string {
+	for i, v := range in {
+		if unicode.IsSpace(v) {
+			count--
+			if count <= 0 {
+				return in[:i]
+			}
+		}
+	}
+	return in
 }
 
 type ctx_middleware_t struct {
