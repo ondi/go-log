@@ -83,31 +83,26 @@ func GetLogContext(ctx context.Context) (value LogContext) {
 }
 
 type LogContextTrim_t struct {
-	level int64
-	words int
-	limit int
+	level       int64
+	first_words int
 }
 
-func NewLogContextTrim(level int64, words int, limit int) (self *LogContextTrim_t) {
+func NewLogContextTrim(level int64, first_words int) (self *LogContextTrim_t) {
 	self = &LogContextTrim_t{
-		level: level,
-		words: words,
-		limit: limit,
+		level:       level,
+		first_words: first_words,
 	}
 	return
 }
 
-func (self *LogContextTrim_t) GetPayload(ctx context.Context) (res []string) {
+func (self *LogContextTrim_t) GetPayload(ctx context.Context) (res string) {
 	if v := GetLogContext(ctx); v != nil {
 		v.ContextRange(func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool {
 			if level_id < self.level {
 				return true
 			}
-			if len(res) >= self.limit {
-				return false
-			}
-			res = append(res, FirstWords(fmt.Sprintf(format, args...), self.words))
-			return true
+			res = FirstWords(fmt.Sprintf(format, args...), self.first_words)
+			return false
 		})
 	}
 	return
