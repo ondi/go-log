@@ -22,12 +22,14 @@ Logs:
 
 	for k, v := range cfg.Kibana {
 		log_http := log.NewHttpQueue(
-			4096,
+			v.QueueSize,
 			v.Writers,
 			log.NewUrls(v.Host),
 			log.MessageKB_t{
 				ApplicationName: v.AppName,
 				Environment:     v.EnvName,
+				Hostname:        self.hostname,
+				TextLimit:       4096,
 				Index: log.MessageIndexKB_t{
 					Index: log.MessageIndexNameKB_t{
 						Format: v.IndexFormat,
@@ -36,13 +38,15 @@ Logs:
 			},
 			self.client,
 			log.PostHeader(headers),
+			log.PostTimeout(15*time.Second),
 			log.RpsLimit(log.NewRps(time.Second, 100, 1000)),
+			log.BulkWrite(1024),
 		)
-		log.GetLogger().AddOutput(k, log_http, log.WhatLevel(v.Level))
+		log.GetLogger().SwapLevelMap(log.GetLogger().CopyLevelMap().AddOutputs(k, log_http, log.WhatLevel(v.Level)))
 	}
 	for k, v := range cfg.Telegram {
 		log_tg := log.NewHttpQueue(
-			128,
+			v.QueueSize,
 			v.Writers,
 			log.NewUrls(v.Host),
 			log.MessageTG_t{
@@ -52,9 +56,10 @@ Logs:
 			},
 			self.client,
 			log.PostHeader(headers),
+			log.PostTimeout(15*time.Second),
 			log.PostDelay(1500*time.Millisecond),
 		)
-		log.GetLogger().AddOutput(k, log_tg, log.WhatLevel(v.Level))
+		log.GetLogger().SwapLevelMap(log.GetLogger().CopyLevelMap().AddOutputs(k, log_tg, log.WhatLevel(v.Level)))
 	}
 */
 
@@ -132,7 +137,11 @@ func WhatLevel(in int64) []Info_t {
 	}
 }
 
-func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (out Logger, err error) {
+func PrintfStderr(format string, args ...any) (int, error) {
+	return fmt.Fprintf(os.Stderr, format, args...)
+}
+
+func SetupLogger(ts time.Time, logs []Args_t, printf func(string, ...any) (int, error)) (out Logger, err error) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
@@ -140,25 +149,25 @@ func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (out Logger, err
 			m.AddOutputs("ctx", NewWriterContext(), WhatLevel(v.LogLevel))
 		case "file":
 			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
-				fmt.Fprintf(stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
 			if output, err := NewWriterFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
-				fmt.Fprintf(stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
 			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
-				fmt.Fprintf(stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
 			if output, err := NewWriterFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
-				fmt.Fprintf(stderr, "LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
@@ -175,7 +184,7 @@ func SetupLogger(ts time.Time, logs []Args_t, stderr io.Writer) (out Logger, err
 	out = New(m)
 	SetLogger(out)
 	for _, v := range logs {
-		Debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
+		printf("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
 			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
 	}
 	return
