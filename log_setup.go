@@ -137,11 +137,11 @@ func WhatLevel(in int64) []Info_t {
 	}
 }
 
-func PrintfStderr(format string, args ...any) (int, error) {
-	return fmt.Fprintf(os.Stderr, format, args...)
+func PrintfStderr(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format, args...)
 }
 
-func SetupLogger(ts time.Time, logs []Args_t, printf func(string, ...any) (int, error)) (out Logger, err error) {
+func SetupLogger(ts time.Time, logs []Args_t, printf func(string, ...any)) (out Logger, err error) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
