@@ -137,11 +137,12 @@ func WhatLevel(in int64) []Info_t {
 	}
 }
 
-func PrintfStderr(format string, args ...any) {
+func LogStderr(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format, args...)
+	io.WriteString(os.Stderr, "\n")
 }
 
-func SetupLogger(ts time.Time, logs []Args_t, printf func(string, ...any)) (out Logger, err error) {
+func SetupLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (out Logger, err error) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
@@ -149,25 +150,25 @@ func SetupLogger(ts time.Time, logs []Args_t, printf func(string, ...any)) (out 
 			m.AddOutputs("ctx", NewWriterContext(), WhatLevel(v.LogLevel))
 		case "file":
 			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
-				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
 			if output, err := NewWriterFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
-				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
 			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
-				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
 			if output, err := NewWriterFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
-				printf("LOG ERROR: %v %v\n", ts.Format("2006-01-02 15:04:05"), err)
+				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
@@ -184,7 +185,7 @@ func SetupLogger(ts time.Time, logs []Args_t, printf func(string, ...any)) (out 
 	out = New(m)
 	SetLogger(out)
 	for _, v := range logs {
-		printf("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v\n",
+		log_debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
 			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
 	}
 	return
