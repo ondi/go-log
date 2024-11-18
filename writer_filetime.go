@@ -15,19 +15,20 @@ import (
 var FileTime = "20060102150405"
 
 type WriterFileTime_t struct {
-	mx           sync.Mutex
-	last_date    time.Time
-	prefix       []Formatter
-	out          *os.File
-	filename     string
-	files        []string
-	truncate     time.Duration
-	backup_count int
-	cycle        int
-	log_limit    int
-	queue_write  int
-	write_error  int
-	bulk_write   int
+	mx              sync.Mutex
+	last_date       time.Time
+	prefix          []Formatter
+	out             *os.File
+	filename        string
+	files           []string
+	truncate        time.Duration
+	backup_count    int
+	cycle           int
+	log_limit       int
+	queue_write     int
+	write_error_cnt int
+	write_error_msg string
+	bulk_write      int
 }
 
 func NewWriterFileTime(ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (Queue, error) {
@@ -75,7 +76,7 @@ func (self *WriterFileTime_t) writer(q Queue) (err error) {
 		}
 		for i := 0; i < len(msg); i++ {
 			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteError(1)
+				q.WriteError(1, err.Error())
 			}
 		}
 	}
@@ -103,7 +104,8 @@ func (self *WriterFileTime_t) LogWrite(m Msg_t) (n int, err error) {
 	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")
 	if err != nil {
-		self.write_error++
+		self.write_error_cnt++
+		self.write_error_msg = err.Error()
 	}
 	return
 }
@@ -112,14 +114,15 @@ func (self *WriterFileTime_t) LogRead(limit int) (out []Msg_t, ok bool) {
 	return
 }
 
-func (self *WriterFileTime_t) WriteError(n int) {
+func (self *WriterFileTime_t) WriteError(count int, msg string) {
 
 }
 
 func (self *WriterFileTime_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.QueueWrite = self.queue_write
-	res.WriteError = self.write_error
+	res.WriteErrorCnt = self.write_error_cnt
+	res.WriteErrorMsg = self.write_error_msg
 	self.mx.Unlock()
 	return
 }

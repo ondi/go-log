@@ -158,7 +158,7 @@ func (self *WriterContext_t) LogRead(limit int) (out []Msg_t, ok bool) {
 	return
 }
 
-func (self *WriterContext_t) WriteError(n int) {
+func (self *WriterContext_t) WriteError(count int, msg string) {
 
 }
 

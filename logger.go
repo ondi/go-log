@@ -32,14 +32,15 @@ type Msg_t struct {
 }
 
 type QueueSize_t struct {
-	Limit      int
-	Size       int
-	Readers    int
-	Writers    int
-	QueueWrite int
-	QueueRead  int
-	QueueError int
-	WriteError int
+	Limit         int
+	Size          int
+	Readers       int
+	Writers       int
+	QueueWrite    int
+	QueueRead     int
+	QueueOverflow int
+	WriteErrorCnt int
+	WriteErrorMsg string
 }
 
 type Queue interface {
@@ -49,7 +50,7 @@ type Queue interface {
 	Close() error
 	WgAdd(int)
 	WgDone()
-	WriteError(n int)
+	WriteError(count int, msg string)
 }
 
 type Formatter interface {

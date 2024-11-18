@@ -5,20 +5,23 @@
 package log
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/ondi/go-queue"
 )
 
+var ERROR_OVERFLOW = errors.New("QUEUE OVERFLOW")
+
 type queue_t struct {
-	wg          sync.WaitGroup
-	mx          sync.Mutex
-	q           queue.Queue[Msg_t]
-	queue_write int
-	queue_read  int
-	queue_error int
-	write_error int
+	wg              sync.WaitGroup
+	mx              sync.Mutex
+	q               queue.Queue[Msg_t]
+	queue_write     int
+	queue_read      int
+	queue_overflow  int
+	write_error_cnt int
+	write_error_msg string
 }
 
 func NewQueue(limit int) Queue {
@@ -31,8 +34,8 @@ func (self *queue_t) LogWrite(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	self.queue_write++
 	if self.q.PushBackNoLock(m) == false {
-		self.queue_error++
-		err = fmt.Errorf("QUEUE WRITE")
+		self.queue_overflow++
+		err = ERROR_OVERFLOW
 	}
 	self.mx.Unlock()
 	return
@@ -58,9 +61,10 @@ func (self *queue_t) LogRead(limit int) (res []Msg_t, ok bool) {
 	return
 }
 
-func (self *queue_t) WriteError(n int) {
+func (self *queue_t) WriteError(count int, msg string) {
 	self.mx.Lock()
-	self.write_error += n
+	self.write_error_cnt += count
+	self.write_error_msg = msg
 	self.mx.Unlock()
 }
 
@@ -71,9 +75,10 @@ func (self *queue_t) Size() (res QueueSize_t) {
 	res.Readers = self.q.Readers()
 	res.Writers = self.q.Writers()
 	res.QueueWrite = self.queue_write
-	res.QueueError = self.queue_error
+	res.QueueOverflow = self.queue_overflow
 	res.QueueRead = self.queue_read
-	res.WriteError = self.write_error
+	res.WriteErrorCnt = self.write_error_cnt
+	res.WriteErrorMsg = self.write_error_msg
 	self.mx.Unlock()
 	return
 }

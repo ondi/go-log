@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -188,26 +189,26 @@ func (self *Http_t) writer(q Queue) (err error) {
 			return
 		}
 		if self.rps.Add(msg[0].Info.Ts) == false {
-			q.WriteError(len(msg))
+			q.WriteError(len(msg), "rps")
 			continue
 		}
 		if _, err = self.message.FormatMessage(&body, msg...); err != nil {
-			q.WriteError(len(msg))
+			q.WriteError(len(msg), err.Error())
 			continue
 		}
 		for _, v := range self.urls.Range() {
-			if ok, _ = self.request(v, body.Bytes()); ok {
+			if err = self.request(v, body.Bytes()); err == nil {
 				break
 			}
 		}
-		if !ok {
-			q.WriteError(len(msg))
+		if err != nil {
+			q.WriteError(len(msg), err.Error())
 		}
 		self.post_delay.Delay()
 	}
 }
 
-func (self *Http_t) request(URL string, body []byte) (ok bool, err error) {
+func (self *Http_t) request(URL string, body []byte) (err error) {
 	ctx, cancel := self.post_ctx.WithTimeout(context.Background())
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, URL, bytes.NewReader(body))
@@ -222,6 +223,12 @@ func (self *Http_t) request(URL string, body []byte) (ok bool, err error) {
 		return
 	}
 	resp.Body.Close()
-	ok = resp.StatusCode >= 200 && resp.StatusCode < 300
+	if (resp.StatusCode >= 200 && resp.StatusCode < 300) == false {
+		if len(resp.Status) == 0 {
+			err = fmt.Errorf("%v", resp.StatusCode)
+		} else {
+			err = fmt.Errorf("%v", resp.Status)
+		}
+	}
 	return
 }
