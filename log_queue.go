@@ -13,7 +13,7 @@ import (
 
 var ERROR_OVERFLOW = errors.New("QUEUE OVERFLOW")
 
-type queue_t struct {
+type Queue_t struct {
 	wg              sync.WaitGroup
 	mx              sync.Mutex
 	q               queue.Queue[Msg_t]
@@ -24,13 +24,13 @@ type queue_t struct {
 	write_error_msg string
 }
 
-func NewQueue(limit int) Queue {
-	self := &queue_t{}
+func NewQueue(limit int) (self *Queue_t) {
+	self = &Queue_t{}
 	self.q = queue.NewOpen[Msg_t](&self.mx, limit)
 	return self
 }
 
-func (self *queue_t) LogWrite(m Msg_t) (n int, err error) {
+func (self *Queue_t) LogWrite(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	self.queue_write++
 	if self.q.PushBackNoLock(m) == false {
@@ -43,7 +43,7 @@ func (self *queue_t) LogWrite(m Msg_t) (n int, err error) {
 
 // bad design: messages stay in buffer forever and not garbage-collected
 // LogRead(p []Msg_t) (n int, ok bool)
-func (self *queue_t) LogRead(limit int) (res []Msg_t, ok bool) {
+func (self *Queue_t) LogRead(limit int) (res []Msg_t, ok bool) {
 	var m Msg_t
 	self.mx.Lock()
 	for len(res) < limit {
@@ -61,14 +61,14 @@ func (self *queue_t) LogRead(limit int) (res []Msg_t, ok bool) {
 	return
 }
 
-func (self *queue_t) WriteError(count int, msg string) {
+func (self *Queue_t) WriteError(count int, msg string) {
 	self.mx.Lock()
 	self.write_error_cnt += count
 	self.write_error_msg = msg
 	self.mx.Unlock()
 }
 
-func (self *queue_t) Size() (res QueueSize_t) {
+func (self *Queue_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.Limit = self.q.Limit()
 	res.Size = self.q.Size()
@@ -83,15 +83,15 @@ func (self *queue_t) Size() (res QueueSize_t) {
 	return
 }
 
-func (self *queue_t) WgAdd(n int) {
+func (self *Queue_t) WgAdd(n int) {
 	self.wg.Add(n)
 }
 
-func (self *queue_t) WgDone() {
+func (self *Queue_t) WgDone() {
 	self.wg.Done()
 }
 
-func (self *queue_t) Close() (err error) {
+func (self *Queue_t) Close() (err error) {
 	self.mx.Lock()
 	self.q.Close()
 	self.mx.Unlock()

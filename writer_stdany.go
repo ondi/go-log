@@ -47,7 +47,7 @@ func NewWriterStdanyQueue(queue_size, writers int, prefix []Formatter, out io.Wr
 	return q
 }
 
-func (self *WriterStdany_t) writer(q Queue) (err error) {
+func (self *WriterStdany_t) writer(q *Queue_t) (err error) {
 	defer q.WgDone()
 	for {
 		msg, ok := q.LogRead(self.bulk_write)
@@ -86,14 +86,6 @@ func (self *WriterStdany_t) LogWrite(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterStdany_t) LogRead(limit int) (out []Msg_t, ok bool) {
-	return
-}
-
-func (self *WriterStdany_t) WriteError(count int, msg string) {
-
-}
-
 func (self *WriterStdany_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.QueueWrite = self.queue_write
@@ -101,14 +93,6 @@ func (self *WriterStdany_t) Size() (res QueueSize_t) {
 	res.WriteErrorMsg = self.write_error_msg
 	self.mx.Unlock()
 	return
-}
-
-func (self *WriterStdany_t) WgAdd(int) {
-
-}
-
-func (self *WriterStdany_t) WgDone() {
-
 }
 
 func (self *WriterStdany_t) Close() error {

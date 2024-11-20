@@ -21,25 +21,9 @@ func (self *WriterCounter_t) LogWrite(Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterCounter_t) LogRead(limit int) (out []Msg_t, ok bool) {
-	return
-}
-
-func (self *WriterCounter_t) WriteError(count int, msg string) {
-
-}
-
 func (self *WriterCounter_t) Size() (res QueueSize_t) {
 	res.QueueWrite = int(self.queue_write.Load())
 	return
-}
-
-func (self *WriterCounter_t) WgAdd(int) {
-
-}
-
-func (self *WriterCounter_t) WgDone() {
-
 }
 
 func (self *WriterCounter_t) Close() error {

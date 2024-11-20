@@ -178,7 +178,7 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 	return q
 }
 
-func (self *Http_t) writer(q Queue) (err error) {
+func (self *Http_t) writer(q *Queue_t) (err error) {
 	defer q.WgDone()
 
 	var body bytes.Buffer

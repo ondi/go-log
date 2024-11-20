@@ -113,7 +113,7 @@ func NewLogger() (out Logger) {
 		os.Stderr,
 		0,
 	)
-	w2 := NewWriterContext()
+	w2 := NewLogContextWriter()
 	for _, v := range WhatLevel(0) {
 		m.AddOutput(v.LevelId, "stderr", w1)
 		m.AddOutput(v.LevelId, "ctx", w2)
@@ -147,7 +147,7 @@ func SetupLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (o
 	for _, v := range logs {
 		switch v.LogType {
 		case "ctx":
-			m.AddOutputs("ctx", NewWriterContext(), WhatLevel(v.LogLevel))
+			m.AddOutputs("ctx", NewLogContextWriter(), WhatLevel(v.LogLevel))
 		case "file":
 			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)

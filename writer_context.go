@@ -29,6 +29,15 @@ type LogContext interface {
 	ContextReset()
 }
 
+func SetLogContext(ctx context.Context, value LogContext) context.Context {
+	return context.WithValue(ctx, &log_ctx, value)
+}
+
+func GetLogContext(ctx context.Context) (value LogContext) {
+	value, _ = ctx.Value(&log_ctx).(LogContext)
+	return
+}
+
 type LogContext_t struct {
 	mx    sync.Mutex
 	name  string
@@ -36,13 +45,13 @@ type LogContext_t struct {
 	limit int
 }
 
-func NewLogContext(name string, limit int) LogContext {
-	self := &LogContext_t{
+func NewLogContext(name string, limit int) (self *LogContext_t) {
+	self = &LogContext_t{
 		name:  name,
 		limit: limit,
 		data:  circular.New[Msg_t](limit),
 	}
-	return self
+	return
 }
 
 func (self *LogContext_t) ContextName() string {
@@ -73,29 +82,20 @@ func (self *LogContext_t) ContextReset() {
 	self.data.Reset()
 }
 
-func SetLogContext(ctx context.Context, value LogContext) context.Context {
-	return context.WithValue(ctx, &log_ctx, value)
-}
-
-func GetLogContext(ctx context.Context) (value LogContext) {
-	value, _ = ctx.Value(&log_ctx).(LogContext)
-	return
-}
-
-type LogContextTrim_t struct {
+type LogContextRead_t struct {
 	level       int64
 	first_words int
 }
 
-func NewLogContextTrim(level int64, first_words int) (self *LogContextTrim_t) {
-	self = &LogContextTrim_t{
+func NewLogContextRead(level int64, first_words int) (self *LogContextRead_t) {
+	self = &LogContextRead_t{
 		level:       level,
 		first_words: first_words,
 	}
 	return
 }
 
-func (self *LogContextTrim_t) GetPayload(ctx context.Context) (res string) {
+func (self *LogContextRead_t) GetPayload(ctx context.Context) (res string) {
 	if v := GetLogContext(ctx); v != nil {
 		v.ContextRange(func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool {
 			if level_id < self.level {
@@ -138,15 +138,15 @@ func (self *ctx_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	self.Handler.ServeHTTP(w, r)
 }
 
-type WriterContext_t struct {
+type LogContextWriter_t struct {
 	queue_write atomic.Int64
 }
 
-func NewWriterContext() Queue {
-	return &WriterContext_t{}
+func NewLogContextWriter() Queue {
+	return &LogContextWriter_t{}
 }
 
-func (self *WriterContext_t) LogWrite(m Msg_t) (n int, err error) {
+func (self *LogContextWriter_t) LogWrite(m Msg_t) (n int, err error) {
 	if v := GetLogContext(m.Ctx); v != nil {
 		self.queue_write.Add(1)
 		n, err = v.WriteLog(m)
@@ -154,27 +154,11 @@ func (self *WriterContext_t) LogWrite(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterContext_t) LogRead(limit int) (out []Msg_t, ok bool) {
-	return
-}
-
-func (self *WriterContext_t) WriteError(count int, msg string) {
-
-}
-
-func (self *WriterContext_t) Size() (res QueueSize_t) {
+func (self *LogContextWriter_t) Size() (res QueueSize_t) {
 	res.QueueWrite = int(self.queue_write.Load())
 	return
 }
 
-func (self *WriterContext_t) WgAdd(int) {
-
-}
-
-func (self *WriterContext_t) WgDone() {
-
-}
-
-func (self *WriterContext_t) Close() error {
+func (self *LogContextWriter_t) Close() error {
 	return nil
 }

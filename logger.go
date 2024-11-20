@@ -45,12 +45,8 @@ type QueueSize_t struct {
 
 type Queue interface {
 	LogWrite(m Msg_t) (int, error)
-	LogRead(limit int) (out []Msg_t, ok bool)
 	Size() QueueSize_t
 	Close() error
-	WgAdd(int)
-	WgDone()
-	WriteError(count int, msg string)
 }
 
 type Formatter interface {

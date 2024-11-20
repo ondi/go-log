@@ -42,7 +42,7 @@ func NewWriterFileBytes(ts time.Time, filename string, prefix []Formatter, bytes
 	return self, self.__cycle(ts)
 }
 
-func NewWriterFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (q Queue, err error) {
+func NewWriterFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (Queue, error) {
 	self := &WriterFileBytes_t{
 		prefix:       prefix,
 		filename:     filename,
@@ -52,20 +52,20 @@ func NewWriterFileBytesQueue(queue_size int, writers int, ts time.Time, filename
 		bulk_write:   16,
 	}
 
-	if err = self.__cycle(ts); err != nil {
-		return
+	err := self.__cycle(ts)
+	if err != nil {
+		return nil, err
 	}
 
-	q = NewQueue(queue_size)
+	q := NewQueue(queue_size)
 	for i := 0; i < writers; i++ {
 		q.WgAdd(1)
 		go self.writer(q)
 	}
-
-	return
+	return q, err
 }
 
-func (self *WriterFileBytes_t) writer(q Queue) (err error) {
+func (self *WriterFileBytes_t) writer(q *Queue_t) (err error) {
 	defer q.WgDone()
 	for {
 		msg, ok := q.LogRead(self.bulk_write)
@@ -113,13 +113,6 @@ func (self *WriterFileBytes_t) LogWrite(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *WriterFileBytes_t) LogRead(limit int) (out []Msg_t, ok bool) {
-	return
-}
-
-func (self *WriterFileBytes_t) WriteError(count int, msg string) {
-}
-
 func (self *WriterFileBytes_t) Size() (res QueueSize_t) {
 	self.mx.Lock()
 	res.QueueWrite = self.queue_write
@@ -129,12 +122,15 @@ func (self *WriterFileBytes_t) Size() (res QueueSize_t) {
 	return
 }
 
-func (self *WriterFileBytes_t) WgAdd(int) {
-
-}
-
-func (self *WriterFileBytes_t) WgDone() {
-
+func (self *WriterFileBytes_t) Close() (err error) {
+	self.mx.Lock()
+	if self.out != nil {
+		if err = self.out.Close(); err == nil {
+			self.out = nil
+		}
+	}
+	self.mx.Unlock()
+	return
 }
 
 func (self *WriterFileBytes_t) __cycle(ts time.Time) (err error) {
@@ -150,16 +146,5 @@ func (self *WriterFileBytes_t) __cycle(ts time.Time) (err error) {
 		self.files = self.files[1:]
 	}
 	self.out, err = os.OpenFile(self.filename, os.O_WRONLY|os.O_CREATE /*|os.O_APPEND*/, 0644)
-	return
-}
-
-func (self *WriterFileBytes_t) Close() (err error) {
-	self.mx.Lock()
-	if self.out != nil {
-		if err = self.out.Close(); err == nil {
-			self.out = nil
-		}
-	}
-	self.mx.Unlock()
 	return
 }
