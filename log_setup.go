@@ -66,10 +66,13 @@ Logs:
 package log
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math"
+	"net"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -350,4 +353,84 @@ func ByteUnit(bytes uint64) (float64, string) {
 func ByteSize(bytes uint64) string {
 	a, b := ByteUnit(bytes)
 	return fmt.Sprintf("%.2f %s", a, b)
+}
+
+type TransportOption func(self *http.Transport)
+
+func DialContext(timeout time.Duration) TransportOption {
+	return func(self *http.Transport) {
+		self.DialContext = (&net.Dialer{Timeout: timeout}).DialContext
+	}
+}
+
+func MaxIdleConns(n int) TransportOption {
+	return func(self *http.Transport) {
+		self.MaxIdleConns = n
+	}
+}
+
+func MaxIdleConnsPerHost(n int) TransportOption {
+	return func(self *http.Transport) {
+		self.MaxIdleConnsPerHost = n
+	}
+}
+
+func ProxyFromEnvironment() TransportOption {
+	return func(self *http.Transport) {
+		self.Proxy = http.ProxyFromEnvironment
+	}
+}
+
+func DisableCompression() TransportOption {
+	return func(self *http.Transport) {
+		self.DisableCompression = true
+	}
+}
+
+func ForceAttemptHTTP2() TransportOption {
+	return func(self *http.Transport) {
+		self.ForceAttemptHTTP2 = true
+	}
+}
+
+func InsecureSkipVerify() TransportOption {
+	return func(self *http.Transport) {
+		self.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+}
+
+func NewTransport(opts ...TransportOption) http.RoundTripper {
+	tr := &http.Transport{
+		// do not set IdleConnTimeout to zero
+		// (pprof) top 30
+		// Showing nodes accounting for 988.20MB, 93.70% of 1054.61MB total
+		// Dropped 253 nodes (cum <= 5.27MB)
+		// Showing top 30 nodes out of 55
+		//       flat  flat%   sum%        cum   cum%
+		//   850.04MB 80.60% 80.60%   853.54MB 80.93%  net.(*Resolver).exchange
+		IdleConnTimeout: 90 * time.Second,
+	}
+	return tr
+}
+
+// Default
+// MaxIdleConns:        100,
+// MaxIdleConnsPerHost: 2,
+func DefaultTransport(dial_timeout time.Duration, MaxIdleConns int, MaxIdleConnsPerHost int) http.RoundTripper {
+	return &http.Transport{
+		Proxy:               http.ProxyFromEnvironment,
+		DialContext:         (&net.Dialer{Timeout: dial_timeout}).DialContext,
+		ForceAttemptHTTP2:   true,
+		MaxIdleConns:        MaxIdleConns,
+		MaxIdleConnsPerHost: MaxIdleConnsPerHost,
+		// do not set IdleConnTimeout to zero
+		// (pprof) top 30
+		// Showing nodes accounting for 988.20MB, 93.70% of 1054.61MB total
+		// Dropped 253 nodes (cum <= 5.27MB)
+		// Showing top 30 nodes out of 55
+		//       flat  flat%   sum%        cum   cum%
+		//   850.04MB 80.60% 80.60%   853.54MB 80.93%  net.(*Resolver).exchange
+		IdleConnTimeout: 90 * time.Second,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 }
