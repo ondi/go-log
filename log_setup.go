@@ -410,6 +410,9 @@ func NewTransport(opts ...TransportOption) http.RoundTripper {
 		//   850.04MB 80.60% 80.60%   853.54MB 80.93%  net.(*Resolver).exchange
 		IdleConnTimeout: 90 * time.Second,
 	}
+	for _, v := range opts {
+		v(tr)
+	}
 	return tr
 }
 
