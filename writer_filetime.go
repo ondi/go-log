@@ -143,6 +143,6 @@ func (self *WriterFileTime_t) __cycle(ts time.Time) (err error) {
 		os.Remove(self.files[0])
 		self.files = self.files[1:]
 	}
-	self.out, err = os.OpenFile(self.filename, os.O_WRONLY|os.O_CREATE /*|os.O_APPEND*/, 0644)
+	self.out, err = os.OpenFile(self.filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC /*|os.O_APPEND*/, 0644)
 	return
 }
