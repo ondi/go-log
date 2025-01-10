@@ -6,8 +6,8 @@ github.com/ondi/go-cache v0.0.0-20230425151132-e34113a7989a h1:GiJ4x7qusRIfRmC52
 github.com/ondi/go-cache v0.0.0-20230425151132-e34113a7989a/go.mod h1:KHvTO08bISVccwhHh62tNAJHn/P9vS9RTDvW9CKX6hA=
 github.com/ondi/go-circular v0.0.0-20240806163217-2b2a2afb1db4 h1:7DhzuT8HF3+ci463Hc6E+m8wCLe+lT9poRYnbPCd/dU=
 github.com/ondi/go-circular v0.0.0-20240806163217-2b2a2afb1db4/go.mod h1:fOnGuMofxAkkckbqcFxParIJGGnqMoPrZTzD+fSPcfg=
-github.com/ondi/go-queue v0.0.0-20231117093047-e8284ff6074e h1:iVLikq906raNuFZBb+N9oMDTmaJcNGEM4HGX2sxIFF8=
-github.com/ondi/go-queue v0.0.0-20231117093047-e8284ff6074e/go.mod h1:KIZLLN94jl5B8MT5WMYIIQncMItr2shdvtD/WE6DFHw=
+github.com/ondi/go-queue v0.0.0-20241202144359-797dec4cff85 h1:p0f58vdXyOLNExg1SNUqq6eEHfRc7k7E4JEYG6j6oKU=
+github.com/ondi/go-queue v0.0.0-20241202144359-797dec4cff85/go.mod h1:x9fCVIrllGNPbHrwdMNLYQsoS9zHt/GFUJXNUN3eBzE=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=

@@ -50,7 +50,7 @@ func NewRps(ttl time.Duration, buckets int64, rps_limit int) (self *Rps_t) {
 
 func (self *Rps_t) __flush(ts time.Time) {
 	for it := self.c.Front(); it != self.c.End(); it = it.Next() {
-		if ts.After(it.Key) || self.c.Size() > self.buckets {
+		if self.c.Size() > self.buckets || ts.Before(it.Key) == false {
 			self.c.Remove(it.Key)
 			self.count -= it.Value
 		} else {
