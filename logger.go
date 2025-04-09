@@ -50,7 +50,7 @@ type Queue interface {
 }
 
 type Formatter interface {
-	FormatMessage(out io.Writer, in ...Msg_t) (int, error)
+	FormatMessage(out io.Writer, in Msg_t) (int, error)
 }
 
 type Logger interface {

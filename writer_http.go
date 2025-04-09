@@ -168,7 +168,12 @@ func (self *Http_t) writer(q *Queue_t) (err error) {
 			q.WriteError(len(msg), "rps")
 			continue
 		}
-		if _, err = self.message.FormatMessage(&body, msg...); err != nil {
+		for _, v := range msg {
+			if _, err = self.message.FormatMessage(&body, v); err != nil {
+				break
+			}
+		}
+		if err != nil {
 			q.WriteError(len(msg), err.Error())
 			continue
 		}
@@ -179,6 +184,7 @@ func (self *Http_t) writer(q *Queue_t) (err error) {
 		}
 		if err != nil {
 			q.WriteError(len(msg), err.Error())
+			continue
 		}
 		self.post_delay.Delay()
 	}

@@ -251,7 +251,7 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 
 		buf.Reset()
 		for _, fm := range __get_fl_cx {
-			fm.FormatMessage(&buf, in...)
+			fm.FormatMessage(&buf, v)
 		}
 		self.Location = buf.String()
 
