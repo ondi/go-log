@@ -218,7 +218,7 @@ type MessageKB_t struct {
 	TextLimit       int              `json:"-"`
 }
 
-func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
+func (self MessageKB_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	var b [64]byte
 	var buf strings.Builder
 
@@ -228,36 +228,34 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 
 	w := &LimitWriter_t{Buf: &buf, Limit: self.TextLimit}
 
-	for _, v := range in {
-		buf.Reset()
-		w.Limit = self.TextLimit
+	buf.Reset()
+	w.Limit = self.TextLimit
 
-		if len(self.Index.Index.Format) > 0 {
-			self.Index.Index.Index = string(v.Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
-			json.NewEncoder(out).Encode(self.Index)
-		}
+	if len(self.Index.Index.Format) > 0 {
+		self.Index.Index.Index = string(in.Info.Ts.AppendFormat(b[:0], self.Index.Index.Format))
+		json.NewEncoder(out).Encode(self.Index)
+	}
 
-		if strings.HasPrefix(v.Format, "json") {
-			if self.Data, err = json.Marshal(v.Args); err != nil {
-				return
-			}
-		} else {
-			fmt.Fprintf(w, v.Format, v.Args...)
-			self.Message = buf.String()
-		}
-
-		self.Level = v.Info.LevelName
-		self.Timestamp = string(v.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
-
-		buf.Reset()
-		for _, fm := range __get_fl_cx {
-			fm.FormatMessage(&buf, v)
-		}
-		self.Location = buf.String()
-
-		if err = json.NewEncoder(out).Encode(self); err != nil {
+	if strings.HasPrefix(in.Format, "json") {
+		if self.Data, err = json.Marshal(in.Args); err != nil {
 			return
 		}
+	} else {
+		fmt.Fprintf(w, in.Format, in.Args...)
+		self.Message = buf.String()
+	}
+
+	self.Level = in.Info.LevelName
+	self.Timestamp = string(in.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
+
+	buf.Reset()
+	for _, fm := range __get_fl_cx {
+		fm.FormatMessage(&buf, in)
+	}
+	self.Location = buf.String()
+
+	if err = json.NewEncoder(out).Encode(self); err != nil {
+		return
 	}
 	return
 }
@@ -273,7 +271,7 @@ type MessageTG_t struct {
 	TextLimit       int    `json:"-"`
 }
 
-func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err error) {
+func (self MessageTG_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	var buf strings.Builder
 
 	if self.TextLimit == 0 {
@@ -292,18 +290,16 @@ func (self MessageTG_t) FormatMessage(out io.Writer, in ...Msg_t) (n int, err er
 		io.WriteString(w, " ")
 	}
 
-	for _, v := range in {
-		for _, fm := range __get_fl_cx {
-			fm.FormatMessage(w, v)
-		}
-
-		if len(v.Info.LevelName) > 0 {
-			io.WriteString(w, v.Info.LevelName)
-			io.WriteString(w, " ")
-		}
-		fmt.Fprintf(w, v.Format, v.Args...)
-		fmt.Fprintf(w, "\n")
+	for _, fm := range __get_fl_cx {
+		fm.FormatMessage(w, in)
 	}
+
+	if len(in.Info.LevelName) > 0 {
+		io.WriteString(w, in.Info.LevelName)
+		io.WriteString(w, " ")
+	}
+	fmt.Fprintf(w, in.Format, in.Args...)
+	fmt.Fprintf(w, "\n")
 
 	self.Text = buf.String()
 	if err = json.NewEncoder(out).Encode(self); err != nil {
