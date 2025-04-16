@@ -207,7 +207,7 @@ type MessageIndexKB_t struct {
 
 type MessageKB_t struct {
 	Index           MessageIndexKB_t `json:"-"`
-	Timestamp       string           `json:"timestamp"` // "2022-02-12T10:11:52.1862628+03:00"
+	Timestamp       string           `json:"timestamp"` // 2006-01-02T15:04:05.000-07:00
 	ApplicationName string           `json:"ApplicationName"`
 	Environment     string           `json:"Environment"`
 	Level           string           `json:"Level"`
