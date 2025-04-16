@@ -206,11 +206,7 @@ func (self *Http_t) request(URL string, body []byte) (err error) {
 	}
 	resp.Body.Close()
 	if (resp.StatusCode >= 200 && resp.StatusCode < 300) == false {
-		if len(resp.Status) == 0 {
-			err = fmt.Errorf("%v", resp.StatusCode)
-		} else {
-			err = fmt.Errorf("%v", resp.Status)
-		}
+		err = fmt.Errorf("%v %v", resp.Status, resp.StatusCode)
 	}
 	return
 }
