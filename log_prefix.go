@@ -49,7 +49,8 @@ func NewFileLine() Formatter {
 }
 
 func (self *FileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
-	if n, err = io.WriteString(out, filepath.Base(in.Info.File)); n > 0 {
+	dir, file := filepath.Split(in.Info.File)
+	if n, err = io.WriteString(out, filepath.Join(filepath.Base(dir), file)); n > 0 {
 		io.WriteString(out, ":")
 		io.WriteString(out, strconv.FormatInt(int64(in.Info.Line), 10))
 		io.WriteString(out, " ")
