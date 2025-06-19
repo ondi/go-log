@@ -95,17 +95,16 @@ func NewLogContextRead(level int64, first_words int) (self *LogContextRead_t) {
 	return
 }
 
-func (self *LogContextRead_t) GetPayload(ctx context.Context, out map[string]string) {
+func (self *LogContextRead_t) GetPayload(ctx context.Context, out func(key string, value string)) {
 	if v := GetLogContext(ctx); v != nil {
 		v.ContextRange(func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool {
 			if level_id < self.level {
 				return true
 			}
-			out["error"] = FirstWords(fmt.Sprintf(format, args...), self.first_words)
+			out("error", FirstWords(fmt.Sprintf(format, args...), self.first_words))
 			return false
 		})
 	}
-	return
 }
 
 func FirstWords(in string, count int) string {
