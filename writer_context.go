@@ -6,12 +6,10 @@ package log
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
-	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/ondi/go-circular"
@@ -83,40 +81,26 @@ func (self *LogContext_t) ContextReset() {
 }
 
 type LogContextRead_t struct {
-	level       int64
-	first_words int
+	level int64
 }
 
-func NewLogContextRead(level int64, first_words int) (self *LogContextRead_t) {
+func NewLogContextRead(level int64) (self *LogContextRead_t) {
 	self = &LogContextRead_t{
-		level:       level,
-		first_words: first_words,
+		level: level,
 	}
 	return
 }
 
-func (self *LogContextRead_t) GetPayload(ctx context.Context, out func(key string, value string)) {
+func (self *LogContextRead_t) GetPayload(ctx context.Context, out func(key string, value string, args ...any)) {
 	if v := GetLogContext(ctx); v != nil {
 		v.ContextRange(func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool {
 			if level_id < self.level {
 				return true
 			}
-			out("error", FirstWords(fmt.Sprintf(format, args...), self.first_words))
+			out(level_name, format, args)
 			return false
 		})
 	}
-}
-
-func FirstWords(in string, count int) string {
-	for i, v := range in {
-		if unicode.IsSpace(v) {
-			count--
-			if count <= 0 {
-				return in[:i]
-			}
-		}
-	}
-	return in
 }
 
 type ctx_middleware_t struct {
