@@ -18,12 +18,6 @@ type Info_t struct {
 	Level int64     `json:"level"`
 }
 
-func (self *Info_t) Set(ts time.Time, level int64) {
-	self.Ts = ts
-	self.Level = level
-	self.File, self.Line = FileLine(1, 32)
-}
-
 type Msg_t struct {
 	Ctx    context.Context `json:"-"`
 	Info   Info_t          `json:"info"`
@@ -107,7 +101,9 @@ func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queu
 
 func (self *log_t) Log(ctx context.Context, level int64, format string, args ...any) {
 	var info Info_t
-	info.Set(time.Now(), level)
+	info.Ts = time.Now()
+	info.Level = level
+	info.File, info.Line = FileLine(1, 32)
 	for _, writer := range (*self.level_map.Load())[level] {
 		writer.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 	}

@@ -59,37 +59,46 @@ func (self *PrefixFileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err
 	return
 }
 
-type PrefixLogLevel_t struct{}
-
-func NewPrefixLogLevel() Formatter {
-	return &PrefixLogLevel_t{}
+type PrefixLevelName_t struct {
+	prefix string
+	suffix string
 }
 
-func (self *PrefixLogLevel_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func NewPrefixLevelName(prefix string, suffix string) Formatter {
+	return &PrefixLevelName_t{
+		prefix: prefix,
+		suffix: suffix,
+	}
+}
+
+func (self *PrefixLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	io.WriteString(out, self.prefix)
 	switch in.Info.Level {
 	case 0:
-		n, err = io.WriteString(out, "TRACE ")
+		n, err = io.WriteString(out, "TRACE")
 	case 1:
-		n, err = io.WriteString(out, "DEBUG ")
+		n, err = io.WriteString(out, "DEBUG")
 	case 2:
-		n, err = io.WriteString(out, "INFO ")
+		n, err = io.WriteString(out, "INFO")
 	case 3:
-		n, err = io.WriteString(out, "WARN ")
+		n, err = io.WriteString(out, "WARN")
 	case 4:
-		n, err = io.WriteString(out, "ERROR ")
+		n, err = io.WriteString(out, "ERROR")
 	default:
-		n, err = fmt.Fprintf(out, "UNDEFINED%v ", in.Info.Level)
+		n, err = fmt.Fprintf(out, "UNDEFINED%v", in.Info.Level)
 	}
+	io.WriteString(out, self.suffix)
+	io.WriteString(out, " ")
 	return
 }
 
-type PrefixLogContext_t struct{}
+type PrefixContextName_t struct{}
 
-func NewPrefixLogContext() Formatter {
-	return &PrefixLogContext_t{}
+func NewPrefixContextName() Formatter {
+	return &PrefixContextName_t{}
 }
 
-func (self *PrefixLogContext_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PrefixContextName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogContext(in.Ctx); v != nil {
 		if n, err = io.WriteString(out, v.ContextName()); n > 0 {
 			io.WriteString(out, " ")

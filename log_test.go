@@ -17,9 +17,9 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogLevel()}, os.Stdout, 0), WhatLevel(0))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogLevel()}, &buf, 0), WhatLevel(0))
-	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewPrefixDateTime(""), NewPrefixLogLevel()}, 1024, 10, 0)
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", "")}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", "")}, &buf, 0), WhatLevel(0))
+	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", "")}, 1024, 10, 0)
 	m.AddOutputs("file", log_file, WhatLevel(0))
 	log_http := NewHttpQueue(
 		10,
@@ -50,14 +50,14 @@ func Test2(t *testing.T) {
 	m := NewLevelMap()
 
 	var buf bytes.Buffer
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogContext(), NewPrefixLogLevel()}, os.Stdout, 0), WhatLevel(0))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogContext(), NewPrefixLogLevel()}, &buf, 0), WhatLevel(0))
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixContextName(), NewPrefixLevelName("_", "_")}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixContextName(), NewPrefixLevelName("_", "_")}, &buf, 0), WhatLevel(0))
 
 	SetLogger(New(m))
 
 	DebugCtx(ctx, "test")
 
-	assert.Assert(t, buf.String() == "b0dd37be-0f1e-421d-98c8-222cc57acae0 DEBUG test\n", fmt.Sprintf("%q", buf.String()))
+	assert.Assert(t, buf.String() == "b0dd37be-0f1e-421d-98c8-222cc57acae0 _DEBUG_ test\n", fmt.Sprintf("%q", buf.String()))
 }
 
 func Test3(t *testing.T) {
