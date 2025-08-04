@@ -17,10 +17,10 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewDt("")}, os.Stdout, 0), WhatLevel(LOG_TRACE.LevelId))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewDt("")}, &buf, 0), WhatLevel(LOG_TRACE.LevelId))
-	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewDt("")}, 1024, 10, 0)
-	m.AddOutputs("file", log_file, WhatLevel(LOG_TRACE.LevelId))
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogLevel()}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogLevel()}, &buf, 0), WhatLevel(0))
+	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewPrefixDateTime(""), NewPrefixLogLevel()}, 1024, 10, 0)
+	m.AddOutputs("file", log_file, WhatLevel(0))
 	log_http := NewHttpQueue(
 		10,
 		1,
@@ -33,7 +33,7 @@ func Test1(t *testing.T) {
 		RpsLimit(NewRps(time.Second, 100, 1000)),
 		PostDelay(time.Millisecond),
 	)
-	m.AddOutputs("http", log_http, WhatLevel(LOG_TRACE.LevelId))
+	m.AddOutputs("http", log_http, WhatLevel(0))
 
 	SetLogger(New(m))
 
@@ -50,8 +50,8 @@ func Test2(t *testing.T) {
 	m := NewLevelMap()
 
 	var buf bytes.Buffer
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, os.Stdout, 0), WhatLevel(LOG_TRACE.LevelId))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewDt(""), NewGetLogContext()}, &buf, 0), WhatLevel(LOG_TRACE.LevelId))
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogContext(), NewPrefixLogLevel()}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLogContext(), NewPrefixLogLevel()}, &buf, 0), WhatLevel(0))
 
 	SetLogger(New(m))
 

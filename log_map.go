@@ -36,16 +36,16 @@ func (self Level_map_t) DelOutput(level_id int64, writer_name string) (writer Qu
 	return
 }
 
-func (self Level_map_t) AddOutputs(writer_name string, queue Queue, levels []Info_t) Level_map_t {
+func (self Level_map_t) AddOutputs(writer_name string, queue Queue, levels []int64) Level_map_t {
 	for _, v := range levels {
-		self.AddOutput(v.LevelId, writer_name, queue)
+		self.AddOutput(v, writer_name, queue)
 	}
 	return self
 }
 
-func (self Level_map_t) DelOutputs(writer_name string, levels []Info_t) Level_map_t {
+func (self Level_map_t) DelOutputs(writer_name string, levels []int64) Level_map_t {
 	for _, v := range levels {
-		if writer := self.DelOutput(v.LevelId, writer_name); writer != nil {
+		if writer := self.DelOutput(v, writer_name); writer != nil {
 			// writer may be used at other levels
 			// writer.Close()
 		}

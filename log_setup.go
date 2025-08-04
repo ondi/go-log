@@ -80,16 +80,8 @@ import (
 )
 
 var (
-	__std       = NewLogger()
-	__get_fl_cx = []Formatter{NewFileLine(), NewGetLogContext()}
-)
-
-var (
-	LOG_TRACE = Info_t{LevelName: "TRACE", LevelId: 0}
-	LOG_DEBUG = Info_t{LevelName: "DEBUG", LevelId: 1}
-	LOG_INFO  = Info_t{LevelName: "INFO", LevelId: 2}
-	LOG_WARN  = Info_t{LevelName: "WARN", LevelId: 3}
-	LOG_ERROR = Info_t{LevelName: "ERROR", LevelId: 4}
+	__std_logger = NewLogger()
+	__std_prefix = []Formatter{NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}
 )
 
 type Args_t struct {
@@ -109,34 +101,35 @@ func NewLogger() (out Logger) {
 	m := NewLevelMap()
 	w1 := NewWriterStdany(
 		[]Formatter{
-			NewDt("2006-01-02 15:04:05.000"),
-			NewFileLine(),
-			NewGetLogContext(),
+			NewPrefixDateTime("2006-01-02 15:04:05.000"),
+			NewPrefixFileLine(),
+			NewPrefixLogContext(),
+			NewPrefixLogLevel(),
 		},
 		os.Stderr,
 		0,
 	)
 	w2 := NewLogContextWriter()
 	for _, v := range WhatLevel(0) {
-		m.AddOutput(v.LevelId, "stderr", w1)
-		m.AddOutput(v.LevelId, "ctx", w2)
+		m.AddOutput(v, "stderr", w1)
+		m.AddOutput(v, "ctx", w2)
 	}
 	out = New(m)
 	return
 }
 
-func WhatLevel(in int64) []Info_t {
+func WhatLevel(in int64) []int64 {
 	switch in {
 	case 4:
-		return []Info_t{LOG_ERROR}
+		return []int64{4}
 	case 3:
-		return []Info_t{LOG_ERROR, LOG_WARN}
+		return []int64{4, 3}
 	case 2:
-		return []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO}
+		return []int64{4, 3, 2}
 	case 1:
-		return []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG}
+		return []int64{4, 3, 2, 1}
 	default:
-		return []Info_t{LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG, LOG_TRACE}
+		return []int64{4, 3, 2, 1, 0}
 	}
 }
 
@@ -152,37 +145,37 @@ func SetupLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (o
 		case "ctx":
 			m.AddOutputs("ctx", NewLogContextWriter(), WhatLevel(v.LogLevel))
 		case "file":
-			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
-			if output, err := NewWriterFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileBytesQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
-			if output, err := NewWriterFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileTimeQueue(v.LogQueue, v.LogWriters, ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdoutqueue":
-			m.AddOutputs("stdout", NewWriterStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout", NewWriterStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderr":
-			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderrqueue":
-			m.AddOutputs("stderr", NewWriterStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewDt(v.LogDate), NewFileLine(), NewGetLogContext()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stderr", NewWriterStdanyQueue(v.LogQueue, v.LogWriters, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixLogContext(), NewPrefixLogLevel()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		}
 	}
 	out = New(m)
@@ -245,11 +238,11 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error
 		self.Message = buf.String()
 	}
 
-	self.Level = in.Info.LevelName
+	self.Level = fmt.Sprintf("LEVEL%v", in.Info.Level)
 	self.Timestamp = string(in.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	buf.Reset()
-	for _, fm := range __get_fl_cx {
+	for _, fm := range __std_prefix {
 		fm.FormatMessage(&buf, in)
 	}
 	self.Location = buf.String()
@@ -290,14 +283,10 @@ func (self MessageTG_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error
 		io.WriteString(w, " ")
 	}
 
-	for _, fm := range __get_fl_cx {
+	for _, fm := range __std_prefix {
 		fm.FormatMessage(w, in)
 	}
 
-	if len(in.Info.LevelName) > 0 {
-		io.WriteString(w, in.Info.LevelName)
-		io.WriteString(w, " ")
-	}
 	fmt.Fprintf(w, in.Format, in.Args...)
 	fmt.Fprintf(w, "\n")
 

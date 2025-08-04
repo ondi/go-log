@@ -6,6 +6,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -18,7 +19,7 @@ import (
 // &log_ctx used for ctx.Value
 var log_ctx = 1
 
-type RangeFn_t = func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool
+type RangeFn_t = func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool
 
 type LogContext interface {
 	ContextName() string
@@ -70,7 +71,7 @@ func (self *LogContext_t) ContextRange(f RangeFn_t) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.data.RangeFront(func(m Msg_t) bool {
-		return f(m.Info.Ts, m.Info.File, m.Info.Line, m.Info.LevelName, m.Info.LevelId, m.Format, m.Args...)
+		return f(m.Info.Ts, m.Info.File, m.Info.Line, m.Info.Level, m.Format, m.Args...)
 	})
 }
 
@@ -93,11 +94,11 @@ func NewLogContextRead(level int64) (self *LogContextRead_t) {
 
 func (self *LogContextRead_t) GetPayload(ctx context.Context, out func(key string, value string, args ...any)) {
 	if v := GetLogContext(ctx); v != nil {
-		v.ContextRange(func(ts time.Time, file string, line int, level_name string, level_id int64, format string, args ...any) bool {
+		v.ContextRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			if level_id < self.level {
 				return true
 			}
-			out(level_name, format, args)
+			out(fmt.Sprintf("LEVEL%v", level_id), format, args)
 			return false
 		})
 	}

@@ -94,10 +94,6 @@ func (self *WriterFileBytes_t) LogWrite(m Msg_t) (n int, err error) {
 		n, err = v.FormatMessage(w, m)
 		self.bytes_count += n
 	}
-	n, err = io.WriteString(w, m.Info.LevelName)
-	self.bytes_count += n
-	n, err = io.WriteString(w, " ")
-	self.bytes_count += n
 	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	self.bytes_count += n
 	n, err = io.WriteString(self.out, "\n")

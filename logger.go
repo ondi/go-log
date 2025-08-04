@@ -12,15 +12,15 @@ import (
 )
 
 type Info_t struct {
-	Ts        time.Time `json:"ts"`
-	LevelName string    `json:"level_name"`
-	File      string    `json:"file"`
-	Line      int       `json:"line"`
-	LevelId   int64     `json:"level"`
+	Ts    time.Time `json:"ts"`
+	File  string    `json:"file"`
+	Line  int       `json:"line"`
+	Level int64     `json:"level"`
 }
 
-func (self *Info_t) Set(ts time.Time) {
+func (self *Info_t) Set(ts time.Time, level int64) {
 	self.Ts = ts
+	self.Level = level
 	self.File, self.Line = FileLine(1, 32)
 }
 
@@ -54,7 +54,7 @@ type Formatter interface {
 }
 
 type Logger interface {
-	Log(ctx context.Context, level Info_t, format string, args ...any)
+	Log(ctx context.Context, level int64, format string, args ...any)
 
 	Trace(format string, args ...any)
 	Debug(format string, args ...any)
@@ -105,98 +105,99 @@ func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queu
 	}
 }
 
-func (self *log_t) Log(ctx context.Context, level Info_t, format string, args ...any) {
-	level.Set(time.Now())
-	for _, writer := range (*self.level_map.Load())[level.LevelId] {
-		writer.LogWrite(Msg_t{Ctx: ctx, Info: level, Format: format, Args: args})
+func (self *log_t) Log(ctx context.Context, level int64, format string, args ...any) {
+	var info Info_t
+	info.Set(time.Now(), level)
+	for _, writer := range (*self.level_map.Load())[level] {
+		writer.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
 	}
 }
 
 func (self *log_t) Error(format string, args ...any) {
-	self.Log(context.Background(), LOG_ERROR, format, args...)
+	self.Log(context.Background(), 4, format, args...)
 }
 
 func (self *log_t) Warn(format string, args ...any) {
-	self.Log(context.Background(), LOG_WARN, format, args...)
+	self.Log(context.Background(), 3, format, args...)
 }
 
 func (self *log_t) Info(format string, args ...any) {
-	self.Log(context.Background(), LOG_INFO, format, args...)
+	self.Log(context.Background(), 2, format, args...)
 }
 
 func (self *log_t) Debug(format string, args ...any) {
-	self.Log(context.Background(), LOG_DEBUG, format, args...)
+	self.Log(context.Background(), 1, format, args...)
 }
 
 func (self *log_t) Trace(format string, args ...any) {
-	self.Log(context.Background(), LOG_TRACE, format, args...)
+	self.Log(context.Background(), 0, format, args...)
 }
 
 func (self *log_t) ErrorCtx(ctx context.Context, format string, args ...any) {
-	self.Log(ctx, LOG_ERROR, format, args...)
+	self.Log(ctx, 4, format, args...)
 }
 
 func (self *log_t) WarnCtx(ctx context.Context, format string, args ...any) {
-	self.Log(ctx, LOG_WARN, format, args...)
+	self.Log(ctx, 3, format, args...)
 }
 
 func (self *log_t) InfoCtx(ctx context.Context, format string, args ...any) {
-	self.Log(ctx, LOG_INFO, format, args...)
+	self.Log(ctx, 2, format, args...)
 }
 
 func (self *log_t) DebugCtx(ctx context.Context, format string, args ...any) {
-	self.Log(ctx, LOG_DEBUG, format, args...)
+	self.Log(ctx, 1, format, args...)
 }
 
 func (self *log_t) TraceCtx(ctx context.Context, format string, args ...any) {
-	self.Log(ctx, LOG_TRACE, format, args...)
+	self.Log(ctx, 0, format, args...)
 }
 
 func Error(format string, args ...any) {
-	__std.Error(format, args...)
+	__std_logger.Error(format, args...)
 }
 
 func Warn(format string, args ...any) {
-	__std.Warn(format, args...)
+	__std_logger.Warn(format, args...)
 }
 
 func Info(format string, args ...any) {
-	__std.Info(format, args...)
+	__std_logger.Info(format, args...)
 }
 
 func Debug(format string, args ...any) {
-	__std.Debug(format, args...)
+	__std_logger.Debug(format, args...)
 }
 
 func Trace(format string, args ...any) {
-	__std.Trace(format, args...)
+	__std_logger.Trace(format, args...)
 }
 
 func ErrorCtx(ctx context.Context, format string, args ...any) {
-	__std.ErrorCtx(ctx, format, args...)
+	__std_logger.ErrorCtx(ctx, format, args...)
 }
 
 func WarnCtx(ctx context.Context, format string, args ...any) {
-	__std.WarnCtx(ctx, format, args...)
+	__std_logger.WarnCtx(ctx, format, args...)
 }
 
 func InfoCtx(ctx context.Context, format string, args ...any) {
-	__std.InfoCtx(ctx, format, args...)
+	__std_logger.InfoCtx(ctx, format, args...)
 }
 
 func DebugCtx(ctx context.Context, format string, args ...any) {
-	__std.DebugCtx(ctx, format, args...)
+	__std_logger.DebugCtx(ctx, format, args...)
 }
 
 func TraceCtx(ctx context.Context, format string, args ...any) {
-	__std.TraceCtx(ctx, format, args...)
+	__std_logger.TraceCtx(ctx, format, args...)
 }
 
 func SetLogger(in Logger) Logger {
-	__std = in
-	return __std
+	__std_logger = in
+	return __std_logger
 }
 
 func GetLogger() Logger {
-	return __std
+	return __std_logger
 }

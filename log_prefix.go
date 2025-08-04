@@ -5,6 +5,7 @@
 package log
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
 	"runtime"
@@ -26,15 +27,15 @@ func FileLine(skip int, limit int) (path string, line int) {
 	return
 }
 
-type DT_t struct {
+type PrefixDateTime_t struct {
 	Layout string
 }
 
-func NewDt(layout string) Formatter {
-	return &DT_t{Layout: layout}
+func NewPrefixDateTime(layout string) Formatter {
+	return &PrefixDateTime_t{Layout: layout}
 }
 
-func (self *DT_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PrefixDateTime_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	var b [64]byte
 	if n, err = out.Write(in.Info.Ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
@@ -42,13 +43,13 @@ func (self *DT_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	return
 }
 
-type FileLine_t struct{}
+type PrefixFileLine_t struct{}
 
-func NewFileLine() Formatter {
-	return &FileLine_t{}
+func NewPrefixFileLine() Formatter {
+	return &PrefixFileLine_t{}
 }
 
-func (self *FileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PrefixFileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	dir, file := filepath.Split(in.Info.File)
 	if n, err = io.WriteString(out, filepath.Join(filepath.Base(dir), file)); n > 0 {
 		io.WriteString(out, ":")
@@ -58,13 +59,37 @@ func (self *FileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error
 	return
 }
 
-type GetLogContext_t struct{}
+type PrefixLogLevel_t struct{}
 
-func NewGetLogContext() Formatter {
-	return &GetLogContext_t{}
+func NewPrefixLogLevel() Formatter {
+	return &PrefixLogLevel_t{}
 }
 
-func (self *GetLogContext_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PrefixLogLevel_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	switch in.Info.Level {
+	case 0:
+		n, err = io.WriteString(out, "TRACE ")
+	case 1:
+		n, err = io.WriteString(out, "DEBUG ")
+	case 2:
+		n, err = io.WriteString(out, "INFO ")
+	case 3:
+		n, err = io.WriteString(out, "WARN ")
+	case 4:
+		n, err = io.WriteString(out, "ERROR ")
+	default:
+		n, err = fmt.Fprintf(out, "UNDEFINED%v ", in.Info.Level)
+	}
+	return
+}
+
+type PrefixLogContext_t struct{}
+
+func NewPrefixLogContext() Formatter {
+	return &PrefixLogContext_t{}
+}
+
+func (self *PrefixLogContext_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogContext(in.Ctx); v != nil {
 		if n, err = io.WriteString(out, v.ContextName()); n > 0 {
 			io.WriteString(out, " ")

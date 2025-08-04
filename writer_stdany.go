@@ -75,8 +75,6 @@ func (self *WriterStdany_t) LogWrite(m Msg_t) (n int, err error) {
 	for _, v := range self.prefix {
 		v.FormatMessage(w, m)
 	}
-	io.WriteString(w, m.Info.LevelName)
-	io.WriteString(w, " ")
 	n, err = fmt.Fprintf(w, m.Format, m.Args...)
 	io.WriteString(self.out, "\n")
 	if err != nil {
