@@ -85,7 +85,7 @@ func (self *PrefixLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 	case 4:
 		n, err = io.WriteString(out, "ERROR")
 	default:
-		n, err = fmt.Fprintf(out, "UNDEFINED%v", in.Info.Level)
+		n, err = fmt.Fprintf(out, "LEVEL%v", in.Info.Level)
 	}
 	io.WriteString(out, self.suffix)
 	io.WriteString(out, " ")
