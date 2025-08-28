@@ -92,7 +92,6 @@ type Http_t struct {
 	post_ctx   PostContext
 	post_delay PostDelayer
 	message    Formatter
-	bulk_write int
 }
 
 type HttpOption func(self *Http_t)
@@ -121,14 +120,6 @@ func PostTimeout(timeout time.Duration) HttpOption {
 	}
 }
 
-func BulkWrite(bulk_write int) HttpOption {
-	return func(self *Http_t) {
-		if bulk_write > 0 {
-			self.bulk_write = bulk_write
-		}
-	}
-}
-
 func NewWriterHttp(urls Urls, message Formatter, client Client, opts ...HttpOption) Queue {
 	self := &Http_t{
 		urls:       urls,
@@ -138,7 +129,6 @@ func NewWriterHttp(urls Urls, message Formatter, client Client, opts ...HttpOpti
 		headers:    NoHeaders_t{},
 		post_ctx:   NoTimeout_t{},
 		post_delay: NoTimeout_t{},
-		bulk_write: 1,
 	}
 
 	for _, opt := range opts {
