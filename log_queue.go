@@ -24,25 +24,45 @@ type Queue_t struct {
 	write_error_msg string
 }
 
-func NewQueue(limit int) (self *Queue_t) {
+func NewQueue(limit int, writers int, bulk_write int, w Queue) (self *Queue_t) {
 	self = &Queue_t{}
 	self.q = queue.NewOpen[Msg_t](&self.mx, limit)
+	for i := 0; i < writers; i++ {
+		self.wg.Add(1)
+		go self.writer(bulk_write, w)
+	}
 	return self
 }
 
-func (self *Queue_t) LogWrite(m Msg_t) (n int, err error) {
-	self.mx.Lock()
-	self.queue_write++
-	if self.q.PushBackNoLock(m) == false {
-		self.queue_overflow++
-		err = ERROR_OVERFLOW
+func (self *Queue_t) writer(bulk_write int, w Queue) (err error) {
+	defer self.wg.Done()
+	for {
+		msg, ok := self.LogRead(bulk_write)
+		if !ok {
+			return
+		}
+		if _, err = w.LogWrite(msg); err != nil {
+			self.WriteError(1, err.Error())
+		}
 	}
-	self.mx.Unlock()
+}
+
+func (self *Queue_t) LogWrite(msg []Msg_t) (n int, err error) {
+	self.mx.Lock()
+	defer self.mx.Unlock()
+	self.queue_write += len(msg)
+	for _, m := range msg {
+		if self.q.PushBackNoLock(m) == false {
+			self.queue_overflow++
+			err = ERROR_OVERFLOW
+			return
+		}
+	}
 	return
 }
 
-// bad design: messages stay in buffer forever and not garbage-collected
-// LogRead(p []Msg_t) (n int, ok bool)
+// LogRead(p []Msg_t) (n int, ok bool) - bad design
+// messages stay in buffer forever and not garbage-collected
 func (self *Queue_t) LogRead(limit int) (res []Msg_t, ok bool) {
 	var m Msg_t
 	self.mx.Lock()
@@ -81,14 +101,6 @@ func (self *Queue_t) Size() (res QueueSize_t) {
 	res.WriteErrorMsg = self.write_error_msg
 	self.mx.Unlock()
 	return
-}
-
-func (self *Queue_t) WgAdd(n int) {
-	self.wg.Add(n)
-}
-
-func (self *Queue_t) WgDone() {
-	self.wg.Done()
 }
 
 func (self *Queue_t) Close() (err error) {

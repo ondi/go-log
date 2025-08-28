@@ -43,68 +43,30 @@ func NewWriterFileTime(ts time.Time, filename string, prefix []Formatter, trunca
 	return self, self.__cycle(self.last_date)
 }
 
-func NewWriterFileTimeQueue(queue_size, writers int, ts time.Time, filename string, prefix []Formatter, truncate time.Duration, backup_count int, log_limit int) (Queue, error) {
-	self := &WriterFileTime_t{
-		prefix:       prefix,
-		filename:     filename,
-		truncate:     truncate,
-		backup_count: backup_count,
-		last_date:    ts,
-		log_limit:    log_limit,
-		bulk_write:   16,
-	}
-
-	err := self.__cycle(self.last_date)
-	if err != nil {
-		return nil, err
-	}
-
-	q := NewQueue(queue_size)
-	for i := 0; i < writers; i++ {
-		q.WgAdd(1)
-		go self.writer(q)
-	}
-
-	return q, err
-}
-
-func (self *WriterFileTime_t) writer(q *Queue_t) (err error) {
-	defer q.WgDone()
-	for {
-		msg, ok := q.LogRead(self.bulk_write)
-		if !ok {
-			return
-		}
-		for i := 0; i < len(msg); i++ {
-			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteError(1, err.Error())
-			}
-		}
-	}
-}
-
-func (self *WriterFileTime_t) LogWrite(m Msg_t) (n int, err error) {
+func (self *WriterFileTime_t) LogWrite(msg []Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	self.queue_write++
-	var w io.Writer
-	if self.log_limit > 0 {
-		w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
-	} else {
-		w = self.out
-	}
-	if tr := m.Info.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
-		self.__cycle(m.Info.Ts)
-		self.last_date = tr
-	}
-	for _, v := range self.prefix {
-		v.FormatMessage(w, m)
-	}
-	n, err = fmt.Fprintf(w, m.Format, m.Args...)
-	io.WriteString(self.out, "\n")
-	if err != nil {
-		self.write_error_cnt++
-		self.write_error_msg = err.Error()
+	for _, m := range msg {
+		self.queue_write++
+		var w io.Writer
+		if self.log_limit > 0 {
+			w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
+		} else {
+			w = self.out
+		}
+		if tr := m.Info.Ts.Truncate(self.truncate); !self.last_date.Equal(tr) {
+			self.__cycle(m.Info.Ts)
+			self.last_date = tr
+		}
+		for _, v := range self.prefix {
+			v.FormatMessage(w, m)
+		}
+		n, err = fmt.Fprintf(w, m.Format, m.Args...)
+		io.WriteString(self.out, "\n")
+		if err != nil {
+			self.write_error_cnt++
+			self.write_error_msg = err.Error()
+		}
 	}
 	return
 }

@@ -129,7 +129,7 @@ func BulkWrite(bulk_write int) HttpOption {
 	}
 }
 
-func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, client Client, opts ...HttpOption) Queue {
+func NewWriterHttp(urls Urls, message Formatter, client Client, opts ...HttpOption) Queue {
 	self := &Http_t{
 		urls:       urls,
 		message:    message,
@@ -145,49 +145,46 @@ func NewHttpQueue(queue_size int, writers int, urls Urls, message Formatter, cli
 		opt(self)
 	}
 
-	q := NewQueue(queue_size)
-	for i := 0; i < writers; i++ {
-		q.WgAdd(1)
-		go self.writer(q)
-	}
-
-	return q
+	return self
 }
 
-func (self *Http_t) writer(q *Queue_t) (err error) {
-	defer q.WgDone()
+func (self *Http_t) LogWrite(msg []Msg_t) (n int, err error) {
+	if len(msg) == 0 {
+		return
+	}
+
+	if self.rps.Add(msg[0].Info.Ts) == false {
+		err = ERROR_RPS
+		return
+	}
 
 	var body bytes.Buffer
-	for {
-		body.Reset()
-		msg, ok := q.LogRead(self.bulk_write)
-		if !ok {
-			return
+	for _, v := range msg {
+		if _, err = self.message.FormatMessage(&body, v); err != nil {
+			break
 		}
-		if self.rps.Add(msg[0].Info.Ts) == false {
-			q.WriteError(len(msg), "rps")
-			continue
-		}
-		for _, v := range msg {
-			if _, err = self.message.FormatMessage(&body, v); err != nil {
-				break
-			}
-		}
-		if err != nil {
-			q.WriteError(len(msg), err.Error())
-			continue
-		}
-		for _, v := range self.urls.Range() {
-			if err = self.request(v, body.Bytes()); err == nil {
-				break
-			}
-		}
-		if err != nil {
-			q.WriteError(len(msg), err.Error())
-			continue
-		}
-		self.post_delay.Delay()
 	}
+	if err != nil {
+		return
+	}
+	for _, v := range self.urls.Range() {
+		if err = self.request(v, body.Bytes()); err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return
+	}
+	self.post_delay.Delay()
+	return
+}
+
+func (self *Http_t) Size() (res QueueSize_t) {
+	return
+}
+
+func (self *Http_t) Close() (err error) {
+	return
 }
 
 func (self *Http_t) request(URL string, body []byte) (err error) {

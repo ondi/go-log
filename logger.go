@@ -38,7 +38,7 @@ type QueueSize_t struct {
 }
 
 type Queue interface {
-	LogWrite(m Msg_t) (int, error)
+	LogWrite(m []Msg_t) (n int, err error)
 	Size() QueueSize_t
 	Close() error
 }
@@ -105,7 +105,7 @@ func (self *log_t) Log(ctx context.Context, level int64, format string, args ...
 	info.Level = level
 	info.File, info.Line = FileLine(1, 32)
 	for _, writer := range (*self.level_map.Load())[level] {
-		writer.LogWrite(Msg_t{Ctx: ctx, Info: info, Format: format, Args: args})
+		writer.LogWrite([]Msg_t{{Ctx: ctx, Info: info, Format: format, Args: args}})
 	}
 }
 

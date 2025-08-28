@@ -21,9 +21,7 @@ func Test1(t *testing.T) {
 	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", "")}, &buf, 0), WhatLevel(0))
 	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", "")}, 1024, 10, 0)
 	m.AddOutputs("file", log_file, WhatLevel(0))
-	log_http := NewHttpQueue(
-		10,
-		1,
+	log_http := NewWriterHttp(
 		NewUrls("http://localhost"),
 		MessageKB_t{},
 		&http.Client{

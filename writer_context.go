@@ -130,10 +130,12 @@ func NewLogContextWriter() Queue {
 	return &LogContextWriter_t{}
 }
 
-func (self *LogContextWriter_t) LogWrite(m Msg_t) (n int, err error) {
-	if v := GetLogContext(m.Ctx); v != nil {
-		self.queue_write.Add(1)
-		n, err = v.WriteLog(m)
+func (self *LogContextWriter_t) LogWrite(msg []Msg_t) (n int, err error) {
+	for _, m := range msg {
+		if v := GetLogContext(m.Ctx); v != nil {
+			self.queue_write.Add(1)
+			n, err = v.WriteLog(m)
+		}
 	}
 	return
 }

@@ -42,69 +42,33 @@ func NewWriterFileBytes(ts time.Time, filename string, prefix []Formatter, bytes
 	return self, self.__cycle(ts)
 }
 
-func NewWriterFileBytesQueue(queue_size int, writers int, ts time.Time, filename string, prefix []Formatter, bytes_limit int, backup_count int, log_limit int) (Queue, error) {
-	self := &WriterFileBytes_t{
-		prefix:       prefix,
-		filename:     filename,
-		bytes_limit:  bytes_limit,
-		backup_count: backup_count,
-		log_limit:    log_limit,
-		bulk_write:   16,
-	}
-
-	err := self.__cycle(ts)
-	if err != nil {
-		return nil, err
-	}
-
-	q := NewQueue(queue_size)
-	for i := 0; i < writers; i++ {
-		q.WgAdd(1)
-		go self.writer(q)
-	}
-	return q, err
-}
-
-func (self *WriterFileBytes_t) writer(q *Queue_t) (err error) {
-	defer q.WgDone()
-	for {
-		msg, ok := q.LogRead(self.bulk_write)
-		if !ok {
-			return
-		}
-		for i := 0; i < len(msg); i++ {
-			if _, err = self.LogWrite(msg[i]); err != nil {
-				q.WriteError(1, err.Error())
-			}
-		}
-	}
-}
-
-func (self *WriterFileBytes_t) LogWrite(m Msg_t) (n int, err error) {
+func (self *WriterFileBytes_t) LogWrite(msg []Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
-	self.queue_write++
-	var w io.Writer
-	if self.log_limit > 0 {
-		w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
-	} else {
-		w = self.out
-	}
-	for _, v := range self.prefix {
-		n, err = v.FormatMessage(w, m)
+	for _, m := range msg {
+		self.queue_write++
+		var w io.Writer
+		if self.log_limit > 0 {
+			w = &LimitWriter_t{Buf: self.out, Limit: self.log_limit}
+		} else {
+			w = self.out
+		}
+		for _, v := range self.prefix {
+			n, err = v.FormatMessage(w, m)
+			self.bytes_count += n
+		}
+		n, err = fmt.Fprintf(w, m.Format, m.Args...)
 		self.bytes_count += n
-	}
-	n, err = fmt.Fprintf(w, m.Format, m.Args...)
-	self.bytes_count += n
-	n, err = io.WriteString(self.out, "\n")
-	self.bytes_count += n
-	if self.bytes_count >= self.bytes_limit {
-		self.__cycle(m.Info.Ts)
-		self.bytes_count = 0
-	}
-	if err != nil {
-		self.write_error_cnt++
-		self.write_error_msg = err.Error()
+		n, err = io.WriteString(self.out, "\n")
+		self.bytes_count += n
+		if self.bytes_count >= self.bytes_limit {
+			self.__cycle(m.Info.Ts)
+			self.bytes_count = 0
+		}
+		if err != nil {
+			self.write_error_cnt++
+			self.write_error_msg = err.Error()
+		}
 	}
 	return
 }

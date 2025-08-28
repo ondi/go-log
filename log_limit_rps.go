@@ -5,11 +5,14 @@
 package log
 
 import (
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/ondi/go-cache"
 )
+
+var ERROR_RPS = errors.New("RPS")
 
 type Rps interface {
 	Add(ts time.Time) (ok bool)
