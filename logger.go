@@ -189,9 +189,8 @@ func TraceCtx(ctx context.Context, format string, args ...any) {
 	__std_logger.TraceCtx(ctx, format, args...)
 }
 
-func SetLogger(in Logger) Logger {
+func SetLogger(in Logger) {
 	__std_logger = in
-	return __std_logger
 }
 
 func GetLogger() Logger {
