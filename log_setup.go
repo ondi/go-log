@@ -140,7 +140,6 @@ func LogStderr(format string, args ...any) {
 
 func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (out Logger, err error) {
 	m := NewLevelMap()
-	out = New(m)
 	for _, v := range logs {
 		switch v.LogType {
 		case "ctx":
@@ -185,6 +184,7 @@ func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (
 			m.AddOutputs("stderr", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 		}
 	}
+	out = New(m)
 	for _, v := range logs {
 		log_debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
 			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
