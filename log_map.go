@@ -12,25 +12,23 @@ func NewLevelMap() Level_map_t {
 	return Level_map_t{}
 }
 
-func (self Level_map_t) AddOutput(level_id int64, writer_name string, queue Queue) (ok bool) {
+func (self Level_map_t) AddOutput(level_id int64, writer_name string, queue Queue) (prev Queue) {
 	writers, ok := self[level_id]
 	if !ok {
 		writers = Queue_map_t{}
 		self[level_id] = writers
 	}
-	if _, ok = writers[writer_name]; !ok {
-		writers[writer_name] = queue
-		return true
-	}
-	return false
+	prev, ok = writers[writer_name]
+	writers[writer_name] = queue
+	return
 }
 
-func (self Level_map_t) DelOutput(level_id int64, writer_name string) (writer Queue) {
+func (self Level_map_t) DelOutput(level_id int64, writer_name string) (prev Queue) {
 	writers, ok := self[level_id]
 	if !ok {
 		return
 	}
-	if writer, ok = writers[writer_name]; ok {
+	if prev, ok = writers[writer_name]; ok {
 		delete(writers, writer_name)
 	}
 	return
