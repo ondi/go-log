@@ -173,15 +173,15 @@ func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (
 		case "stdout":
 			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdout2":
-			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("_", "_")}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout2", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("_", "_")}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdoutqueue":
 			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stdout, v.LogLimit)
-			m.AddOutputs("stdout", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdoutqueue", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 		case "stderr":
 			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderrqueue":
 			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stderr, v.LogLimit)
-			m.AddOutputs("stderr", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
+			m.AddOutputs("stderrqueue", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 		}
 	}
 	out = New(m)
