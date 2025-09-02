@@ -54,20 +54,16 @@ func (self *WriterFileBytes_t) LogWrite(msg []Msg_t) (n int, err error) {
 			w = self.out
 		}
 		for _, v := range self.prefix {
-			n, err = v.FormatMessage(w, m)
+			if n, err = v.FormatMessage(w, m); err != nil {
+				self.write_error_cnt++
+				self.write_error_msg = err.Error()
+				return
+			}
 			self.bytes_count += n
 		}
-		n, err = fmt.Fprintf(w, m.Format, m.Args...)
-		self.bytes_count += n
-		n, err = io.WriteString(self.out, "\n")
-		self.bytes_count += n
 		if self.bytes_count >= self.bytes_limit {
 			self.__cycle(m.Info.Ts)
 			self.bytes_count = 0
-		}
-		if err != nil {
-			self.write_error_cnt++
-			self.write_error_msg = err.Error()
 		}
 	}
 	return

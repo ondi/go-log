@@ -59,13 +59,11 @@ func (self *WriterFileTime_t) LogWrite(msg []Msg_t) (n int, err error) {
 			self.last_date = tr
 		}
 		for _, v := range self.prefix {
-			v.FormatMessage(w, m)
-		}
-		n, err = fmt.Fprintf(w, m.Format, m.Args...)
-		io.WriteString(self.out, "\n")
-		if err != nil {
-			self.write_error_cnt++
-			self.write_error_msg = err.Error()
+			if n, err = v.FormatMessage(w, m); err != nil {
+				self.write_error_cnt++
+				self.write_error_msg = err.Error()
+				return
+			}
 		}
 	}
 	return

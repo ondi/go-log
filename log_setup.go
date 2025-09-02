@@ -145,42 +145,42 @@ func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (
 		case "ctx":
 			m.AddOutputs("ctx", NewLogContextWriter(), WhatLevel(v.LogLevel))
 		case "file":
-			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
-			fq, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, v.LogSize, v.LogBackup, v.LogLimit)
+			fq, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogSize, v.LogBackup, v.LogLimit)
 			if err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
-			fq, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, v.LogDuration, v.LogBackup, v.LogLimit)
+			fq, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit)
 			if err != nil {
 				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
 			} else {
 				m.AddOutputs(v.LogFile, NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdout2":
-			m.AddOutputs("stdout2", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("_", "_")}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout2", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("_", "_"), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdoutqueue":
-			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stdout, v.LogLimit)
+			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, v.LogLimit)
 			m.AddOutputs("stdoutqueue", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 		case "stderr":
-			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderrqueue":
-			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", "")}, os.Stderr, v.LogLimit)
+			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stderr, v.LogLimit)
 			m.AddOutputs("stderrqueue", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 		}
 	}

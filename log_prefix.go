@@ -8,24 +8,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"runtime"
 	"strconv"
 )
-
-func FileLine(skip int, limit int) (path string, line int) {
-	var next_line int
-	var next_path string
-	_, path, line, ok := runtime.Caller(skip)
-	for i := skip + 1; i < limit; i++ {
-		if _, next_path, next_line, ok = runtime.Caller(i); !ok {
-			return
-		}
-		if filepath.Dir(path) != filepath.Dir(next_path) {
-			return next_path, next_line
-		}
-	}
-	return
-}
 
 type PrefixDateTime_t struct {
 	Layout string
@@ -104,5 +88,27 @@ func (self *PrefixContextName_t) FormatMessage(out io.Writer, in Msg_t) (n int, 
 			io.WriteString(out, " ")
 		}
 	}
+	return
+}
+
+type PrefixTextMessage_t struct{}
+
+func NewPrefixTextMessage() Formatter {
+	return &PrefixTextMessage_t{}
+}
+
+func (self *PrefixTextMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	n, err = fmt.Fprintf(out, in.Format, in.Args...)
+	return
+}
+
+type PrefixNewLine_t struct{}
+
+func NewPrefixNewLine() Formatter {
+	return &PrefixNewLine_t{}
+}
+
+func (self *PrefixNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	n, err = fmt.Fprint(out, "\n")
 	return
 }

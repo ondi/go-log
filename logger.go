@@ -7,6 +7,8 @@ package log
 import (
 	"context"
 	"io"
+	"path/filepath"
+	"runtime"
 	"sync/atomic"
 	"time"
 )
@@ -195,4 +197,19 @@ func SetLogger(in Logger) {
 
 func GetLogger() Logger {
 	return __std_logger
+}
+
+func FileLine(skip int, limit int) (path string, line int) {
+	var next_line int
+	var next_path string
+	_, path, line, ok := runtime.Caller(skip)
+	for i := skip + 1; i < limit; i++ {
+		if _, next_path, next_line, ok = runtime.Caller(i); !ok {
+			return
+		}
+		if filepath.Dir(path) != filepath.Dir(next_path) {
+			return next_path, next_line
+		}
+	}
+	return
 }
