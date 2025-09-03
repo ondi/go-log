@@ -5,10 +5,12 @@
 package log
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 type PrefixDateTime_t struct {
@@ -34,12 +36,8 @@ func NewPrefixFileLine() Formatter {
 }
 
 func (self *PrefixFileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
-	dir, file := filepath.Split(in.Info.File)
-	if n, err = io.WriteString(out, filepath.Join(filepath.Base(dir), file)); n > 0 {
-		io.WriteString(out, ":")
-		io.WriteString(out, strconv.FormatInt(int64(in.Info.Line), 10))
-		io.WriteString(out, " ")
-	}
+	n, err = io.WriteString(out, FileLine(in.Info.File, in.Info.Line))
+	io.WriteString(out, " ")
 	return
 }
 
@@ -57,20 +55,7 @@ func NewPrefixLevelName(prefix string, suffix string) Formatter {
 
 func (self *PrefixLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	io.WriteString(out, self.prefix)
-	switch in.Info.Level {
-	case 0:
-		n, err = io.WriteString(out, "TRACE")
-	case 1:
-		n, err = io.WriteString(out, "DEBUG")
-	case 2:
-		n, err = io.WriteString(out, "INFO")
-	case 3:
-		n, err = io.WriteString(out, "WARN")
-	case 4:
-		n, err = io.WriteString(out, "ERROR")
-	default:
-		n, err = fmt.Fprintf(out, "LEVEL%v", in.Info.Level)
-	}
+	n, err = io.WriteString(out, LevelName(in.Info.Level))
 	io.WriteString(out, self.suffix)
 	io.WriteString(out, " ")
 	return
@@ -110,5 +95,65 @@ func NewPrefixNewLine() Formatter {
 
 func (self *PrefixNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	n, err = fmt.Fprint(out, "\n")
+	return
+}
+
+type PrefixJsonMessage_t struct {
+	AppName     string    `json:"app_name,omitempty"`
+	AppVersion  string    `json:"app_version,omitempty"`
+	Ts          time.Time `json:"dt,omitempty"`
+	Location    string    `json:"location,omitempty"`
+	Level       string    `json:"level,omitempty"`
+	ContextName string    `json:"context_name,omitempty"`
+	Message     string    `json:"message,omitempty"`
+}
+
+func NewPrefixJsonMessage(AppName string, AppVersion string) Formatter {
+	return &PrefixJsonMessage_t{
+		AppName:    AppName,
+		AppVersion: AppVersion,
+	}
+}
+
+func (self *PrefixJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	msg := PrefixJsonMessage_t{
+		AppName:    self.AppName,
+		AppVersion: self.AppVersion,
+		Ts:         in.Info.Ts,
+		Location:   FileLine(in.Info.File, in.Info.Line),
+		Level:      LevelName(in.Info.Level),
+		Message:    fmt.Sprintf(in.Format, in.Args...),
+	}
+	if v := GetLogContext(in.Ctx); v != nil {
+		msg.ContextName = v.ContextName()
+	}
+	if err = json.NewEncoder(out).Encode(msg); err != nil {
+		return
+	}
+	n++
+	return
+}
+
+func LevelName(in int64) (res string) {
+	switch in {
+	case 0:
+		res = "TRACE"
+	case 1:
+		res = "DEBUG"
+	case 2:
+		res = "INFO"
+	case 3:
+		res = "WARN"
+	case 4:
+		res = "ERROR"
+	default:
+		res = fmt.Sprintf("LEVEL%v", in)
+	}
+	return
+}
+
+func FileLine(f string, l int) (res string) {
+	dir, file := filepath.Split(f)
+	res = filepath.Join(filepath.Base(dir), file) + ":" + strconv.FormatInt(int64(l), 10)
 	return
 }

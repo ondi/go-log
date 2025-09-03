@@ -138,7 +138,7 @@ func LogStderr(format string, args ...any) {
 	io.WriteString(os.Stderr, "\n")
 }
 
-func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (out Logger, err error) {
+func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version string, log_debug func(string, ...any)) (out Logger, err error) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
@@ -175,13 +175,16 @@ func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (
 		case "stdout2":
 			m.AddOutputs("stdout2", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("_", "_"), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdoutqueue":
-			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, v.LogLimit)
-			m.AddOutputs("stdoutqueue", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
+			q := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, v.LogLimit)
+			m.AddOutputs("stdoutqueue", NewQueue(v.LogQueue, v.LogWriters, 1, q), WhatLevel(v.LogLevel))
 		case "stderr":
 			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stderrqueue":
-			fq := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stderr, v.LogLimit)
-			m.AddOutputs("stderrqueue", NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
+			q := NewWriterStdany([]Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stderr, v.LogLimit)
+			m.AddOutputs("stderrqueue", NewQueue(v.LogQueue, v.LogWriters, 1, q), WhatLevel(v.LogLevel))
+		case "jsonstdoutqueue":
+			q := NewWriterStdany([]Formatter{NewPrefixJsonMessage(app_name, app_version)}, os.Stdout, v.LogLimit)
+			m.AddOutputs("stderrqueue", NewQueue(v.LogQueue, v.LogWriters, 1, q), WhatLevel(v.LogLevel))
 		}
 	}
 	out = New(m)
@@ -192,8 +195,8 @@ func CreateLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (
 	return
 }
 
-func SetupLogger(ts time.Time, logs []Args_t, log_debug func(string, ...any)) (out Logger, err error) {
-	if out, err = CreateLogger(ts, logs, log_debug); err != nil {
+func SetupLogger(ts time.Time, logs []Args_t, app_name string, app_version string, log_debug func(string, ...any)) (out Logger, err error) {
+	if out, err = CreateLogger(ts, logs, app_name, app_version, log_debug); err != nil {
 		return
 	}
 	SetLogger(out)

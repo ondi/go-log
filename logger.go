@@ -105,7 +105,7 @@ func (self *log_t) Log(ctx context.Context, level int64, format string, args ...
 	var info Info_t
 	info.Ts = time.Now()
 	info.Level = level
-	info.File, info.Line = FileLine(1, 32)
+	info.File, info.Line = GetFileLine(1, 32)
 	for _, writer := range (*self.level_map.Load())[level] {
 		writer.LogWrite([]Msg_t{{Ctx: ctx, Info: info, Format: format, Args: args}})
 	}
@@ -199,7 +199,7 @@ func GetLogger() Logger {
 	return __std_logger
 }
 
-func FileLine(skip int, limit int) (path string, line int) {
+func GetFileLine(skip int, limit int) (path string, line int) {
 	var next_line int
 	var next_path string
 	_, path, line, ok := runtime.Caller(skip)
