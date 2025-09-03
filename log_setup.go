@@ -105,6 +105,8 @@ func NewLogger() (out Logger) {
 			NewPrefixFileLine(),
 			NewPrefixContextName(),
 			NewPrefixLevelName("", ""),
+			NewPrefixTextMessage(),
+			NewPrefixNewLine(),
 		},
 		os.Stderr,
 		0,
