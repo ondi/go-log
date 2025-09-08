@@ -140,7 +140,7 @@ func LogStderr(format string, args ...any) {
 	io.WriteString(os.Stderr, "\n")
 }
 
-func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version string) (out Logger, errs []string) {
+func SetupLogger(ts time.Time, logs []Args_t, app_name string, app_version string) (out Logger, errs []string) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
@@ -193,15 +193,12 @@ func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version stri
 	return
 }
 
-func SetupLogger(ts time.Time, logs []Args_t, app_name string, app_version string, log_debug func(string, ...any)) (out Logger, err error) {
-	out, errs := CreateLogger(ts, logs, app_name, app_version)
-	SetLogger(out)
+func SetupPrint(logs []Args_t, errs []string, log_debug func(string, ...any)) {
 	for _, v := range logs {
 		log_debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
 			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
 	}
 	log_debug("LOG SETUP ERRORS: %v", errs)
-	return
 }
 
 type MessageIndexNameKB_t struct {
