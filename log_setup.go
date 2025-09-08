@@ -140,7 +140,7 @@ func LogStderr(format string, args ...any) {
 	io.WriteString(os.Stderr, "\n")
 }
 
-func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version string, log_debug func(string, ...any)) (out Logger, err error) {
+func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version string) (out Logger, errs []string) {
 	m := NewLevelMap()
 	for _, v := range logs {
 		switch v.LogType {
@@ -148,27 +148,27 @@ func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version stri
 			m.AddOutputs("ctx", NewLogContextWriter(), WhatLevel(v.LogLevel))
 		case "file":
 			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
-				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
+				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filequeue":
 			fq, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogSize, v.LogBackup, v.LogLimit)
 			if err != nil {
-				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
+				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 			}
 		case "filetime":
 			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
-				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
+				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "filetimequeue":
 			fq, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPrefixDateTime(v.LogDate), NewPrefixFileLine(), NewPrefixContextName(), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit)
 			if err != nil {
-				log_debug("LOG ERROR: %v %v", ts.Format("2006-01-02 15:04:05"), err)
+				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 			}
@@ -190,18 +190,17 @@ func CreateLogger(ts time.Time, logs []Args_t, app_name string, app_version stri
 		}
 	}
 	out = New(m)
-	for _, v := range logs {
-		log_debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
-			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
-	}
 	return
 }
 
 func SetupLogger(ts time.Time, logs []Args_t, app_name string, app_version string, log_debug func(string, ...any)) (out Logger, err error) {
-	if out, err = CreateLogger(ts, logs, app_name, app_version, log_debug); err != nil {
-		return
-	}
+	out, errs := CreateLogger(ts, logs, app_name, app_version)
 	SetLogger(out)
+	for _, v := range logs {
+		log_debug("LOG OUTPUT: LogLevel=%v, LogLimit=%v, LogType=%v, LogFile=%v, LogSize=%v, LogDuration=%v, LogBackup=%v, LogQueue=%v, LogWriters=%v",
+			v.LogLevel, v.LogLimit, v.LogType, v.LogFile, ByteSize(uint64(v.LogSize)), v.LogDuration, v.LogBackup, v.LogQueue, v.LogWriters)
+	}
+	log_debug("LOG SETUP ERRORS: %v", errs)
 	return
 }
 
