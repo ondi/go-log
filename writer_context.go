@@ -104,20 +104,20 @@ func (self *LogContextRead_t) GetPayload(ctx context.Context, out func(key strin
 	}
 }
 
-type ctx_middleware_t struct {
+type LogContextMiddleware_t struct {
 	Handler http.Handler
 	Limit   int
 }
 
-func NewContextMiddleware(next http.Handler, limit int) http.Handler {
-	self := &ctx_middleware_t{
+func NewLogContextMiddleware(next http.Handler, limit int) http.Handler {
+	self := &LogContextMiddleware_t{
 		Handler: next,
 		Limit:   limit,
 	}
 	return self
 }
 
-func (self *ctx_middleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (self *LogContextMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r = r.WithContext(context.WithValue(r.Context(), &log_ctx, NewLogContext(uuid.New().String(), self.Limit)))
 	self.Handler.ServeHTTP(w, r)
 }
