@@ -21,15 +21,12 @@ Logs:
     LogBackup: 15
 
 	for k, v := range cfg.Kibana {
-		log_http := log.NewHttpQueue(
-			v.QueueSize,
-			v.Writers,
+		log_http := log.NewWriterHttp(
 			log.NewUrls(v.Host),
 			log.MessageKB_t{
 				ApplicationName: v.AppName,
 				Environment:     v.EnvName,
 				Hostname:        self.hostname,
-				TextLimit:       4096,
 				Index: log.MessageIndexKB_t{
 					Index: log.MessageIndexNameKB_t{
 						Format: v.IndexFormat,
@@ -37,17 +34,14 @@ Logs:
 				},
 			},
 			self.client,
-			log.PostHeader(headers),
-			log.PostTimeout(15*time.Second),
+			log.PostHeader(v),
 			log.RpsLimit(log.NewRps(time.Second, 100, 1000)),
-			log.BulkWrite(1024),
 		)
-		log.GetLogger().SwapLevelMap(log.GetLogger().CopyLevelMap().AddOutputs(k, log_http, log.WhatLevel(v.Level)))
+		log.GetLogger().SwapLevelMap(log.GetLogger().CopyLevelMap().AddOutputs(k, log.NewQueue(1024, v.Writers, 1024, log_http), log.WhatLevel(v.Level)))
+		self.log_http[k] = log_http
 	}
 	for k, v := range cfg.Telegram {
-		log_tg := log.NewHttpQueue(
-			v.QueueSize,
-			v.Writers,
+		log_tg := log.NewWriterHttp(
 			log.NewUrls(v.Host),
 			log.MessageTG_t{
 				ChatId:    v.ChatID,
@@ -55,11 +49,11 @@ Logs:
 				TextLimit: 4096,
 			},
 			self.client,
-			log.PostHeader(headers),
-			log.PostTimeout(15*time.Second),
+			log.PostHeader(v),
 			log.PostDelay(1500*time.Millisecond),
 		)
-		log.GetLogger().SwapLevelMap(log.GetLogger().CopyLevelMap().AddOutputs(k, log_tg, log.WhatLevel(v.Level)))
+		log.GetLogger().SwapLevelMap(log.GetLogger().CopyLevelMap().AddOutputs(k, log.NewQueue(64, v.Writers, 1, log_tg), log.WhatLevel(v.Level)))
+		self.log_tg[k] = log_tg
 	}
 */
 
