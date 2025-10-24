@@ -142,10 +142,9 @@ func NewLogCircularRead(levels ...int64) (self *LogCircularRead_t) {
 func (self *LogCircularRead_t) GetPayload(ctx context.Context, out func(level_id int64, format string, args ...any)) {
 	if v := GetLogCircular(ctx); v != nil {
 		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
-			if self.levels[level_id] == false {
-				return true
+			if self.levels[level_id] {
+				out(level_id, format, args)
 			}
-			out(level_id, format, args)
 			return false
 		})
 	}
