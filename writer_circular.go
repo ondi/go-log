@@ -145,7 +145,7 @@ func (self *LogCircularRead_t) GetPayload(ctx context.Context, out func(level_id
 			if self.levels[level_id] {
 				out(level_id, format, args)
 			}
-			return false
+			return true
 		})
 	}
 }
