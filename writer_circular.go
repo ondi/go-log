@@ -125,27 +125,16 @@ func (self *LogCircularWriter_t) Close() error {
 	return nil
 }
 
-type LogCircularRead_t struct {
-	levels map[int64]bool
+type LogCircularRead_t struct{}
+
+func NewLogCircularRead() (self *LogCircularRead_t) {
+	return &LogCircularRead_t{}
 }
 
-func NewLogCircularRead(levels ...int64) (self *LogCircularRead_t) {
-	self = &LogCircularRead_t{
-		levels: map[int64]bool{},
-	}
-	for _, v := range levels {
-		self.levels[v] = true
-	}
-	return
-}
-
-func (self *LogCircularRead_t) GetPayload(ctx context.Context, out func(level_id int64, format string, args ...any)) {
+func (self *LogCircularRead_t) GetPayload(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
 	if v := GetLogCircular(ctx); v != nil {
 		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
-			if self.levels[level_id] {
-				out(level_id, format, args)
-			}
-			return true
+			return out(level_id, format, args)
 		})
 	}
 }
