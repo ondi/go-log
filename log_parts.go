@@ -13,15 +13,15 @@ import (
 	"time"
 )
 
-type PrefixDateTime_t struct {
+type PartDateTime_t struct {
 	Layout string
 }
 
-func NewPrefixDateTime(layout string) Formatter {
-	return &PrefixDateTime_t{Layout: layout}
+func NewPartDateTime(layout string) Formatter {
+	return &PartDateTime_t{Layout: layout}
 }
 
-func (self *PrefixDateTime_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartDateTime_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	var b [64]byte
 	if n, err = out.Write(in.Info.Ts.AppendFormat(b[:0], self.Layout)); n > 0 {
 		io.WriteString(out, " ")
@@ -29,31 +29,31 @@ func (self *PrefixDateTime_t) FormatMessage(out io.Writer, in Msg_t) (n int, err
 	return
 }
 
-type PrefixFileLine_t struct{}
+type PartFileLine_t struct{}
 
-func NewPrefixFileLine() Formatter {
-	return &PrefixFileLine_t{}
+func NewPartFileLine() Formatter {
+	return &PartFileLine_t{}
 }
 
-func (self *PrefixFileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartFileLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	n, err = io.WriteString(out, FileLine(in.Info.File, in.Info.Line))
 	io.WriteString(out, " ")
 	return
 }
 
-type PrefixLevelName_t struct {
+type PartLevelName_t struct {
 	prefix string
 	suffix string
 }
 
-func NewPrefixLevelName(prefix string, suffix string) Formatter {
-	return &PrefixLevelName_t{
+func NewPartLevelName(prefix string, suffix string) Formatter {
+	return &PartLevelName_t{
 		prefix: prefix,
 		suffix: suffix,
 	}
 }
 
-func (self *PrefixLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	io.WriteString(out, self.prefix)
 	n, err = io.WriteString(out, LevelName(in.Info.Level))
 	io.WriteString(out, self.suffix)
@@ -61,44 +61,44 @@ func (self *PrefixLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 	return
 }
 
-type PrefixContextName_t struct{}
+type PartCircularName_t struct{}
 
-func NewPrefixContextName() Formatter {
-	return &PrefixContextName_t{}
+func NewPartCircularName() Formatter {
+	return &PartCircularName_t{}
 }
 
-func (self *PrefixContextName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
-	if v := GetLogContext(in.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.ContextName()); n > 0 {
+func (self *PartCircularName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	if v := GetLogCircular(in.Ctx); v != nil {
+		if n, err = io.WriteString(out, v.CircularName()); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
 	return
 }
 
-type PrefixTextMessage_t struct{}
+type PartTextMessage_t struct{}
 
-func NewPrefixTextMessage() Formatter {
-	return &PrefixTextMessage_t{}
+func NewPartTextMessage() Formatter {
+	return &PartTextMessage_t{}
 }
 
-func (self *PrefixTextMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartTextMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	n, err = fmt.Fprintf(out, in.Format, in.Args...)
 	return
 }
 
-type PrefixNewLine_t struct{}
+type PartNewLine_t struct{}
 
-func NewPrefixNewLine() Formatter {
-	return &PrefixNewLine_t{}
+func NewPartNewLine() Formatter {
+	return &PartNewLine_t{}
 }
 
-func (self *PrefixNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	n, err = fmt.Fprint(out, "\n")
 	return
 }
 
-type PrefixJsonMessage_t struct {
+type PartJsonMessage_t struct {
 	AppName     string    `json:"app_name,omitempty"`
 	AppVersion  string    `json:"app_version,omitempty"`
 	Ts          time.Time `json:"dt,omitempty"`
@@ -108,15 +108,15 @@ type PrefixJsonMessage_t struct {
 	Message     string    `json:"message,omitempty"`
 }
 
-func NewPrefixJsonMessage(AppName string, AppVersion string) Formatter {
-	return &PrefixJsonMessage_t{
+func NewPartJsonMessage(AppName string, AppVersion string) Formatter {
+	return &PartJsonMessage_t{
 		AppName:    AppName,
 		AppVersion: AppVersion,
 	}
 }
 
-func (self *PrefixJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
-	msg := PrefixJsonMessage_t{
+func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	msg := PartJsonMessage_t{
 		AppName:    self.AppName,
 		AppVersion: self.AppVersion,
 		Ts:         in.Info.Ts,
@@ -124,8 +124,8 @@ func (self *PrefixJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, 
 		Level:      LevelName(in.Info.Level),
 		Message:    fmt.Sprintf(in.Format, in.Args...),
 	}
-	if v := GetLogContext(in.Ctx); v != nil {
-		msg.ContextName = v.ContextName()
+	if v := GetLogCircular(in.Ctx); v != nil {
+		msg.ContextName = v.CircularName()
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return

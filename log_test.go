@@ -17,9 +17,9 @@ func Test1(t *testing.T) {
 
 	var buf bytes.Buffer
 	ts := time.Now()
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, 0), WhatLevel(0))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, &buf, 0), WhatLevel(0))
-	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewPrefixDateTime(""), NewPrefixLevelName("", ""), NewPrefixTextMessage(), NewPrefixNewLine()}, 1024, 10, 0)
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, &buf, 0), WhatLevel(0))
+	log_file, _ := NewWriterFileBytes(ts, "/tmp/test.log", []Formatter{NewPartDateTime(""), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, 1024, 10, 0)
 	m.AddOutputs("file", log_file, WhatLevel(0))
 	log_http := NewWriterHttp(
 		NewUrls("http://localhost"),
@@ -42,14 +42,14 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	c := NewLogContext("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
-	ctx := SetLogContext(context.Background(), c)
+	c := NewLogCircular("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
+	ctx := SetLogCircular(context.Background(), c)
 
 	m := NewLevelMap()
 
 	var buf bytes.Buffer
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixContextName(), NewPrefixLevelName("_", "_"), NewPrefixTextMessage(), NewPrefixNewLine()}, os.Stdout, 0), WhatLevel(0))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPrefixDateTime(""), NewPrefixContextName(), NewPrefixLevelName("_", "_"), NewPrefixTextMessage(), NewPrefixNewLine()}, &buf, 0), WhatLevel(0))
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartCircularName(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartCircularName(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, &buf, 0), WhatLevel(0))
 
 	SetLogger(New(m))
 
