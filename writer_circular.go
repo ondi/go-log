@@ -126,6 +126,28 @@ func (self *LogCircularWriter_t) Close() error {
 	return nil
 }
 
+type LogTag interface {
+	LogTagKey() string
+	LogTagValue() string
+}
+
+type LogTag_t struct {
+	Key   string
+	Value string
+}
+
+func (self LogTag_t) LogTagKey() string {
+	return self.Key
+}
+
+func (self LogTag_t) LogTagValue() string {
+	return self.Value
+}
+
+func (self LogTag_t) String() string {
+	return self.Key + "=" + self.Value
+}
+
 type LogCircularRead_t struct{}
 
 func NewLogCircularRead() (self *LogCircularRead_t) {
@@ -144,6 +166,19 @@ func (self *LogCircularRead_t) GetLevels(ctx context.Context, out map[string]int
 	if v := GetLogCircular(ctx); v != nil {
 		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			out[fmt.Sprintf("LEVEL%v", level_id)]++
+			return true
+		})
+	}
+}
+
+func (self *LogCircularRead_t) GetTags(ctx context.Context, out map[string]string) {
+	if v := GetLogCircular(ctx); v != nil {
+		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
+			for _, v2 := range args {
+				if temp, ok := v2.(LogTag); ok {
+					out[temp.LogTagKey()] = temp.LogTagValue()
+				}
+			}
 			return true
 		})
 	}
