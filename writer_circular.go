@@ -6,7 +6,6 @@ package log
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -162,10 +161,15 @@ func (self *LogCircularRead_t) GetAll(ctx context.Context, out func(level_id int
 	}
 }
 
-func (self *LogCircularRead_t) GetLevels(ctx context.Context, out map[string]int64) {
+func (self *LogCircularRead_t) CountTags(ctx context.Context, out map[string]int64) {
 	if v := GetLogCircular(ctx); v != nil {
 		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
-			out[fmt.Sprintf("LEVEL%v", level_id)]++
+			out[LevelName(level_id)]++
+			for _, v2 := range args {
+				if temp, ok := v2.(LogTag); ok {
+					out[temp.LogTagKey()]++
+				}
+			}
 			return true
 		})
 	}
