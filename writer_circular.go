@@ -125,25 +125,25 @@ func (self *LogCircularWriter_t) Close() error {
 	return nil
 }
 
-type LogTag interface {
-	LogTagKey() string
-	LogTagValue() string
+type Tag interface {
+	TagKey() string
+	TagValue() string
 }
 
-type LogTag_t struct {
+type Tag_t struct {
 	Key   string
 	Value string
 }
 
-func (self LogTag_t) LogTagKey() string {
+func (self Tag_t) LogTagKey() string {
 	return self.Key
 }
 
-func (self LogTag_t) LogTagValue() string {
+func (self Tag_t) LogTagValue() string {
 	return self.Value
 }
 
-func (self LogTag_t) String() string {
+func (self Tag_t) String() string {
 	return self.Key + "=" + self.Value
 }
 
@@ -166,8 +166,8 @@ func (self *LogCircularRead_t) CountTags(ctx context.Context, out map[string]int
 		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			out[LevelName(level_id)]++
 			for _, v2 := range args {
-				if temp, ok := v2.(LogTag); ok {
-					out[temp.LogTagKey()]++
+				if temp, ok := v2.(Tag); ok {
+					out[temp.TagKey()]++
 				}
 			}
 			return true
@@ -179,8 +179,8 @@ func (self *LogCircularRead_t) GetTags(ctx context.Context, out map[string]strin
 	if v := GetLogCircular(ctx); v != nil {
 		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			for _, v2 := range args {
-				if temp, ok := v2.(LogTag); ok {
-					out[temp.LogTagKey()] = temp.LogTagValue()
+				if temp, ok := v2.(Tag); ok {
+					out[temp.TagKey()] = temp.TagValue()
 				}
 			}
 			return true
