@@ -102,12 +102,10 @@ func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queu
 }
 
 func (self *log_t) Log(ctx context.Context, level int64, format string, args ...any) {
-	var info Info_t
-	info.Ts = time.Now()
-	info.Level = level
-	info.File, info.Line = GetFileLine(1, 32)
+	m := []Msg_t{{Ctx: ctx, Info: Info_t{Ts: time.Now(), Level: level}, Format: format, Args: args}}
+	m[0].Info.File, m[0].Info.Line = GetFileLine(1, 32)
 	for _, writer := range (*self.level_map.Load())[level] {
-		writer.LogWrite([]Msg_t{{Ctx: ctx, Info: info, Format: format, Args: args}})
+		writer.LogWrite(m)
 	}
 }
 
