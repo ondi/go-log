@@ -21,7 +21,8 @@ var log_circular = 1
 type RangeFn_t = func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool
 
 type LogCircular interface {
-	CircularName() string
+	CircularSet(key string, value string)
+	CircularGet(key string) (value string)
 	WriteLog(m Msg_t) (n int, err error)
 	CircularRange(f RangeFn_t)
 	CircularReset()
@@ -38,22 +39,31 @@ func GetLogCircular(ctx context.Context) (value LogCircular) {
 
 type LogCircular_t struct {
 	mx    sync.Mutex
-	name  string
+	kv    map[string]string
 	data  *circular.List_t[Msg_t]
 	limit int
 }
 
 func NewLogCircular(name string, limit int) (self *LogCircular_t) {
 	self = &LogCircular_t{
-		name:  name,
-		limit: limit,
+		kv:    map[string]string{"name": name},
 		data:  circular.New[Msg_t](limit),
+		limit: limit,
 	}
 	return
 }
 
-func (self *LogCircular_t) CircularName() string {
-	return self.name
+func (self *LogCircular_t) CircularSet(key string, value string) {
+	self.mx.Lock()
+	self.kv[key] = value
+	self.mx.Unlock()
+}
+
+func (self *LogCircular_t) CircularGet(key string) (value string) {
+	self.mx.Lock()
+	value = self.kv[key]
+	self.mx.Unlock()
+	return
 }
 
 func (self *LogCircular_t) WriteLog(m Msg_t) (n int, err error) {

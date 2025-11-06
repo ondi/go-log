@@ -69,7 +69,7 @@ func NewPartCircularName() Formatter {
 
 func (self *PartCircularName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogCircular(in.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.CircularName()); n > 0 {
+		if n, err = io.WriteString(out, v.CircularGet("name")); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
@@ -125,7 +125,7 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 		Message:    fmt.Sprintf(in.Format, in.Args...),
 	}
 	if v := GetLogCircular(in.Ctx); v != nil {
-		msg.ContextName = v.CircularName()
+		msg.ContextName = v.CircularGet("name")
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return
