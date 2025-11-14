@@ -44,9 +44,9 @@ type LogCircular_t struct {
 	limit int
 }
 
-func NewLogCircular(name string, limit int) (self *LogCircular_t) {
+func NewLogCircular(id string, limit int) (self *LogCircular_t) {
 	self = &LogCircular_t{
-		kv:    map[string]string{"name": name},
+		kv:    map[string]string{"id": id},
 		data:  circular.New[Msg_t](limit),
 		limit: limit,
 	}

@@ -61,15 +61,15 @@ func (self *PartLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err 
 	return
 }
 
-type PartCircularName_t struct{}
+type PartCircularId_t struct{}
 
 func NewPartCircularName() Formatter {
-	return &PartCircularName_t{}
+	return &PartCircularId_t{}
 }
 
-func (self *PartCircularName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartCircularId_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogCircular(in.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.CircularGet("name")); n > 0 {
+		if n, err = io.WriteString(out, v.CircularGet("id")); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
@@ -99,13 +99,13 @@ func (self *PartNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err er
 }
 
 type PartJsonMessage_t struct {
-	AppName     string    `json:"app_name,omitempty"`
-	AppVersion  string    `json:"app_version,omitempty"`
-	Ts          time.Time `json:"dt,omitempty"`
-	Location    string    `json:"location,omitempty"`
-	Level       string    `json:"level,omitempty"`
-	ContextName string    `json:"context_name,omitempty"`
-	Message     string    `json:"message,omitempty"`
+	AppName    string    `json:"app_name,omitempty"`
+	AppVersion string    `json:"app_version,omitempty"`
+	Ts         time.Time `json:"dt,omitempty"`
+	Location   string    `json:"location,omitempty"`
+	Level      string    `json:"level,omitempty"`
+	ContextId  string    `json:"context_id,omitempty"`
+	Message    string    `json:"message,omitempty"`
 }
 
 func NewPartJsonMessage(AppName string, AppVersion string) Formatter {
@@ -125,7 +125,7 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 		Message:    fmt.Sprintf(in.Format, in.Args...),
 	}
 	if v := GetLogCircular(in.Ctx); v != nil {
-		msg.ContextName = v.CircularGet("name")
+		msg.ContextId = v.CircularGet("id")
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return
