@@ -75,7 +75,7 @@ import (
 
 var (
 	__std_logger = NewLogger()
-	__std_prefix = []Formatter{NewPartFileLine(), NewPartCircularName(), NewPartLevelName("", "")}
+	__std_parts  = []Formatter{NewPartFileLine(), NewPartCircularName(), NewPartLevelName("", "")}
 )
 
 type Args_t struct {
@@ -250,7 +250,7 @@ func (self MessageKB_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error
 	self.Timestamp = string(in.Info.Ts.AppendFormat(b[:0], "2006-01-02T15:04:05.000-07:00"))
 
 	buf.Reset()
-	for _, fm := range __std_prefix {
+	for _, fm := range __std_parts {
 		fm.FormatMessage(&buf, in)
 	}
 	self.Location = buf.String()
@@ -291,7 +291,7 @@ func (self MessageTG_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error
 		io.WriteString(w, " ")
 	}
 
-	for _, fm := range __std_prefix {
+	for _, fm := range __std_parts {
 		fm.FormatMessage(w, in)
 	}
 
