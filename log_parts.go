@@ -99,13 +99,13 @@ func (self *PartNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err er
 }
 
 type PartJsonMessage_t struct {
+	Level      string    `json:"level,omitempty"`
+	Message    string    `json:"message,omitempty"`
+	Location   string    `json:"location,omitempty"`
+	ContextId  string    `json:"context_id,omitempty"`
 	AppName    string    `json:"app_name,omitempty"`
 	AppVersion string    `json:"app_version,omitempty"`
 	Ts         time.Time `json:"dt,omitempty"`
-	Location   string    `json:"location,omitempty"`
-	Level      string    `json:"level,omitempty"`
-	ContextId  string    `json:"context_id,omitempty"`
-	Message    string    `json:"message,omitempty"`
 }
 
 func NewPartJsonMessage(AppName string, AppVersion string) Formatter {
@@ -117,12 +117,12 @@ func NewPartJsonMessage(AppName string, AppVersion string) Formatter {
 
 func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	msg := PartJsonMessage_t{
+		Level:      LevelName(in.Info.Level),
+		Message:    fmt.Sprintf(in.Format, in.Args...),
+		Location:   FileLine(in.Info.File, in.Info.Line),
 		AppName:    self.AppName,
 		AppVersion: self.AppVersion,
 		Ts:         in.Info.Ts,
-		Location:   FileLine(in.Info.File, in.Info.Line),
-		Level:      LevelName(in.Info.Level),
-		Message:    fmt.Sprintf(in.Format, in.Args...),
 	}
 	if v := GetLogCircular(in.Ctx); v != nil {
 		msg.ContextId = v.CircularGet("id")
