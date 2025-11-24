@@ -13,6 +13,28 @@ import (
 	"time"
 )
 
+type Tag interface {
+	TagKey() string
+	TagValue() string
+}
+
+type Tag_t struct {
+	Key   string
+	Value string
+}
+
+func (self Tag_t) TagKey() string {
+	return self.Key
+}
+
+func (self Tag_t) TagValue() string {
+	return self.Value
+}
+
+func (self Tag_t) String() string {
+	return self.Key + "=" + self.Value
+}
+
 type PartDateTime_t struct {
 	Layout string
 }
@@ -101,6 +123,7 @@ func (self *PartNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err er
 type PartJsonMessage_t struct {
 	Level      string    `json:"level,omitempty"`
 	Message    string    `json:"message,omitempty"`
+	Tags       []Tag_t   `json:"tags,omitempty"`
 	Location   string    `json:"location,omitempty"`
 	ContextId  string    `json:"context_id,omitempty"`
 	AppName    string    `json:"app_name,omitempty"`
@@ -123,6 +146,11 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 		AppName:    self.AppName,
 		AppVersion: self.AppVersion,
 		Ts:         in.Info.Ts,
+	}
+	for _, v := range in.Args {
+		if temp, ok := v.(Tag); ok {
+			msg.Tags = append(msg.Tags, Tag_t{Key: temp.TagKey(), Value: temp.TagValue()})
+		}
 	}
 	if v := GetLogCircular(in.Ctx); v != nil {
 		msg.ContextId = v.CircularGet("id")

@@ -135,28 +135,6 @@ func (self *LogCircularWriter_t) Close() error {
 	return nil
 }
 
-type Tag interface {
-	TagKey() string
-	TagValue() string
-}
-
-type Tag_t struct {
-	Key   string
-	Value string
-}
-
-func (self Tag_t) LogTagKey() string {
-	return self.Key
-}
-
-func (self Tag_t) LogTagValue() string {
-	return self.Value
-}
-
-func (self Tag_t) String() string {
-	return self.Key + "=" + self.Value
-}
-
 type LogCircularRead_t struct{}
 
 func NewLogCircularRead() (self *LogCircularRead_t) {
