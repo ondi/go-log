@@ -32,7 +32,7 @@ func (self Tag_t) TagValue() string {
 }
 
 func (self Tag_t) String() string {
-	return self.Key + ": " + self.Value
+	return "{" + self.Key + ":" + self.Value + "}"
 }
 
 type PartDateTime_t struct {
