@@ -32,7 +32,7 @@ func (self Tag_t) TagValue() string {
 }
 
 func (self Tag_t) String() string {
-	return `{"` + self.Key + `": "` + self.Value + `"}`
+	return self.Key + "=" + self.Value
 }
 
 type PartDateTime_t struct {
@@ -121,14 +121,14 @@ func (self *PartNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err er
 }
 
 type PartJsonMessage_t struct {
-	Level      string    `json:"level,omitempty"`
-	Message    string    `json:"message,omitempty"`
-	Tags       []Tag_t   `json:"tags,omitempty"`
-	Location   string    `json:"location,omitempty"`
-	ContextId  string    `json:"context_id,omitempty"`
-	AppName    string    `json:"app_name,omitempty"`
-	AppVersion string    `json:"app_version,omitempty"`
-	Ts         time.Time `json:"dt,omitempty"`
+	Level      string            `json:"level,omitempty"`
+	Message    string            `json:"message,omitempty"`
+	Tags       map[string]string `json:"tags,omitempty"`
+	Location   string            `json:"location,omitempty"`
+	ContextId  string            `json:"context_id,omitempty"`
+	AppName    string            `json:"app_name,omitempty"`
+	AppVersion string            `json:"app_version,omitempty"`
+	Ts         time.Time         `json:"dt,omitempty"`
 }
 
 func NewPartJsonMessage(AppName string, AppVersion string) Formatter {
@@ -147,9 +147,10 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 		AppVersion: self.AppVersion,
 		Ts:         in.Info.Ts,
 	}
+	msg.Tags = map[string]string{}
 	for _, v := range in.Args {
 		if temp, ok := v.(Tag); ok {
-			msg.Tags = append(msg.Tags, Tag_t{Key: temp.TagKey(), Value: temp.TagValue()})
+			msg.Tags[temp.TagKey()] = temp.TagValue()
 		}
 	}
 	if v := GetLogCircular(in.Ctx); v != nil {
