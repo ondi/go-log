@@ -90,20 +90,20 @@ func (self *LogBuffer_t) BufferReset() {
 	self.data.Reset()
 }
 
-type LogAddBufferMiddleware_t struct {
+type LogBufferMiddleware_t struct {
 	Handler http.Handler
 	Limit   int
 }
 
-func NewLogAddBufferMiddleware(next http.Handler, limit int) http.Handler {
-	self := &LogAddBufferMiddleware_t{
+func NewLogBufferMiddleware(next http.Handler, limit int) http.Handler {
+	self := &LogBufferMiddleware_t{
 		Handler: next,
 		Limit:   limit,
 	}
 	return self
 }
 
-func (self *LogAddBufferMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (self *LogBufferMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r = r.WithContext(SetLogBuffer(r.Context(), NewLogBuffer(uuid.New().String(), self.Limit)))
 	self.Handler.ServeHTTP(w, r)
 }
