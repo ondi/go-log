@@ -83,13 +83,13 @@ func (self *PartLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err 
 	return
 }
 
-type PartCircularId_t struct{}
+type PartBufferId_t struct{}
 
-func NewPartCircularName() Formatter {
-	return &PartCircularId_t{}
+func NewPartBufferId() Formatter {
+	return &PartBufferId_t{}
 }
 
-func (self *PartCircularId_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+func (self *PartBufferId_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogBuffer(in.Ctx); v != nil {
 		if n, err = io.WriteString(out, v.BufferGet("id")); n > 0 {
 			io.WriteString(out, " ")

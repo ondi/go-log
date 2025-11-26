@@ -48,8 +48,8 @@ func Test2(t *testing.T) {
 	m := NewLevelMap()
 
 	var buf bytes.Buffer
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartCircularName(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, 0), WhatLevel(0))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartCircularName(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, &buf, 0), WhatLevel(0))
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartBufferId(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartBufferId(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, &buf, 0), WhatLevel(0))
 
 	SetLogger(New(m))
 
