@@ -90,8 +90,8 @@ func NewPartCircularName() Formatter {
 }
 
 func (self *PartCircularId_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
-	if v := GetLogCircular(in.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.CircularGet("id")); n > 0 {
+	if v := GetLogBuffer(in.Ctx); v != nil {
+		if n, err = io.WriteString(out, v.BufferGet("id")); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
@@ -153,8 +153,8 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 			msg.Tags[temp.TagKey()] = temp.TagValue()
 		}
 	}
-	if v := GetLogCircular(in.Ctx); v != nil {
-		msg.ContextId = v.CircularGet("id")
+	if v := GetLogBuffer(in.Ctx); v != nil {
+		msg.ContextId = v.BufferGet("id")
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return

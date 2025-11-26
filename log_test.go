@@ -42,8 +42,8 @@ func Test1(t *testing.T) {
 }
 
 func Test2(t *testing.T) {
-	c := NewLogCircular("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
-	ctx := SetLogCircular(context.Background(), c)
+	c := NewLogBuffer("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
+	ctx := SetLogBuffer(context.Background(), c)
 
 	m := NewLevelMap()
 

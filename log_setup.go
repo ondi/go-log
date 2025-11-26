@@ -105,7 +105,7 @@ func NewLogger() (out Logger) {
 		os.Stderr,
 		0,
 	)
-	w2 := NewLogCircularWriter()
+	w2 := NewLogBufferWriter()
 	for _, v := range WhatLevel(0) {
 		m.AddOutput(v, "stderr", w1)
 		m.AddOutput(v, "buf", w2)
@@ -139,7 +139,7 @@ func SetupLogger(ts time.Time, logs []Args_t, app_name string, app_version strin
 	for _, v := range logs {
 		switch v.LogType {
 		case "buf":
-			m.AddOutputs("buf", NewLogCircularWriter(), WhatLevel(v.LogLevel))
+			m.AddOutputs("buf", NewLogBufferWriter(), WhatLevel(v.LogLevel))
 		case "file":
 			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartCircularName(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))

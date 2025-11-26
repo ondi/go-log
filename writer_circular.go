@@ -15,37 +15,37 @@ import (
 	"github.com/ondi/go-circular"
 )
 
-// &log_circular used for ctx.Value
-var log_circular = 1
+// &log_buffer used for ctx.Value
+var log_buffer = 1
 
 type RangeFn_t = func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool
 
-type LogCircular interface {
-	CircularSet(key string, value string)
-	CircularGet(key string) (value string)
+type LogBuffer interface {
+	BufferSet(key string, value string)
+	BufferGet(key string) (value string)
 	WriteLog(m Msg_t) (n int, err error)
-	CircularRange(f RangeFn_t)
-	CircularReset()
+	BufferRange(f RangeFn_t)
+	BufferReset()
 }
 
-func SetLogCircular(ctx context.Context, value LogCircular) context.Context {
-	return context.WithValue(ctx, &log_circular, value)
+func SetLogBuffer(ctx context.Context, value LogBuffer) context.Context {
+	return context.WithValue(ctx, &log_buffer, value)
 }
 
-func GetLogCircular(ctx context.Context) (value LogCircular) {
-	value, _ = ctx.Value(&log_circular).(LogCircular)
+func GetLogBuffer(ctx context.Context) (value LogBuffer) {
+	value, _ = ctx.Value(&log_buffer).(LogBuffer)
 	return
 }
 
-type LogCircular_t struct {
+type LogBuffer_t struct {
 	mx    sync.Mutex
 	kv    map[string]string
 	data  *circular.List_t[Msg_t]
 	limit int
 }
 
-func NewLogCircular(id string, limit int) (self *LogCircular_t) {
-	self = &LogCircular_t{
+func NewLogBuffer(id string, limit int) (self *LogBuffer_t) {
+	self = &LogBuffer_t{
 		kv:    map[string]string{"id": id},
 		data:  circular.New[Msg_t](limit),
 		limit: limit,
@@ -53,20 +53,20 @@ func NewLogCircular(id string, limit int) (self *LogCircular_t) {
 	return
 }
 
-func (self *LogCircular_t) CircularSet(key string, value string) {
+func (self *LogBuffer_t) BufferSet(key string, value string) {
 	self.mx.Lock()
 	self.kv[key] = value
 	self.mx.Unlock()
 }
 
-func (self *LogCircular_t) CircularGet(key string) (value string) {
+func (self *LogBuffer_t) BufferGet(key string) (value string) {
 	self.mx.Lock()
 	value = self.kv[key]
 	self.mx.Unlock()
 	return
 }
 
-func (self *LogCircular_t) WriteLog(m Msg_t) (n int, err error) {
+func (self *LogBuffer_t) WriteLog(m Msg_t) (n int, err error) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	if self.data.Size() >= self.limit {
@@ -76,7 +76,7 @@ func (self *LogCircular_t) WriteLog(m Msg_t) (n int, err error) {
 	return
 }
 
-func (self *LogCircular_t) CircularRange(f RangeFn_t) {
+func (self *LogBuffer_t) BufferRange(f RangeFn_t) {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.data.RangeFront(func(m Msg_t) bool {
@@ -84,41 +84,41 @@ func (self *LogCircular_t) CircularRange(f RangeFn_t) {
 	})
 }
 
-func (self *LogCircular_t) CircularReset() {
+func (self *LogBuffer_t) BufferReset() {
 	self.mx.Lock()
 	defer self.mx.Unlock()
 	self.data.Reset()
 }
 
-type LogCircularMiddleware_t struct {
+type LogAddBufferMiddleware_t struct {
 	Handler http.Handler
 	Limit   int
 }
 
-func NewLogCircularMiddleware(next http.Handler, limit int) http.Handler {
-	self := &LogCircularMiddleware_t{
+func NewLogAddBufferMiddleware(next http.Handler, limit int) http.Handler {
+	self := &LogAddBufferMiddleware_t{
 		Handler: next,
 		Limit:   limit,
 	}
 	return self
 }
 
-func (self *LogCircularMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(context.WithValue(r.Context(), &log_circular, NewLogCircular(uuid.New().String(), self.Limit)))
+func (self *LogAddBufferMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(SetLogBuffer(r.Context(), NewLogBuffer(uuid.New().String(), self.Limit)))
 	self.Handler.ServeHTTP(w, r)
 }
 
-type LogCircularWriter_t struct {
+type LogBufferWriter_t struct {
 	queue_write atomic.Int64
 }
 
-func NewLogCircularWriter() Queue {
-	return &LogCircularWriter_t{}
+func NewLogBufferWriter() Queue {
+	return &LogBufferWriter_t{}
 }
 
-func (self *LogCircularWriter_t) LogWrite(msg []Msg_t) (n int, err error) {
+func (self *LogBufferWriter_t) LogWrite(msg []Msg_t) (n int, err error) {
 	for _, m := range msg {
-		if v := GetLogCircular(m.Ctx); v != nil {
+		if v := GetLogBuffer(m.Ctx); v != nil {
 			self.queue_write.Add(1)
 			n, err = v.WriteLog(m)
 		}
@@ -126,32 +126,32 @@ func (self *LogCircularWriter_t) LogWrite(msg []Msg_t) (n int, err error) {
 	return
 }
 
-func (self *LogCircularWriter_t) Size() (res QueueSize_t) {
+func (self *LogBufferWriter_t) Size() (res QueueSize_t) {
 	res.QueueWrite = int(self.queue_write.Load())
 	return
 }
 
-func (self *LogCircularWriter_t) Close() error {
+func (self *LogBufferWriter_t) Close() error {
 	return nil
 }
 
-type LogCircularRead_t struct{}
+type LogBufferRead_t struct{}
 
-func NewLogCircularRead() (self *LogCircularRead_t) {
-	return &LogCircularRead_t{}
+func NewLogBufferRead() (self *LogBufferRead_t) {
+	return &LogBufferRead_t{}
 }
 
-func (self *LogCircularRead_t) GetAll(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
-	if v := GetLogCircular(ctx); v != nil {
-		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
+func (self *LogBufferRead_t) GetAll(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
+	if v := GetLogBuffer(ctx); v != nil {
+		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			return out(level_id, format, args)
 		})
 	}
 }
 
-func (self *LogCircularRead_t) CountTags(ctx context.Context, out map[string]int64) {
-	if v := GetLogCircular(ctx); v != nil {
-		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
+func (self *LogBufferRead_t) CountTags(ctx context.Context, out map[string]int64) {
+	if v := GetLogBuffer(ctx); v != nil {
+		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			out[LevelName(level_id)]++
 			for _, v2 := range args {
 				if temp, ok := v2.(Tag); ok {
@@ -163,9 +163,9 @@ func (self *LogCircularRead_t) CountTags(ctx context.Context, out map[string]int
 	}
 }
 
-func (self *LogCircularRead_t) GetTags(ctx context.Context, out map[string]string) {
-	if v := GetLogCircular(ctx); v != nil {
-		v.CircularRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
+func (self *LogBufferRead_t) GetTags(ctx context.Context, out map[string]string) {
+	if v := GetLogBuffer(ctx); v != nil {
+		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			for _, v2 := range args {
 				if temp, ok := v2.(Tag); ok {
 					out[temp.TagKey()] = temp.TagValue()
