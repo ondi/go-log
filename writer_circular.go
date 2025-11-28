@@ -149,7 +149,7 @@ func (self *LogBufferRead_t) GetAll(ctx context.Context, out func(level_id int64
 	}
 }
 
-func (self *LogBufferRead_t) CountTags(ctx context.Context, out map[string]int64) {
+func (self *LogBufferRead_t) GetCount(ctx context.Context, out map[string]int64) {
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			out[LevelName(level_id)]++
