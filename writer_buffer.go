@@ -150,8 +150,7 @@ func (self *LogBufferRead_t) GetAll(ctx context.Context, out func(level_id int64
 	}
 }
 
-func (self *LogBufferRead_t) GetCount(ctx context.Context) (out map[string]map[string]int64) {
-	out = map[string]map[string]int64{}
+func (self *LogBufferRead_t) GetCount(ctx context.Context, out map[string]map[string]int64) {
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
@@ -171,11 +170,9 @@ func (self *LogBufferRead_t) GetCount(ctx context.Context) (out map[string]map[s
 			return true
 		})
 	}
-	return
 }
 
-func (self *LogBufferRead_t) GetTags(ctx context.Context) (out map[string]map[string]string) {
-	out = map[string]map[string]string{}
+func (self *LogBufferRead_t) GetTags(ctx context.Context, out map[string]map[string]string) {
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
@@ -195,5 +192,4 @@ func (self *LogBufferRead_t) GetTags(ctx context.Context) (out map[string]map[st
 			return true
 		})
 	}
-	return
 }
