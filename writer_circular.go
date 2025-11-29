@@ -7,6 +7,7 @@ package log
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -149,29 +150,50 @@ func (self *LogBufferRead_t) GetAll(ctx context.Context, out func(level_id int64
 	}
 }
 
-func (self *LogBufferRead_t) GetCount(ctx context.Context, out map[string]int64) {
+func (self *LogBufferRead_t) GetCount(ctx context.Context) (out map[string]map[string]int64) {
+	out = map[string]map[string]int64{}
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
-			out[LevelName(level_id)]++
+			found := 0
+			level := strconv.FormatInt(level_id, 10)
+			if out[level] == nil {
+				out[level] = map[string]int64{}
+			}
 			for _, v2 := range args {
 				if temp, ok := v2.(Tag); ok {
-					out[temp.TagKey()]++
+					out[level][temp.TagKey()]++
+					found++
 				}
+			}
+			if found == 0 {
+				out[level][""]++
 			}
 			return true
 		})
 	}
+	return
 }
 
-func (self *LogBufferRead_t) GetTags(ctx context.Context, out map[string]string) {
+func (self *LogBufferRead_t) GetTags(ctx context.Context) (out map[string]map[string]string) {
+	out = map[string]map[string]string{}
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
+			found := 0
+			level := strconv.FormatInt(level_id, 10)
+			if out[level] == nil {
+				out[level] = map[string]string{}
+			}
 			for _, v2 := range args {
 				if temp, ok := v2.(Tag); ok {
-					out[temp.TagKey()] = temp.TagValue()
+					out[level][temp.TagKey()] = temp.TagValue()
+					found++
 				}
+			}
+			if found == 0 {
+				out[level][""] = ""
 			}
 			return true
 		})
 	}
+	return
 }
