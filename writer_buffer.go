@@ -7,7 +7,6 @@ package log
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -154,7 +153,7 @@ func (self *LogBufferRead_t) GetCount(ctx context.Context, out map[string]map[st
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
-			level := strconv.FormatInt(level_id, 10)
+			level := LevelName(level_id)
 			if out[level] == nil {
 				out[level] = map[string]int64{}
 			}
@@ -176,7 +175,7 @@ func (self *LogBufferRead_t) GetTags(ctx context.Context, out map[string]map[str
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
-			level := strconv.FormatInt(level_id, 10)
+			level := LevelName(level_id)
 			if out[level] == nil {
 				out[level] = map[string]string{}
 			}
