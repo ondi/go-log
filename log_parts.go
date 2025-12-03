@@ -10,6 +10,7 @@ import (
 	"io"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -182,6 +183,11 @@ func LevelName(in int64) (res string) {
 }
 
 func FileLine(f string, l int) (res string) {
-	res = filepath.Base(f) + ":" + strconv.FormatInt(int64(l), 10)
+	dir, file := filepath.Split(f)
+	base := filepath.Base(dir)
+	if ix := strings.Index(base, "@"); ix > -1 {
+		base = base[:ix]
+	}
+	res = filepath.Join(base, file) + ":" + strconv.FormatInt(int64(l), 10)
 	return
 }
