@@ -182,7 +182,6 @@ func LevelName(in int64) (res string) {
 }
 
 func FileLine(f string, l int) (res string) {
-	dir, file := filepath.Split(f)
-	res = filepath.Join(filepath.Base(dir), file) + ":" + strconv.FormatInt(int64(l), 10)
+	res = filepath.Base(f) + ":" + strconv.FormatInt(int64(l), 10)
 	return
 }
