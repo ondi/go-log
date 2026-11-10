@@ -21,8 +21,10 @@ var log_buffer = 1
 type RangeFn_t = func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool
 
 type LogBuffer interface {
-	BufferSet(key string, value string)
-	BufferGet(key string) (value string)
+	BufferId() string
+	ExtraTagsSet(level string, key string, value string)
+	ExtraTagsGetAll(out map[string]map[string]string)
+	ExtraTagsGetCount(out map[string]map[string]int64)
 	WriteLog(m Msg_t) (n int, err error)
 	BufferRange(f RangeFn_t)
 	BufferReset()
@@ -38,32 +40,60 @@ func GetLogBuffer(ctx context.Context) (value LogBuffer) {
 }
 
 type LogBuffer_t struct {
-	mx    sync.Mutex
-	kv    map[string]string
-	data  *circular.List_t[Msg_t]
-	limit int
+	mx         sync.Mutex
+	buffer_id  string
+	extra_tags map[string]map[string]string
+	data       *circular.List_t[Msg_t]
+	limit      int
 }
 
-func NewLogBuffer(id string, limit int) (self *LogBuffer_t) {
+func NewLogBuffer(buffer_id string, limit int) (self *LogBuffer_t) {
 	self = &LogBuffer_t{
-		kv:    map[string]string{"id": id},
-		data:  circular.New[Msg_t](limit),
-		limit: limit,
+		buffer_id:  buffer_id,
+		extra_tags: map[string]map[string]string{},
+		data:       circular.New[Msg_t](limit),
+		limit:      limit,
 	}
 	return
 }
 
-func (self *LogBuffer_t) BufferSet(key string, value string) {
+func (self *LogBuffer_t) BufferId() string {
+	return self.buffer_id
+}
+
+func (self *LogBuffer_t) ExtraTagsSet(level string, key string, value string) {
 	self.mx.Lock()
-	self.kv[key] = value
+	if self.extra_tags[level] == nil {
+		self.extra_tags[level] = map[string]string{}
+	}
+	self.extra_tags[level][key] = value
 	self.mx.Unlock()
 }
 
-func (self *LogBuffer_t) BufferGet(key string) (value string) {
+func (self *LogBuffer_t) ExtraTagsGetAll(out map[string]map[string]string) {
 	self.mx.Lock()
-	value = self.kv[key]
+	for k1, v1 := range self.extra_tags {
+		for k2, v2 := range v1 {
+			if out[k1] == nil {
+				out[k1] = map[string]string{}
+			}
+			out[k1][k2] = v2
+		}
+	}
 	self.mx.Unlock()
-	return
+}
+
+func (self *LogBuffer_t) ExtraTagsGetCount(out map[string]map[string]int64) {
+	self.mx.Lock()
+	for k1, v1 := range self.extra_tags {
+		for k2 := range v1 {
+			if out[k1] == nil {
+				out[k1] = map[string]int64{}
+			}
+			out[k1][k2]++
+		}
+	}
+	self.mx.Unlock()
 }
 
 func (self *LogBuffer_t) WriteLog(m Msg_t) (n int, err error) {
@@ -141,7 +171,7 @@ func NewLogBufferRead() (self *LogBufferRead_t) {
 	return &LogBufferRead_t{}
 }
 
-func (self *LogBufferRead_t) GetAll(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
+func (self *LogBufferRead_t) GetMsg(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			return out(level_id, format, args)
@@ -149,7 +179,7 @@ func (self *LogBufferRead_t) GetAll(ctx context.Context, out func(level_id int64
 	}
 }
 
-func (self *LogBufferRead_t) GetCount(ctx context.Context, out map[string]map[string]int64) {
+func (self *LogBufferRead_t) GetTagsCount(ctx context.Context, out map[string]map[string]int64) {
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
@@ -168,10 +198,11 @@ func (self *LogBufferRead_t) GetCount(ctx context.Context, out map[string]map[st
 			}
 			return true
 		})
+		v.ExtraTagsGetCount(out)
 	}
 }
 
-func (self *LogBufferRead_t) GetTags(ctx context.Context, out map[string]map[string]string) {
+func (self *LogBufferRead_t) GetTagsAll(ctx context.Context, out map[string]map[string]string) {
 	if v := GetLogBuffer(ctx); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
@@ -190,5 +221,6 @@ func (self *LogBufferRead_t) GetTags(ctx context.Context, out map[string]map[str
 			}
 			return true
 		})
+		v.ExtraTagsGetAll(out)
 	}
 }

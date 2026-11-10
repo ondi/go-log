@@ -92,7 +92,7 @@ func NewPartBufferId() Formatter {
 
 func (self *PartBufferId_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogBuffer(in.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.BufferGet("id")); n > 0 {
+		if n, err = io.WriteString(out, v.BufferId()); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
@@ -155,7 +155,7 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 		}
 	}
 	if v := GetLogBuffer(in.Ctx); v != nil {
-		msg.ContextId = v.BufferGet("id")
+		msg.ContextId = v.BufferId()
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return
