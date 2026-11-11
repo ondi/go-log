@@ -1,6 +1,6 @@
 module github.com/ondi/go-log
 
-go 1.25
+go 1.27
 
 require (
 	github.com/google/uuid v1.6.0
