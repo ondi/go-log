@@ -43,13 +43,13 @@ func Test1(t *testing.T) {
 
 func Test2(t *testing.T) {
 	c := NewLogBuffer("b0dd37be-0f1e-421d-98c8-222cc57acae0", 10)
-	ctx := SetLogBuffer(context.Background(), c)
+	ctx := SetLogBuffer(context.Background(), LogKey[1], c)
 
 	m := NewLevelMap()
 
 	var buf bytes.Buffer
-	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartBufferId(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, 0), WhatLevel(0))
-	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartBufferId(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, &buf, 0), WhatLevel(0))
+	m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartBufferId(LogKey[1]), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, 0), WhatLevel(0))
+	m.AddOutputs("buf", NewWriterStdany([]Formatter{NewPartDateTime(""), NewPartBufferId(LogKey[1]), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, &buf, 0), WhatLevel(0))
 
 	SetLogger(New(m))
 

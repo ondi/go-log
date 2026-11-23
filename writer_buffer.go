@@ -15,8 +15,12 @@ import (
 	"github.com/ondi/go-circular"
 )
 
-// &log_buffer used for ctx.Value
-var log_buffer = 1
+type log_key_t int64
+
+var LogKey = []log_key_t{
+	0,
+	1,
+}
 
 type RangeFn_t = func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool
 
@@ -30,12 +34,12 @@ type LogBuffer interface {
 	BufferReset()
 }
 
-func SetLogBuffer(ctx context.Context, value LogBuffer) context.Context {
-	return context.WithValue(ctx, &log_buffer, value)
+func SetLogBuffer(ctx context.Context, key log_key_t, value LogBuffer) context.Context {
+	return context.WithValue(ctx, key, value)
 }
 
-func GetLogBuffer(ctx context.Context) (value LogBuffer) {
-	value, _ = ctx.Value(&log_buffer).(LogBuffer)
+func GetLogBuffer(ctx context.Context, key log_key_t) (value LogBuffer) {
+	value, _ = ctx.Value(key).(LogBuffer)
 	return
 }
 
@@ -127,24 +131,6 @@ func (self *LogBuffer_t) BufferReset() {
 	self.data.Reset()
 }
 
-type LogBufferMiddleware_t struct {
-	Handler http.Handler
-	Limit   int
-}
-
-func NewLogBufferMiddleware(next http.Handler, limit int) http.Handler {
-	self := &LogBufferMiddleware_t{
-		Handler: next,
-		Limit:   limit,
-	}
-	return self
-}
-
-func (self *LogBufferMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r = r.WithContext(SetLogBuffer(r.Context(), NewLogBuffer(uuid.New().String(), self.Limit)))
-	self.Handler.ServeHTTP(w, r)
-}
-
 type LogBufferWriter_t struct {
 	queue_write atomic.Int64
 }
@@ -155,9 +141,11 @@ func NewLogBufferWriter() Queue {
 
 func (self *LogBufferWriter_t) LogWrite(msg []Msg_t) (n int, err error) {
 	for _, m := range msg {
-		if v := GetLogBuffer(m.Ctx); v != nil {
-			self.queue_write.Add(1)
-			n, err = v.WriteLog(m)
+		for _, v := range LogKey {
+			if v := GetLogBuffer(m.Ctx, v); v != nil {
+				self.queue_write.Add(1)
+				n, err = v.WriteLog(m)
+			}
 		}
 	}
 	return
@@ -172,22 +160,26 @@ func (self *LogBufferWriter_t) Close() error {
 	return nil
 }
 
-type LogBufferRead_t struct{}
-
-func NewLogBufferRead() (self *LogBufferRead_t) {
-	return &LogBufferRead_t{}
+type LogBufferReader_t struct {
+	key log_key_t
 }
 
-func (self *LogBufferRead_t) GetMsg(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
-	if v := GetLogBuffer(ctx); v != nil {
+func NewLogBufferReader(key log_key_t) (self *LogBufferReader_t) {
+	return &LogBufferReader_t{
+		key: key,
+	}
+}
+
+func (self *LogBufferReader_t) GetMsg(ctx context.Context, out func(level_id int64, format string, args ...any) bool) {
+	if v := GetLogBuffer(ctx, self.key); v != nil {
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			return out(level_id, format, args)
 		})
 	}
 }
 
-func (self *LogBufferRead_t) GetTagsCount(ctx context.Context, f func(name string, level string, key string, count int64) bool) {
-	if v := GetLogBuffer(ctx); v != nil {
+func (self *LogBufferReader_t) GetTagsCount(ctx context.Context, f func(name string, level string, key string, count int64) bool) {
+	if v := GetLogBuffer(ctx, self.key); v != nil {
 		tags := map[string]map[string]int64{}
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
@@ -215,8 +207,8 @@ func (self *LogBufferRead_t) GetTagsCount(ctx context.Context, f func(name strin
 	}
 }
 
-func (self *LogBufferRead_t) GetTagsAll(ctx context.Context, f func(name string, level string, key string, value string) bool) {
-	if v := GetLogBuffer(ctx); v != nil {
+func (self *LogBufferReader_t) GetTagsAll(ctx context.Context, f func(name string, level string, key string, value string) bool) {
+	if v := GetLogBuffer(ctx, self.key); v != nil {
 		tags := map[string]map[string]string{}
 		v.BufferRange(func(ts time.Time, file string, line int, level_id int64, format string, args ...any) bool {
 			found := 0
@@ -242,4 +234,24 @@ func (self *LogBufferRead_t) GetTagsAll(ctx context.Context, f func(name string,
 		}
 		v.ExtraTagsGetAll(f)
 	}
+}
+
+type LogBufferMiddleware_t struct {
+	handler http.Handler
+	key     log_key_t
+	limit   int
+}
+
+func NewLogBufferMiddleware(next http.Handler, key log_key_t, limit int) http.Handler {
+	self := &LogBufferMiddleware_t{
+		handler: next,
+		key:     key,
+		limit:   limit,
+	}
+	return self
+}
+
+func (self *LogBufferMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r = r.WithContext(SetLogBuffer(r.Context(), self.key, NewLogBuffer(uuid.New().String(), self.limit)))
+	self.handler.ServeHTTP(w, r)
 }
