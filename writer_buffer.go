@@ -127,8 +127,9 @@ func (self *LogBuffer_t) BufferRange(f RangeFn_t) {
 
 func (self *LogBuffer_t) BufferReset() {
 	self.mx.Lock()
-	defer self.mx.Unlock()
 	self.data.Reset()
+	self.extra_tags = map[string]map[string]map[string][]string{}
+	self.mx.Unlock()
 }
 
 type LogBufferWriter_t struct {
@@ -233,6 +234,12 @@ func (self *LogBufferReader_t) GetTagsAll(ctx context.Context, f func(name strin
 			}
 		}
 		v.ExtraTagsGetAll(f)
+	}
+}
+
+func (self *LogBufferReader_t) BufferReset(ctx context.Context) {
+	if v := GetLogBuffer(ctx, self.key); v != nil {
+		v.BufferReset()
 	}
 }
 
