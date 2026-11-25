@@ -75,7 +75,7 @@ import (
 
 var (
 	__std_logger = NewLogger()
-	__std_parts  = []Formatter{NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", "")}
+	__std_parts  = []Formatter{NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", "")}
 )
 
 type Args_t struct {
@@ -97,7 +97,7 @@ func NewLogger() (out Logger) {
 		[]Formatter{
 			NewPartDateTime("2006-01-02 15:04:05.000"),
 			NewPartFileLine(),
-			NewPartLogValue("id"),
+			NewPartLogValue(),
 			NewPartLevelName("", ""),
 			NewPartTextMessage(),
 			NewPartNewLine(),
@@ -145,42 +145,42 @@ func SetupLogger(ts time.Time, logs []Args_t, app_name string, app_version strin
 		case "ctx":
 			m.AddOutputs("ctx", NewWriterContext(), WhatLevel(v.LogLevel))
 		case "file":
-			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogSize, v.LogBackup, v.LogLimit); err != nil {
 				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "q_file":
-			fq, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogSize, v.LogBackup, v.LogLimit)
+			fq, err := NewWriterFileBytes(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogSize, v.LogBackup, v.LogLimit)
 			if err != nil {
 				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 			}
 		case "filetime":
-			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
+			if output, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit); err != nil {
 				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, output, WhatLevel(v.LogLevel))
 			}
 		case "q_filetime":
-			fq, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit)
+			fq, err := NewWriterFileTime(ts, v.LogFile, []Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, v.LogDuration, v.LogBackup, v.LogLimit)
 			if err != nil {
 				errs = append(errs, fmt.Sprintf("%v %v", v.LogType, err.Error()))
 			} else {
 				m.AddOutputs(v.LogFile, NewQueue(v.LogQueue, v.LogWriters, 1, fq), WhatLevel(v.LogLevel))
 			}
 		case "stdout":
-			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout", NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "stdout2":
-			m.AddOutputs("stdout2", NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stdout2", NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("_", "_"), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, v.LogLimit), WhatLevel(v.LogLevel))
 		case "q_stdout":
-			q := NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, v.LogLimit)
+			q := NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stdout, v.LogLimit)
 			m.AddOutputs("stdoutqueue", NewQueue(v.LogQueue, v.LogWriters, 1, q), WhatLevel(v.LogLevel))
 		case "stderr":
-			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
+			m.AddOutputs("stderr", NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stderr, v.LogLimit), WhatLevel(v.LogLevel))
 		case "q_stderr":
-			q := NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue("id"), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stderr, v.LogLimit)
+			q := NewWriterStdany([]Formatter{NewPartDateTime(v.LogDate), NewPartFileLine(), NewPartLogValue(), NewPartLevelName("", ""), NewPartTextMessage(), NewPartNewLine()}, os.Stderr, v.LogLimit)
 			m.AddOutputs("stderrqueue", NewQueue(v.LogQueue, v.LogWriters, 1, q), WhatLevel(v.LogLevel))
 		case "q_json_stdout":
 			q := NewWriterStdany([]Formatter{NewPartJsonMessage(app_name, app_version)}, os.Stdout, v.LogLimit)

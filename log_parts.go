@@ -85,18 +85,15 @@ func (self *PartLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err 
 }
 
 type PartLogValue_t struct {
-	name string
 }
 
-func NewPartLogValue(name string) Formatter {
-	return &PartLogValue_t{
-		name: name,
-	}
+func NewPartLogValue() Formatter {
+	return &PartLogValue_t{}
 }
 
 func (self *PartLogValue_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
 	if v := GetLogValue(in.Ctx); v != nil {
-		if n, err = io.WriteString(out, v.GetValue(self.name)); n > 0 {
+		if n, err = io.WriteString(out, v.LogValueId()); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
@@ -159,7 +156,7 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 		}
 	}
 	if v := GetLogValue(in.Ctx); v != nil {
-		msg.ContextId = v.GetValue("id")
+		msg.ContextId = v.LogValueId()
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return

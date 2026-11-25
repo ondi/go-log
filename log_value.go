@@ -16,6 +16,7 @@ type log_key_t int64
 var my_log_key log_key_t = 1
 
 type LogValue interface {
+	LogValueId() string
 	SetValue(key string, value string)
 	GetValue(key string) (value string)
 	SetQueue(q Queue)
@@ -34,15 +35,21 @@ func GetLogValue(ctx context.Context) (out LogValue) {
 }
 
 type LogValue_t struct {
-	mx    sync.Mutex
-	value map[string]string
-	queue Queue
+	mx           sync.Mutex
+	queue        Queue
+	value        map[string]string
+	log_value_id string
 }
 
-func NewLogValue() (self *LogValue_t) {
+func NewLogValue(log_value_id string) (self *LogValue_t) {
 	return &LogValue_t{
-		value: map[string]string{},
+		value:        map[string]string{},
+		log_value_id: log_value_id,
 	}
+}
+
+func (self *LogValue_t) LogValueId() string {
+	return self.log_value_id
 }
 
 func (self *LogValue_t) SetValue(key string, value string) {
@@ -93,8 +100,7 @@ func NewLogValueMiddleware(next http.Handler) http.Handler {
 }
 
 func (self *LogCounterMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log_value := NewLogValue()
-	log_value.SetValue("id", uuid.New().String())
+	log_value := NewLogValue(uuid.New().String())
 	log_value.SetQueue(NewWriterCounter())
 	r = r.WithContext(SetLogValue(r.Context(), log_value))
 	self.handler.ServeHTTP(w, r)
