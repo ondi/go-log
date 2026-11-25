@@ -84,19 +84,19 @@ func (self *PartLevelName_t) FormatMessage(out io.Writer, in Msg_t) (n int, err 
 	return
 }
 
-type PartBufferId_t struct {
-	key log_key_t
+type PartLogValue_t struct {
+	name string
 }
 
-func NewPartBufferId(key log_key_t) Formatter {
-	return &PartBufferId_t{
-		key: key,
+func NewPartLogValue(name string) Formatter {
+	return &PartLogValue_t{
+		name: name,
 	}
 }
 
-func (self *PartBufferId_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
-	if v := GetLogBuffer(in.Ctx, self.key); v != nil {
-		if n, err = io.WriteString(out, v.BufferId()); n > 0 {
+func (self *PartLogValue_t) FormatMessage(out io.Writer, in Msg_t) (n int, err error) {
+	if v := GetLogValue(in.Ctx); v != nil {
+		if n, err = io.WriteString(out, v.GetValue(self.name)); n > 0 {
 			io.WriteString(out, " ")
 		}
 	}
@@ -126,7 +126,6 @@ func (self *PartNewLine_t) FormatMessage(out io.Writer, in Msg_t) (n int, err er
 }
 
 type PartJsonMessage_t struct {
-	key        log_key_t         `json:"-"`
 	Level      string            `json:"level,omitempty"`
 	Message    string            `json:"message,omitempty"`
 	Tags       map[string]string `json:"tags,omitempty"`
@@ -137,9 +136,8 @@ type PartJsonMessage_t struct {
 	Ts         time.Time         `json:"dt,omitempty"`
 }
 
-func NewPartJsonMessage(key log_key_t, AppName string, AppVersion string) Formatter {
+func NewPartJsonMessage(AppName string, AppVersion string) Formatter {
 	return &PartJsonMessage_t{
-		key:        key,
 		AppName:    AppName,
 		AppVersion: AppVersion,
 	}
@@ -160,8 +158,8 @@ func (self *PartJsonMessage_t) FormatMessage(out io.Writer, in Msg_t) (n int, er
 			msg.Tags[temp.TagKey()] = temp.TagValue()
 		}
 	}
-	if v := GetLogBuffer(in.Ctx, self.key); v != nil {
-		msg.ContextId = v.BufferId()
+	if v := GetLogValue(in.Ctx); v != nil {
+		msg.ContextId = v.GetValue("id")
 	}
 	if err = json.NewEncoder(out).Encode(msg); err != nil {
 		return

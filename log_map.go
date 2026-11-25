@@ -4,8 +4,10 @@
 
 package log
 
+// Name: Queue
 type Queue_map_t map[string]Queue
 
+// Level: QueueMap
 type Level_map_t map[int64]Queue_map_t
 
 func NewLevelMap() Level_map_t {
@@ -51,7 +53,7 @@ func (self Level_map_t) DelOutputs(writer_name string, levels []int64) Level_map
 	return self
 }
 
-func (self Level_map_t) Copy(out Level_map_t) Level_map_t {
+func (self Level_map_t) CopyTo(out Level_map_t) Level_map_t {
 	var ok bool
 	var temp Queue_map_t
 	for k1, v1 := range self {

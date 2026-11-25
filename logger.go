@@ -77,18 +77,18 @@ type log_t struct {
 // use NewLevelMap()
 func New(in Level_map_t) Logger {
 	self := &log_t{}
-	temp := in.Copy(Level_map_t{})
+	temp := in.CopyTo(Level_map_t{})
 	self.level_map.Store(&temp)
 	return self
 }
 
 func (self *log_t) SwapLevelMap(in Level_map_t) Level_map_t {
-	temp := in.Copy(Level_map_t{})
+	temp := in.CopyTo(Level_map_t{})
 	return *self.level_map.Swap(&temp)
 }
 
 func (self *log_t) CopyLevelMap() (out Level_map_t) {
-	return (*self.level_map.Load()).Copy(Level_map_t{})
+	return (*self.level_map.Load()).CopyTo(Level_map_t{})
 }
 
 func (self *log_t) Range(fn func(level_id int64, writer_name string, writer Queue) bool) {
