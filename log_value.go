@@ -92,7 +92,7 @@ type LogCounterMiddleware_t struct {
 	handler http.Handler
 }
 
-func NewLogValueMiddleware(next http.Handler) http.Handler {
+func NewCounterMiddleware(next http.Handler) http.Handler {
 	self := &LogCounterMiddleware_t{
 		handler: next,
 	}
@@ -108,15 +108,19 @@ func (self *LogCounterMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Req
 
 func LogCounterMiddlewareReader(ctx context.Context, f func(name string, level string, key string, value int64) bool) {
 	if l := GetLogValue(ctx); l != nil {
-		if q := l.GetQueue(); q != nil {
-			if c, _ := q.(*WriterCounter_t); c != nil {
-				c.Range(func(level string, key string, count int64) bool {
-					return f("logs", level, key, count)
-				})
-			}
-		}
-		l.Range(func(key string, value string) bool {
-			return f(key, "", value, 1)
-		})
+		LogCounterReader(l, f)
 	}
+}
+
+func LogCounterReader(l LogValue, f func(name string, level string, key string, value int64) bool) {
+	if q := l.GetQueue(); q != nil {
+		if c, _ := q.(*WriterCounter_t); c != nil {
+			c.Range(func(level string, key string, count int64) bool {
+				return f("logs", level, key, count)
+			})
+		}
+	}
+	l.Range(func(key string, value string) bool {
+		return f(key, "", value, 1)
+	})
 }
