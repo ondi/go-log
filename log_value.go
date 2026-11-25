@@ -92,7 +92,7 @@ type LogCounterMiddleware_t struct {
 	handler http.Handler
 }
 
-func NewCounterMiddleware(next http.Handler) http.Handler {
+func NewLogCounterMiddleware(next http.Handler) http.Handler {
 	self := &LogCounterMiddleware_t{
 		handler: next,
 	}
