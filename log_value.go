@@ -108,19 +108,23 @@ func (self *LogCounterMiddleware_t) ServeHTTP(w http.ResponseWriter, r *http.Req
 
 func LogCounterMiddlewareReader(ctx context.Context, f func(name string, level string, key string, value int64) bool) {
 	if l := GetLogValue(ctx); l != nil {
-		LogCounterReader(l, f)
+		LogCounterValueReader(l, f)
 	}
 }
 
-func LogCounterReader(l LogValue, f func(name string, level string, key string, value int64) bool) {
+func LogCounterValueReader(l LogValue, f func(name string, level string, key string, value int64) bool) {
 	if q := l.GetQueue(); q != nil {
-		if c, _ := q.(*WriterCounter_t); c != nil {
-			c.Range(func(level string, key string, count int64) bool {
-				return f("logs", level, key, count)
-			})
-		}
+		LogCounterQueueReader(q, f)
 	}
 	l.Range(func(key string, value string) bool {
 		return f(key, "", value, 1)
 	})
+}
+
+func LogCounterQueueReader(q Queue, f func(name string, level string, key string, value int64) bool) {
+	if c, _ := q.(*WriterCounter_t); c != nil {
+		c.Range(func(level string, key string, count int64) bool {
+			return f("logs", level, key, count)
+		})
+	}
 }
